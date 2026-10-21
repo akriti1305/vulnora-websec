@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisLab — Search (XSS Vulnerable)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .warning-banner {
+            background: #d32f2f;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .vuln-tag {
+            display: inline-block;
+            background: #d32f2f;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #1a237e;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.88rem;
+            margin-bottom: 28px;
+        }
+
+        /* Search form */
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .search-form input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: #1a237e;
+        }
+
+        .search-form button {
+            padding: 12px 24px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .search-form button:hover { background: #b71c1c; }
+
+        /* Result box — this is where XSS payload is reflected */
+        .result-box {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        .result-box h2 {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .result-content {
+            font-size: 1rem;
+            color: #333;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 3px solid #d32f2f;
+            /* The query variable (Markup'd/unescaped) is rendered here */
+        }
+
+        .hint-box {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 0.82rem;
+            color: #555;
+        }
+
+        .hint-box strong { color: #333; }
+
+        .hint-box code {
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1a237e;
+            text-decoration: none;
+            font-size: 0.88rem;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="warning-banner">
+    ⚠️ AegisLab — INTENTIONALLY VULNERABLE — Academic Use Only ⚠️
+</div>
+
+<div class="container">
+
+    <span class="vuln-tag">⚠ REFLECTED XSS VULNERABLE</span>
+    <h1>🔍 Search</h1>
+    <p class="subtitle">Search query is reflected back into HTML without any escaping</p>
+
+    <!-- GET /search?q=... -->
+    <form action="/search" method="GET" class="search-form">
+        <input type="text" name="q"
+               value="{{ query }}"
+               placeholder="Type your search query...">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if query %}
+    <div class="result-box">
+        <h2>Search results for:</h2>
+        <!--
+            VULNERABILITY: The variable {{ query }} is wrapped in Markup() in app.py
+            so Jinja2 does NOT escape it. Whatever HTML/JS the user typed is rendered
+            directly as raw HTML in the browser.
+        -->
+        <div class="result-content">{{ query }}</div>
+    </div>
+    {% endif %}
+
+    <!-- XSS test hints -->
+    <div class="hint-box">
+        <strong>🧪 XSS Test Payloads:</strong><br><br>
+        Basic alert: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br>
+        Or just visit: <code>/search?q=&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br><br>
+        Image onerror: <code>&lt;img src=x onerror=alert('XSS')&gt;</code><br><br>
+        AegisScan marker: <code>&lt;script&gt;alert('aegisscan-xss')&lt;/script&gt;</code>
+    </div>
+
+    <a href="/" class="back-link">← Back to AegisLab Home</a>
+
+</div>
+</body>
+</html>

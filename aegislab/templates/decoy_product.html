@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AegisLab — Product Catalogue (Decoy)</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .product { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .product h2 { margin: 0 0 8px; color: #1a237e; }
+        .price { font-size: 1.3rem; font-weight: bold; color: #d32f2f; margin-top: 8px; }
+        .nav a { margin-right: 10px; color: #1a237e; text-decoration: none; font-size: 0.9rem; }
+        .notice { background: #fff8e1; border: 1px solid #ffe082; padding: 10px; border-radius: 4px; font-size: 0.85rem; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<h1>🛍️ Product Catalogue (Decoy)</h1>
+<p>Browse our public product listing. All products are publicly viewable — no account required.</p>
+<div class="nav">
+    {% for pid in ['1','2','3','4','5'] %}
+    <a href="/decoy/product?id={{ pid }}">Product {{ pid }}</a>
+    {% endfor %}
+</div>
+
+{% if product %}
+<div class="product">
+    <h2>{{ product.name }}</h2>
+    <p>{{ product.desc }}</p>
+    <p class="price">{{ product.price }}</p>
+    <p style="font-size:0.8rem;color:#888;">Product ID: {{ product_id }}</p>
+</div>
+{% else %}
+<div class="product">
+    <p>Product #{{ product_id }} not found.</p>
+</div>
+{% endif %}
+
+<div class="notice">
+    ℹ️ <strong>Decoy notice:</strong> This is a PUBLIC product catalogue. Every product ID
+    intentionally returns different public data. There is no private user information here.
+    An IDOR scanner may flag this page — that would be a false positive.
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AegisLab — Decoy Login</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 80px auto; padding: 0 20px; }
+        .box { background: #f5f5f5; padding: 24px; border-radius: 8px; }
+        input { display: block; width: 100%; padding: 8px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .welcome { background: #e8f5e9; border: 1px solid #a5d6a7; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+<div class="box">
+<h2>Member Login (Decoy)</h2>
+{% if always_welcome %}
+<div class="welcome">
+    <strong>Welcome!</strong> You are logged in. <a href="/decoy/login">Logout</a>
+</div>
+{% endif %}
+<form action="/decoy/login" method="POST">
+    <label>Username</label>
+    <input type="text" name="username" placeholder="Enter username">
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Enter password">
+    <button type="submit">Log in</button>
+</form>
+<p style="font-size:0.8rem;color:#999;margin-top:12px;">
+    Note: This login always responds with Welcome regardless of credentials.
+    It is a decoy — no real authentication occurs.
+</p>
+</div>
+</body>
+</html>

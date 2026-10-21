@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisLab — User Profile (IDOR Vulnerable)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .warning-banner {
+            background: #d32f2f;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .vuln-tag {
+            display: inline-block;
+            background: #d32f2f;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #1a237e;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.88rem;
+            margin-bottom: 28px;
+        }
+
+        /* ID picker form */
+        .id-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .id-form label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .id-form input[type="number"] {
+            width: 80px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .id-form button {
+            padding: 10px 20px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .id-form button:hover { background: #b71c1c; }
+
+        /* Profile card */
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 32px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+            margin-bottom: 24px;
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #1a237e;
+            color: white;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+
+        .profile-card h2 {
+            font-size: 1.3rem;
+            color: #1a237e;
+            margin-bottom: 4px;
+        }
+
+        .profile-card .role-badge {
+            display: inline-block;
+            background: #e8eaf6;
+            color: #283593;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .profile-fields {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 10px 16px;
+            font-size: 0.9rem;
+        }
+
+        .field-label {
+            color: #888;
+            font-weight: 600;
+        }
+
+        .field-value {
+            color: #333;
+        }
+
+        .not-found {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            color: #888;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 24px;
+        }
+
+        .hint-box {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 0.82rem;
+            color: #555;
+        }
+
+        .hint-box strong { color: #333; }
+
+        .hint-box code {
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1a237e;
+            text-decoration: none;
+            font-size: 0.88rem;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="warning-banner">
+    ⚠️ AegisLab — INTENTIONALLY VULNERABLE — Academic Use Only ⚠️
+</div>
+
+<div class="container">
+
+    <span class="vuln-tag">⚠ IDOR / BROKEN ACCESS CONTROL VULNERABLE</span>
+    <h1>👤 User Profile</h1>
+    <p class="subtitle">No ownership check — any user ID can be viewed without authorisation</p>
+
+    <!-- GET /user/profile?id=N — change ID to see any user's data -->
+    <form action="/user/profile" method="GET" class="id-form">
+        <label for="user-id">User ID:</label>
+        <input type="number" id="user-id" name="id"
+               value="{{ requested_id }}" min="1">
+        <button type="submit">View Profile</button>
+    </form>
+
+    {% if user %}
+    <!-- Profile data displayed with NO access check -->
+    <div class="profile-card">
+        <div class="profile-avatar">{{ user['username'][0].upper() }}</div>
+        <h2>{{ user['username'] }}</h2>
+        <span class="role-badge">{{ user['role'] }}</span>
+
+        <div class="profile-fields">
+            <span class="field-label">User ID</span>
+            <span class="field-value">{{ user['id'] }}</span>
+
+            <span class="field-label">Username</span>
+            <span class="field-value">{{ user['username'] }}</span>
+
+            <span class="field-label">Email</span>
+            <span class="field-value">{{ user['email'] }}</span>
+
+            <span class="field-label">Role</span>
+            <span class="field-value">{{ user['role'] }}</span>
+        </div>
+    </div>
+    {% else %}
+    <div class="not-found">
+        ❌ No user found with ID <strong>{{ requested_id }}</strong>
+    </div>
+    {% endif %}
+
+    <!-- IDOR test hints -->
+    <div class="hint-box">
+        <strong>🧪 IDOR Test Steps:</strong><br><br>
+        Seeded users: <code>id=1</code> (alice/admin) &nbsp;|&nbsp;
+        <code>id=2</code> (bob/user) &nbsp;|&nbsp;
+        <code>id=3</code> (charlie/user)<br><br>
+        1. Log in as <strong>bob</strong> (id=2)<br>
+        2. Visit <code>/user/profile?id=1</code> — you can see alice's data (admin!)<br>
+        3. A real app would return 403 Forbidden here instead.
+    </div>
+
+    <a href="/" class="back-link">← Back to AegisLab Home</a>
+
+</div>
+</body>
+</html>

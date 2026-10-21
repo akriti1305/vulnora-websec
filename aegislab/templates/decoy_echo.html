@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AegisLab — Echo Search (Decoy)</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .result { background: #f5f5f5; padding: 16px; border-radius: 6px; margin-top: 20px; }
+        input[type=text] { padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 16px; background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<h1>Echo Search (Decoy)</h1>
+<p>This search form reflects your query safely — all input is HTML-escaped.</p>
+<form action="/decoy/echo" method="GET">
+    <input type="text" name="q" value="{{ query | e }}" placeholder="Search...">
+    <button type="submit">Search</button>
+</form>
+{% if query %}
+<div class="result">
+    <strong>You searched for:</strong>
+    <!-- SAFE: Jinja2 auto-escaping is active (no Markup()) -->
+    <p>{{ query }}</p>
+</div>
+{% endif %}
+</body>
+</html>

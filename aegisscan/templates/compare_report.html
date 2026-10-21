@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AegisScan — Scan Comparison #{{ scan_a_id }} vs #{{ scan_b_id }}</title>
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --surface2: #1c2128;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --red:      #ff6b6b;
+      --yellow:   #e3b341;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #58a6ff, #a371f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: .25rem;
+    }
+    .subtitle { color: var(--muted); font-size: .9rem; margin-bottom: 2rem; }
+
+    /* === Banner === */
+    .banner {
+      border-radius: 10px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .banner-stat {
+      text-align: center;
+      min-width: 100px;
+    }
+    .banner-stat .num {
+      font-size: 2.2rem;
+      font-weight: 800;
+      display: block;
+    }
+    .banner-stat .lbl {
+      font-size: .78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .banner.good   { background: #0d2318; border: 1px solid #3fb950; }
+    .banner.mixed  { background: #211a08; border: 1px solid #e3b341; }
+    .banner.bad    { background: #2b0d0d; border: 1px solid #ff6b6b; }
+
+    /* === Sections === */
+    .section { margin-bottom: 2rem; }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: .6rem 1rem;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .section-title.fixed   { background: #0d2318; color: var(--green); }
+    .section-title.persists{ background: #1c2128; color: var(--yellow); }
+    .section-title.new-sec { background: #2b0d0d; color: var(--red); }
+
+    .card-list {
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
+    }
+    .card-item {
+      padding: .75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .card-item:last-child { border-bottom: none; }
+    .sev-badge {
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .sev-Critical { background: #ff6b6b22; color: #ff6b6b; border: 1px solid #ff6b6b55; }
+    .sev-High     { background: #ffa65722; color: #ffa657; border: 1px solid #ffa65755; }
+    .sev-Medium   { background: #e3b34122; color: #e3b341; border: 1px solid #e3b34155; }
+    .sev-Low      { background: #3fb95022; color: #3fb950; border: 1px solid #3fb95055; }
+
+    .item-type { font-weight: 600; }
+    .item-loc  { font-size: .82rem; color: var(--muted); font-family: monospace; }
+
+    .empty-note {
+      padding: 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+    }
+
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: center;
+    }
+    .selector-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .sel-group { flex: 1; min-width: 220px; }
+    .sel-group label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; }
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.55rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+    .btn-sel {
+      background: var(--surface2);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      padding: 0.55rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-sel:hover { background: #21262d; border-color: var(--accent); }
+    .nav-back {
+      display: inline-block;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .nav-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="nav-back">&larr; Back to Dashboard</a>
+
+<div class="logo">🛡️ AegisScan</div>
+<div class="subtitle">
+  Scan Comparison &mdash; {% if scan_a_id and scan_b_id %}Baseline: Scan #{{ scan_a_id }} &rarr; Re-scan: Scan #{{ scan_b_id }}{% else %}Compare Two Vulnerability Scans{% endif %}
+</div>
+
+{% if all_scans and all_scans|length >= 2 %}
+<form method="GET" action="/compare" class="selector-bar">
+  <div class="sel-group">
+    <label for="sel_a">Baseline Scan (Before):</label>
+    <select name="a" id="sel_a" required>
+      {% for s in all_scans %}
+      <option value="{{ s.id }}" {% if s.id == scan_a_id %}selected{% endif %}>
+        Scan #{{ s.id }} &mdash; {{ s.target_name }} ({{ s.findings_count }} findings)
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="sel-group">
+    <label for="sel_b">Re-Scan (After):</label>
+    <select name="b" id="sel_b" required>
+      {% for s in all_scans %}
+      <option value="{{ s.id }}" {% if s.id == scan_b_id %}selected{% endif %}>
+        Scan #{{ s.id }} &mdash; {{ s.target_name }} ({{ s.findings_count }} findings)
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn-sel">Compare</button>
+</form>
+{% endif %}
+
+{% if compare %}
+<!-- ===== Summary Banner ===== -->
+{% set has_fixed = compare.fixed_count > 0 %}
+{% set has_new   = compare.new_count   > 0 %}
+<div class="banner {% if has_fixed and not has_new %}good{% elif has_new %}bad{% else %}mixed{% endif %}">
+  <div class="banner-stat">
+    <span class="num" style="color:var(--green)">{{ compare.fixed_count }}</span>
+    <span class="lbl">✅ Issues Fixed</span>
+  </div>
+  <div class="banner-stat">
+    <span class="num" style="color:var(--yellow)">{{ compare.persists_count }}</span>
+    <span class="lbl">⚠️ Still Open</span>
+  </div>
+  <div class="banner-stat">
+    <span class="num" style="color:var(--red)">{{ compare.new_count }}</span>
+    <span class="lbl">🆕 New Issues</span>
+  </div>
+  <div style="flex:1;text-align:right;color:var(--muted);font-size:.85rem;">
+    Scan A had <strong style="color:var(--text)">{{ compare.total_in_a }}</strong> findings<br>
+    Scan B has <strong style="color:var(--text)">{{ compare.total_in_b }}</strong> findings
+  </div>
+</div>
+
+<!-- ===== Fixed ===== -->
+<div class="section">
+  <div class="section-title fixed">
+    ✅ Fixed ({{ compare.fixed_count }}) — in Scan #{{ scan_a_id }}, NOT in Scan #{{ scan_b_id }}
+  </div>
+  {% if compare.fixed %}
+  <div class="card-list">
+    {% for f in compare.fixed %}
+    <div class="card-item">
+      <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
+      <div>
+        <div class="item-type">{{ f.vulnerability_type }}</div>
+        <div class="item-loc">{{ f.location }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-note">No issues were fixed between these two scans.</div>
+  {% endif %}
+</div>
+
+<!-- ===== Still Open ===== -->
+<div class="section">
+  <div class="section-title persists">
+    ⚠️ Still Open ({{ compare.persists_count }}) — in both scans
+  </div>
+  {% if compare.persists %}
+  <div class="card-list">
+    {% for f in compare.persists %}
+    <div class="card-item">
+      <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
+      <div>
+        <div class="item-type">{{ f.vulnerability_type }}</div>
+        <div class="item-loc">{{ f.location }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-note">No persisting issues.</div>
+  {% endif %}
+</div>
+
+<!-- ===== New Issues ===== -->
+<div class="section">
+  <div class="section-title new-sec">
+    🆕 New Issues ({{ compare.new_count }}) — in Scan #{{ scan_b_id }}, NOT in Scan #{{ scan_a_id }}
+  </div>
+  {% if compare.new %}
+  <div class="card-list">
+    {% for f in compare.new %}
+    <div class="card-item">
+      <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
+      <div>
+        <div class="item-type">{{ f.vulnerability_type }}</div>
+        <div class="item-loc">{{ f.location }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-note" style="border-radius: 6px;">No new issues introduced.</div>
+  {% endif %}
+</div>
+{% else %}
+<div style="background:var(--surface); border: 1px dashed var(--border); border-radius: 8px; padding: 2.5rem; text-align: center; color: var(--muted); margin-bottom: 2rem;">
+  Select two scans from the dropdown above and click <strong>Compare</strong> to view the differential analysis.
+</div>
+{% endif %}
+
+<div class="footer">
+  AegisScan &mdash; Before/After Comparison &mdash; Academic Cybersecurity Project
+</div>
+
+</body>
+</html>

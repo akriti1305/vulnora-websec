@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisLab — Login (SQLi Vulnerable)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .warning-banner {
+            background: #d32f2f;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .center-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .vuln-tag {
+            display: inline-block;
+            background: #d32f2f;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #1a237e;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1a237e;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button[type="submit"]:hover { background: #b71c1c; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: #fce4e4;
+            border: 1px solid #f44336;
+            color: #b71c1c;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #1b5e20;
+        }
+
+        .hint-box {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 14px;
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: #555;
+        }
+
+        .hint-box strong { color: #333; }
+
+        .hint-box code {
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #1a237e;
+            text-decoration: none;
+            font-size: 0.88rem;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="warning-banner">
+    ⚠️ AegisLab — INTENTIONALLY VULNERABLE — Academic Use Only ⚠️
+</div>
+
+<div class="center-wrap">
+    <div class="login-card">
+
+        <span class="vuln-tag">⚠ SQL INJECTION VULNERABLE</span>
+        <h1>🔑 Login</h1>
+        <p class="subtitle">Raw SQL string concatenation — intentionally insecure</p>
+
+        <!-- Show error or success message -->
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success">✅ {{ success }}</div>
+        {% endif %}
+
+        <!-- Login form — POST /login -->
+        <form method="POST" action="/login">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username"
+                   placeholder="Enter username" autocomplete="off">
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password"
+                   placeholder="Enter password">
+
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- SQLi test hints (helpful for testing and viva) -->
+        <div class="hint-box">
+            <strong>🧪 SQL Injection Test Payloads (safe):</strong><br><br>
+            <strong>Bypass login:</strong><br>
+            Username: <code>' OR '1'='1</code><br>
+            Password: <code>anything</code><br><br>
+            <strong>Cause SQL error (info disclosure):</strong><br>
+            Username: <code>'</code><br>
+            Password: <code>test</code><br><br>
+            <strong>Real users:</strong> alice / password123 &nbsp;|&nbsp; bob / qwerty456
+        </div>
+
+        <a href="/" class="back-link">← Back to AegisLab Home</a>
+    </div>
+</div>
+
+</body>
+</html>

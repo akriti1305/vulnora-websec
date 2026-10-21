@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AegisScan Report &mdash; Scan #{{ scan_id }}</title>
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2128;
+      --border:    #30363d;
+      --text:      #c9d1d9;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --critical:  #ff6b6b;
+      --high:      #ffa657;
+      --medium:    #e3b341;
+      --low:       #3fb950;
+      --info:      #79c0ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* === Header === */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #58a6ff, #a371f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    .scan-label {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem 1.2rem;
+      font-size: .85rem;
+      color: var(--muted);
+      text-align: right;
+    }
+    .scan-label strong { color: var(--accent); font-size: 1.1rem; display: block; }
+
+    /* === Meta table === */
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+    .meta-table td { padding: .5rem .75rem; border: 1px solid var(--border); font-size: .9rem; vertical-align: top; }
+    .meta-table td:first-child { color: var(--muted); width: 160px; background: var(--surface); font-weight: 600; }
+    code { font-family: 'Consolas', monospace; font-size: .88em; color: var(--accent); }
+
+    /* === Summary grid === */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.3rem;
+    }
+    .card .label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .card .value { font-size: 1.9rem; font-weight: 700; margin-top: .2rem; }
+    .card.c-critical .value { color: var(--critical); }
+    .card.c-high .value    { color: var(--high); }
+    .card.c-medium .value  { color: var(--medium); }
+    .card.c-low .value     { color: var(--low); }
+    .card.c-accent .value  { color: var(--accent); }
+
+    /* === Section heading === */
+    h2 { font-size: 1.1rem; margin: 2rem 0 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); color: var(--accent); }
+
+    /* === Finding card === */
+    .finding {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--critical);
+      border-radius: 10px;
+      padding: 1.4rem;
+      margin-bottom: 1.2rem;
+    }
+    .finding.sev-high    { border-left-color: var(--high); }
+    .finding.sev-medium  { border-left-color: var(--medium); }
+    .finding.sev-low     { border-left-color: var(--low); }
+    .finding.sev-info    { border-left-color: var(--info); }
+
+    .finding-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .finding-title { font-size: 1.05rem; font-weight: 700; }
+
+    .badges { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+    .badge {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+    .badge.critical  { background: rgba(255,107,107,.15); color: var(--critical); border: 1px solid var(--critical); }
+    .badge.high      { background: rgba(255,166,87,.15);  color: var(--high);     border: 1px solid var(--high); }
+    .badge.medium    { background: rgba(227,179,65,.15);  color: var(--medium);   border: 1px solid var(--medium); }
+    .badge.low       { background: rgba(63,185,80,.15);   color: var(--low);      border: 1px solid var(--low); }
+    .badge.confirmed { background: rgba(255,107,107,.1);  color: var(--critical); border: 1px solid var(--critical); }
+    .badge.not_reproducible { background: rgba(139,148,158,.1); color: var(--muted); border: 1px solid var(--border); }
+    .badge.neutral   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
+
+    /* === Detail rows === */
+    .detail-grid { display: grid; gap: .65rem; }
+    .detail-row  { display: grid; grid-template-columns: 140px 1fr; gap: .5rem; align-items: start; }
+    .detail-label { color: var(--muted); font-size: .84rem; padding-top: .15rem; }
+    .detail-value { font-size: .9rem; word-break: break-word; }
+
+    .evidence-box {
+      background: #0a0d11;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .7rem 1rem;
+      font-family: 'Consolas', 'Cascadia Code', monospace;
+      font-size: .81rem;
+      color: #79c0ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: .3rem;
+    }
+
+    /* === Remediation === */
+    .remediation {
+      margin-top: 1rem;
+      padding: .9rem 1.1rem;
+      background: rgba(88,166,255,.06);
+      border: 1px solid rgba(88,166,255,.18);
+      border-radius: 8px;
+      font-size: .87rem;
+      line-height: 1.55;
+    }
+    .remediation-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: .35rem;
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* === Empty state === */
+    .empty {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+    .empty .icon { font-size: 2.5rem; margin-bottom: .5rem; }
+
+    /* === Footer === */
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: center;
+    }
+
+    /* === Vuln type pill === */
+    .type-pill {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .15rem .55rem;
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <a href="/" style="color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+      &larr; Back to Dashboard
+    </a>
+    <a href="/compare?a={{ scan_id }}" style="color: var(--muted); text-decoration: none; font-size: 0.85rem;">
+      Compare this scan &rarr;
+    </a>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="logo">&#x1F6E1; AegisScan</div>
+      <div class="subtitle">Security Vulnerability Report</div>
+    </div>
+    <div class="scan-label">
+      <strong>Scan #{{ scan_id }}</strong>
+      {{ scan_started_at }}
+    </div>
+  </div>
+
+  <!-- Scan metadata -->
+  <table class="meta-table">
+    <tr><td>Target</td><td>{{ target_name }} &mdash; <code>{{ target_url }}</code></td></tr>
+    <tr><td>Scan started</td><td>{{ scan_started_at }}</td></tr>
+    <tr><td>Scan finished</td><td>{{ scan_finished_at }}</td></tr>
+  </table>
+
+  <!-- Summary cards -->
+  <div class="summary-grid">
+    <div class="card c-accent">
+      <div class="label">Total Findings</div>
+      <div class="value">{{ total_findings }}</div>
+    </div>
+    <div class="card c-critical">
+      <div class="label">Confirmed</div>
+      <div class="value">{{ confirmed_count }}</div>
+    </div>
+    <div class="card c-critical">
+      <div class="label">Critical</div>
+      <div class="value">{{ severity_counts.get('Critical', 0) }}</div>
+    </div>
+    <div class="card c-high">
+      <div class="label">High</div>
+      <div class="value">{{ severity_counts.get('High', 0) }}</div>
+    </div>
+    <div class="card c-medium">
+      <div class="label">Medium</div>
+      <div class="value">{{ severity_counts.get('Medium', 0) }}</div>
+    </div>
+    <div class="card c-low">
+      <div class="label">Low</div>
+      <div class="value">{{ severity_counts.get('Low', 0) }}</div>
+    </div>
+  </div>
+
+  <!-- Findings -->
+  <h2>&#x26A0; Findings (sorted by severity)</h2>
+
+  {% if findings %}
+    {% for f in findings %}
+    {% set sev_class = f.severity | lower %}
+    <div class="finding sev-{{ sev_class }}">
+      <div class="finding-header">
+        <div>
+          <div class="type-pill">{{ f.vulnerability_type }}</div>
+          <div class="finding-title">{{ f.vulnerability_type }} &mdash; {{ f.location }}</div>
+        </div>
+        <div class="badges">
+          <span class="badge {{ sev_class }}">{{ f.severity }}</span>
+          <span class="badge {{ f.status }}">{{ f.status }}</span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-row">
+          <span class="detail-label">Location</span>
+          <span class="detail-value"><code>{{ f.location }}</code></span>
+        </div>
+        {% if f.payload %}
+        <div class="detail-row">
+          <span class="detail-label">Payload</span>
+          <span class="detail-value"><code>{{ f.payload }}</code></span>
+        </div>
+        {% endif %}
+        {% if f.evidence %}
+        <div class="detail-row">
+          <span class="detail-label">Evidence</span>
+          <span class="detail-value">
+            <div class="evidence-box">{{ f.evidence }}</div>
+          </span>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if f.remediation %}
+      <div class="remediation">
+        <div class="remediation-title">&#x2705; How to Fix</div>
+        {{ f.remediation }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <div class="icon">&#x2705;</div>
+      <div>No vulnerabilities detected in this scan.</div>
+    </div>
+  {% endif %}
+
+
+  <div class="footer" style="margin-top:0">
+    Generated by AegisScan &mdash; Academic Cybersecurity Project &mdash;
+    For ethical / authorised use only. Do not run against systems you do not own.
+  </div>
+
+</div><!-- end main content -->
+
+<!-- ===== Evaluation Accuracy Box ===== -->
+{% if eval_data %}
+<div style="max-width:1100px;margin:0 auto 3rem;padding:0 2rem;">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:1.5rem;">
+    <h2 style="color:#58a6ff;font-size:1.1rem;margin-bottom:1rem;">
+      📊 Scanner Accuracy Evaluation (vs AegisLab Ground Truth)
+    </h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+      {% for stage_key, stage_label in [('pre_validation','Before Validation (raw detections)'),
+                                        ('post_validation','After Validation (confirmed only)')] %}
+      {% if stage_key in eval_data %}
+      {% set e = eval_data[stage_key] %}
+      <div style="background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:1.2rem;">
+        <div style="font-weight:700;margin-bottom:.8rem;color:#c9d1d9;">{{ stage_label }}</div>
+        <div style="display:flex;gap:1rem;margin-bottom:.8rem;flex-wrap:wrap;">
+          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
+            <div style="font-size:1.6rem;font-weight:800;color:#3fb950;">{{ "%.0f"|format(e.precision*100) }}%</div>
+            <div style="font-size:.75rem;color:#8b949e;">Precision</div>
+          </div>
+          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
+            <div style="font-size:1.6rem;font-weight:800;color:#ffa657;">{{ "%.0f"|format(e.recall*100) }}%</div>
+            <div style="font-size:.75rem;color:#8b949e;">Recall</div>
+          </div>
+          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
+            <div style="font-size:1.6rem;font-weight:800;color:#a371f7;">{{ "%.0f"|format(e.f1*100) }}%</div>
+            <div style="font-size:.75rem;color:#8b949e;">F1 Score</div>
+          </div>
+          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
+            <div style="font-size:1rem;font-weight:700;color:#58a6ff;">{{ e.TP }}TP / {{ e.FP }}FP / {{ e.FN }}FN</div>
+            <div style="font-size:.75rem;color:#8b949e;">counts</div>
+          </div>
+        </div>
+        {% if e.fp_list %}
+        <div style="margin-top:.6rem;font-size:.8rem;color:#ff6b6b;">
+          <strong>False Positives:</strong>
+          <ul style="margin:.3rem 0 0 1.2rem;">
+            {% for fp in e.fp_list %}<li>{{ fp }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if e.fn_list %}
+        <div style="margin-top:.6rem;font-size:.8rem;color:#e3b341;">
+          <strong>False Negatives (missed):</strong>
+          <ul style="margin:.3rem 0 0 1.2rem;">
+            {% for fn in e.fn_list %}<li>{{ fn }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endfor %}
+
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="footer" style="padding:1rem 2rem;max-width:1100px;margin:0 auto 2rem;">
+  Generated by AegisScan &mdash; Academic Cybersecurity Project &mdash;
+  For ethical / authorised use only.
+</div>
+
+</body>
+</html>
