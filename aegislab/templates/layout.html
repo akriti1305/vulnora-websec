@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AegisCloud Enterprise Portal{% endblock %} — AegisLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --navy-900: #0f172a;
+            --navy-800: #1e293b;
+            --navy-700: #334155;
+            --slate-600: #475569;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-300: #cbd5e1;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            --white: #ffffff;
+            --emerald-600: #059669;
+            --emerald-500: #10b981;
+            --emerald-50: #ecfdf5;
+            --rose-600: #e11d48;
+            --rose-500: #f43f5e;
+            --rose-50: #fff1f2;
+            --amber-600: #d97706;
+            --amber-500: #f59e0b;
+            --amber-50: #fffbeb;
+            --sky-600: #0284c7;
+            --sky-50: #f0f9ff;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+            --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+            --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+            --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--slate-50);
+            color: var(--navy-900);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Full App Shell Layout */
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* Left Navigation Sidebar */
+        .app-sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: var(--slate-300);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 40;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .brand-logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .brand-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--white);
+            line-height: 1.2;
+        }
+
+        .brand-tier {
+            font-size: 0.72rem;
+            color: var(--slate-400);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .sidebar-section {
+            padding: 20px 14px 8px;
+        }
+
+        .sidebar-heading {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0 10px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--slate-300);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .sidebar-link:hover {
+            background-color: rgba(255, 255, 255, 0.07);
+            color: var(--white);
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active {
+            background-color: #4f46e5;
+            color: var(--white);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .sidebar-link svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            stroke-width: 2;
+        }
+
+        .sidebar-link .badge-nav {
+            margin-left: auto;
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-nav-indigo {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+        }
+
+        .badge-nav-emerald {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .user-profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--white);
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+        }
+
+        .user-profile-badge:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-avatar-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-meta {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            line-height: 1.25;
+        }
+
+        .user-meta-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-meta-role {
+            font-size: 0.7rem;
+            color: var(--slate-400);
+        }
+
+        /* Main Workspace Container */
+        .app-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation Header */
+        .top-navbar {
+            height: 64px;
+            background: var(--white);
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .page-breadcrumb {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--navy-800);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .env-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--slate-100);
+            border: 1px solid var(--slate-200);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--slate-600);
+            letter-spacing: 0.01em;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--emerald-500);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            display: inline-block;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-search-form {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-search-input {
+            width: 220px;
+            padding: 7px 12px 7px 34px;
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            color: var(--navy-900);
+            transition: all 0.2s;
+        }
+
+        .header-search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            width: 280px;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .header-search-icon {
+            position: absolute;
+            left: 10px;
+            width: 15px;
+            height: 15px;
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+
+        .btn-topbar {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .btn-topbar-ghost {
+            background: transparent;
+            color: var(--slate-600);
+            border: 1px solid var(--slate-200);
+        }
+
+        .btn-topbar-ghost:hover {
+            background: var(--slate-100);
+            color: var(--navy-900);
+        }
+
+        .btn-topbar-primary {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-topbar-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Page Content Area */
+        .content-area {
+            flex: 1;
+            padding: 32px;
+            max-width: 1360px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Generic Card System */
+        .card {
+            background: var(--white);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--white);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 0.82rem;
+            color: var(--slate-500);
+            margin-top: 2px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .card-footer {
+            padding: 14px 24px;
+            background: var(--slate-50);
+            border-top: 1px solid var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+        }
+
+        /* Button System */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+            border: 1px solid transparent;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-secondary {
+            background-color: var(--slate-100);
+            color: var(--navy-800);
+            border-color: var(--slate-200);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--slate-200);
+            color: var(--navy-900);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--slate-700);
+            border-color: var(--slate-300);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--slate-50);
+            border-color: var(--slate-400);
+            color: var(--navy-900);
+        }
+
+        .btn-danger {
+            background-color: var(--rose-600);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background-color: #be123c;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.78rem;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--navy-700);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            color: var(--navy-900);
+            font-size: 0.88rem;
+            font-family: inherit;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .badge-indigo {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(79, 70, 229, 0.15);
+        }
+
+        .badge-emerald {
+            background: var(--emerald-50);
+            color: var(--emerald-600);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-amber {
+            background: var(--amber-50);
+            color: var(--amber-600);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-rose {
+            background: var(--rose-50);
+            color: var(--rose-600);
+            border: 1px solid rgba(225, 29, 72, 0.2);
+        }
+
+        .badge-slate {
+            background: var(--slate-100);
+            color: var(--slate-600);
+            border: 1px solid var(--slate-200);
+        }
+
+        /* Tables */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.84rem;
+        }
+
+        .table th {
+            background: var(--slate-50);
+            color: var(--slate-600);
+            font-weight: 600;
+            text-align: left;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--slate-200);
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+        }
+
+        .table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--slate-100);
+            color: var(--navy-800);
+            vertical-align: middle;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tbody tr:hover {
+            background-color: #fafbfc;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            font-size: 0.86rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            background: var(--emerald-50);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #065f46;
+        }
+
+        .alert-error, .alert-danger {
+            background: var(--rose-50);
+            border-color: rgba(225, 29, 72, 0.3);
+            color: #9f1239;
+        }
+
+        .alert-warning {
+            background: var(--amber-50);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: var(--sky-50);
+            border-color: rgba(2, 132, 199, 0.3);
+            color: #075985;
+        }
+
+        /* Code snippets */
+        .code-pill {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--slate-100);
+            color: var(--navy-800);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            border: 1px solid var(--slate-200);
+        }
+
+        /* Footer */
+        .app-footer {
+            padding: 24px 32px;
+            background: var(--white);
+            border-top: 1px solid var(--slate-200);
+            color: var(--slate-500);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .app-sidebar {
+                width: 72px;
+            }
+            .sidebar-brand .brand-info,
+            .sidebar-heading,
+            .sidebar-link span,
+            .sidebar-link .badge-nav,
+            .user-meta {
+                display: none;
+            }
+            .sidebar-brand {
+                justify-content: center;
+                padding: 16px 8px;
+            }
+            .sidebar-link {
+                justify-content: center;
+                padding: 12px;
+            }
+            .content-area {
+                padding: 20px 16px;
+            }
+            .top-navbar {
+                padding: 0 16px;
+            }
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- Left Sidebar -->
+    <aside class="app-sidebar">
+        <a href="/" class="sidebar-brand">
+            <div class="brand-logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="brand-info">
+                <span class="brand-name">AegisCloud</span>
+                <span class="brand-tier">Customer Portal</span>
+            </div>
+        </a>
+
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Core Platform</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect width="7" height="9" x="3" y="3" rx="1"/>
+                            <rect width="7" height="5" x="14" y="3" rx="1"/>
+                            <rect width="7" height="9" x="14" y="12" rx="1"/>
+                            <rect width="7" height="5" x="3" y="16" rx="1"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/search?q=hello" class="sidebar-link {% if active_page == 'search' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.3-4.3"/>
+                        </svg>
+                        <span>Explore & Search</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user/profile?id=1" class="sidebar-link {% if active_page == 'profile' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="8" r="5"/>
+                            <path d="M20 21a8 8 0 1 0-16 0"/>
+                        </svg>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/assistant" class="sidebar-link {% if active_page == 'assistant' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 8V4H8"/>
+                            <rect width="16" height="12" x="4" y="8" rx="2"/>
+                            <path d="M2 14h2"/>
+                            <path d="M20 14h2"/>
+                            <path d="M15 13v2"/>
+                            <path d="M9 13v2"/>
+                        </svg>
+                        <span>AI Assistant</span>
+                        <span class="badge-nav badge-nav-indigo">Agent</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Account & Access</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/login" class="sidebar-link {% if active_page == 'login' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" x2="3" y1="12" y2="12"/>
+                        </svg>
+                        <span>Access Gateway</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/assistant/audit-log" class="sidebar-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" x2="8" y1="13" y2="13"/>
+                            <line x1="16" x2="8" y1="17" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <span>Audit Activity</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Integrations & Decoys</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/decoy/product?id=1" class="sidebar-link {% if active_page == 'decoy_product' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="m7.5 4.27 9 5.15"/>
+                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                            <path d="m3.3 7 8.7 5 8.7-5"/>
+                            <path d="M12 22V12"/>
+                        </svg>
+                        <span>Catalogue Store</span>
+                        <span class="badge-nav badge-nav-emerald">Decoy</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/decoy/login" class="sidebar-link {% if active_page == 'decoy_login' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span>Partner SSO</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/decoy/echo?q=hello" class="sidebar-link {% if active_page == 'decoy_echo' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
+                        </svg>
+                        <span>Echo Diagnostics</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            {% if session.username %}
+            <a href="/user/profile?id={{ session.user_id or 1 }}" class="user-profile-badge">
+                <div class="user-avatar-sm">{{ session.username[0]|upper }}</div>
+                <div class="user-meta">
+                    <span class="user-meta-name">{{ session.username }}</span>
+                    <span class="user-meta-role">Authorized Member</span>
+                </div>
+            </a>
+            {% else %}
+            <a href="/login" class="user-profile-badge">
+                <div class="user-avatar-sm" style="background: var(--slate-600);">G</div>
+                <div class="user-meta">
+                    <span class="user-meta-name">Guest Session</span>
+                    <span class="user-meta-role">Sign in to workspace</span>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="app-main">
+        <!-- Top Navigation Bar -->
+        <header class="top-navbar">
+            <div class="top-left">
+                <div class="page-breadcrumb">
+                    {% block breadcrumb %}
+                    <span>Portal Workspace</span>
+                    {% endblock %}
+                </div>
+                <div class="env-pill">
+                    <span class="pulse-dot"></span>
+                    <span>AegisLab • Local Security Training Environment</span>
+                </div>
+            </div>
+
+            <div class="top-right">
+                <form action="/search" method="GET" class="header-search-form">
+                    <svg class="header-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    <input type="text" name="q" class="header-search-input" placeholder="Search workspace..." autocomplete="off">
+                </form>
+
+                <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn-topbar btn-topbar-ghost">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>API Spec</span>
+                </a>
+
+                {% if session.username %}
+                <a href="/logout" class="btn-topbar btn-topbar-ghost" style="color: var(--rose-600);">
+                    <span>Logout</span>
+                </a>
+                {% else %}
+                <a href="/login" class="btn-topbar btn-topbar-primary">
+                    <span>Sign In</span>
+                </a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="content-area">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div>
+                &copy; 2026 AegisCloud Systems Inc. Enterprise Portal v2.4.0 &bull; Local Training Target
+            </div>
+            <div style="display: flex; gap: 16px;">
+                <a href="/assistant/documents" style="color: var(--slate-500); text-decoration: none;">Knowledge Docs</a>
+                <a href="/assistant/tools" style="color: var(--slate-500); text-decoration: none;">Tool Manifest</a>
+                <a href="/assistant/audit-log" style="color: var(--slate-500); text-decoration: none;">Audit Trail</a>
+            </div>
+        </footer>
+    </div>
+
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

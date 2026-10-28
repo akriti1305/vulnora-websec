@@ -1,374 +1,340 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AegisLab — Vulnerable Test Application</title>
-    <style>
-        /* Simple clean styling — no external libraries needed */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends "layout.html" %}
+{% set active_page = "dashboard" %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            color: #333;
-            min-height: 100vh;
-        }
+{% block title %}Dashboard — AegisCloud Enterprise{% endblock %}
 
-        /* Top warning banner — clearly labels this as a vulnerable test app */
-        .warning-banner {
-            background: #d32f2f;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            letter-spacing: 0.5px;
-        }
+{% block breadcrumb %}
+<span>Enterprise Customer Workspace</span>
+{% endblock %}
 
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            color: #1a237e;
-        }
-
-        header p {
-            color: #666;
-            margin-top: 8px;
-            font-size: 1rem;
-        }
-
-        .user-bar {
-            background: #e8eaf6;
-            border: 1px solid #c5cae9;
-            border-radius: 6px;
-            padding: 10px 16px;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-
-        /* Grid of feature cards */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-left: 4px solid #d32f2f;
-        }
-
-        .card h3 {
-            font-size: 1rem;
-            color: #d32f2f;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.8rem;
-        }
-
-        .card h2 {
-            font-size: 1.2rem;
-            color: #1a237e;
-            margin-bottom: 10px;
-        }
-
-        .card p {
-            color: #666;
-            font-size: 0.88rem;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        /* Inline search form on home page */
-        .inline-form {
-            display: flex;
-            gap: 8px;
-        }
-
-        .inline-form input[type="text"] {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 9px 18px;
-            background: #1a237e;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-
-        .btn:hover { background: #283593; }
-
-        .btn-red { background: #d32f2f; }
-        .btn-red:hover { background: #b71c1c; }
-
-        /* Profile ID form */
-        .profile-form {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .profile-form input[type="number"] {
-            width: 70px;
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        /* Vulnerability list at the bottom */
-        .vuln-list {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .vuln-list h2 {
-            color: #1a237e;
-            margin-bottom: 16px;
-            font-size: 1.1rem;
-        }
-
-        .vuln-list ul {
-            list-style: none;
-        }
-
-        .vuln-list ul li {
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .vuln-list ul li:last-child { border-bottom: none; }
-
-        .badge {
-            background: #d32f2f;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body>
-
-<div class="warning-banner">
-    ⚠️ AegisLab — INTENTIONALLY VULNERABLE APPLICATION — For Academic/Local Testing Only ⚠️
+{% block content %}
+<!-- Welcome Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
+            Welcome back{% if logged_in_user %}, <span style="color: var(--primary);">{{ logged_in_user }}</span>{% else %}, Guest User{% endif %}
+        </h1>
+        <p style="color: var(--slate-500); font-size: 0.92rem; margin-top: 4px;">
+            AegisCloud Enterprise operations dashboard &bull; Manage cloud resources, knowledge search, and AI assistant workflows.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        {% if logged_in_user %}
+        <div class="badge badge-emerald" style="padding: 6px 12px; font-size: 0.8rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Logged in as {{ logged_in_user }}
+        </div>
+        <a href="/logout" class="btn btn-outline btn-sm">Sign Out</a>
+        {% else %}
+        <a href="/login" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+            Member Login
+        </a>
+        {% endif %}
+    </div>
 </div>
 
-<div class="container">
-
-    <header>
-        <h1>🧪 AegisLab</h1>
-        <p>A deliberately vulnerable web application — safe testing target for AegisScan</p>
-    </header>
-
-    <!-- Show logged-in state if a session exists -->
-    {% if logged_in_user %}
-    <div class="user-bar">
-        ✅ Logged in as: <strong>{{ logged_in_user }}</strong> &nbsp;|&nbsp;
-        <a href="/logout">Logout</a>
+<!-- KPI Summary Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px;">
+    
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">API & Services</span>
+                <span class="badge badge-emerald">Operational</span>
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">4 Active</div>
+            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Gateway &bull; Search &bull; Profiles &bull; AI</div>
+        </div>
     </div>
-    {% else %}
-    <div class="user-bar">
-        🔒 Not logged in. &nbsp;Use the Login card below.
+
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">Knowledge Base</span>
+                <span class="badge badge-indigo">Synchronized</span>
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">4 Documents</div>
+            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Context store ingested and indexed</div>
+        </div>
     </div>
-    {% endif %}
 
-    <!-- ----------------------------------------------------------------- -->
-    <!-- Feature Cards — one per vulnerability                              -->
-    <!-- These links/forms make all routes discoverable by a web crawler   -->
-    <!-- ----------------------------------------------------------------- -->
-    <div class="card-grid">
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">AI Copilot Tools</span>
+                <span class="badge badge-indigo">Active Agent</span>
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">3 Tools Ready</div>
+            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Calculate, Search, and Send Email</div>
+        </div>
+    </div>
 
-        <!-- Card 1: SQL Injection -->
-        <div class="card">
-            <h3>Vulnerability 1</h3>
-            <h2>🗄️ SQL Injection</h2>
-            <p>Login form uses raw SQL string concatenation. Try injecting SQL via the username field.</p>
-            <a href="/login" class="btn btn-red">Go to Login</a>
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">Access Security</span>
+                <span class="badge badge-amber">Training Mode</span>
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">RBAC Enabled</div>
+            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Direct object reference testbed</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Primary Interactive Section (2 Columns) -->
+<div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; margin-bottom: 28px;">
+
+    <!-- Left Column: Search & Recent Activity -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- Enterprise Content Search Card -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <span>Enterprise Content Search</span>
+                    </div>
+                    <div class="card-subtitle">Query organizational knowledge, policies, technical manuals, and team records</div>
+                </div>
+                <span class="badge badge-indigo">GET Endpoint</span>
+            </div>
+            <div class="card-body">
+                <!-- Inline search form preserved for scanner discovery -->
+                <form action="/search" method="GET" style="display: flex; gap: 10px;">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" name="q" class="form-control" value="hello" placeholder="Search across documents, policies, or users..." style="padding-left: 36px;">
+                        <svg style="position: absolute; left: 12px; top: 12px; width: 16px; height: 16px; color: var(--slate-400);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>Search</span>
+                    </button>
+                </form>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.78rem; color: var(--slate-500);">
+                    <span style="font-weight: 600;">Popular searches:</span>
+                    <a href="/search?q=security" style="color: var(--primary); text-decoration: none;">security</a> &bull;
+                    <a href="/search?q=quarterly+briefing" style="color: var(--primary); text-decoration: none;">quarterly briefing</a> &bull;
+                    <a href="/search?q=compliance" style="color: var(--primary); text-decoration: none;">compliance</a>
+                </div>
+            </div>
         </div>
 
-        <!-- Card 2: Reflected XSS -->
-        <div class="card">
-            <h3>Vulnerability 2</h3>
-            <h2>💉 Reflected XSS</h2>
-            <p>Search results echo back your query without HTML escaping. Try a script tag.</p>
-            <!-- Inline search form so the crawler can find and submit it -->
-            <form action="/search" method="GET" class="inline-form">
-                <input type="text" name="q" placeholder="Search anything..." value="hello">
-                <button type="submit" class="btn btn-red">Search</button>
-            </form>
-        </div>
-
-        <!-- Card 3: IDOR / Broken Access Control -->
-        <div class="card">
-            <h3>Vulnerability 3</h3>
-            <h2>🔓 IDOR / Access Control</h2>
-            <p>View any user's profile by changing the ID. No ownership check is performed.</p>
-            <!-- Form so crawler discovers the profile endpoint -->
-            <form action="/user/profile" method="GET" class="profile-form">
-                <span>User ID:</span>
-                <input type="number" name="id" value="1" min="1">
-                <button type="submit" class="btn btn-red">View</button>
-            </form>
-        </div>
-
-        <!-- Card 4: Missing Security Headers (passive — always present) -->
-        <div class="card">
-            <h3>Vulnerability 4</h3>
-            <h2>🛡️ Missing Security Headers</h2>
-            <p>This app intentionally omits CSP, HSTS, X-Frame-Options, and X-Content-Type-Options headers.</p>
-            <a href="/" class="btn btn-red">Check Headers</a>
-        </div>
-
-        <!-- Card 5: Insecure Cookie (passive — set on login) -->
-        <div class="card">
-            <h3>Vulnerability 5</h3>
-            <h2>🍪 Insecure Cookie</h2>
-            <p>After login, the session cookie is set without <code>HttpOnly</code> or <code>Secure</code> flags.</p>
-            <a href="/login" class="btn btn-red">Login to Trigger</a>
-        </div>
-
-        <!-- Card 6: AI-Agent Security Lab (AegisScan 2.0 / Phase 7) -->
-        <div class="card" style="border-left-color: #1a237e;">
-            <h3 style="color: #1a237e;">AegisScan 2.0 Lab</h3>
-            <h2>🤖 AI Assistant & Tool Lab</h2>
-            <p>Deterministic AI-agent simulator with controlled tools, canary protection, document ingestion, and 6 security scenarios.</p>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <a href="/assistant" class="btn" style="background:#1a237e;">Open Assistant</a>
-                <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn" style="background:#455a64;">View Manifest</a>
+        <!-- Recent Activity Feed -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <span>Recent Organization Activity</span>
+                    </div>
+                    <div class="card-subtitle">Real-time audit telemetry and system interaction records</div>
+                </div>
+                <a href="/assistant/audit-log" class="btn btn-outline btn-sm">View Full Log</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Activity Event</th>
+                            <th>Service</th>
+                            <th>Timestamp</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--navy-900);">Knowledge Document Ingested</div>
+                                <div style="font-size: 0.74rem; color: var(--slate-500);">doc-02 Q3 Financial Review by External Consultant</div>
+                            </td>
+                            <td><span class="code-pill">/assistant/upload</span></td>
+                            <td style="color: var(--slate-500); font-size: 0.78rem;">Just now</td>
+                            <td><span class="badge badge-emerald">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--navy-900);">Authentication Attempt</div>
+                                <div style="font-size: 0.74rem; color: var(--slate-500);">User identity session initialization</div>
+                            </td>
+                            <td><span class="code-pill">/login</span></td>
+                            <td style="color: var(--slate-500); font-size: 0.78rem;">4 mins ago</td>
+                            <td><span class="badge badge-indigo">Session Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--navy-900);">Catalog Item Lookup</div>
+                                <div style="font-size: 0.74rem; color: var(--slate-500);">Product query for SKU #1 (Widget Alpha)</div>
+                            </td>
+                            <td><span class="code-pill">/decoy/product</span></td>
+                            <td style="color: var(--slate-500); font-size: 0.78rem;">12 mins ago</td>
+                            <td><span class="badge badge-slate">Public</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--navy-900);">AI Agent Tool Registered</div>
+                                <div style="font-size: 0.74rem; color: var(--slate-500);">send_email high-impact tool policy configured</div>
+                            </td>
+                            <td><span class="code-pill">/assistant/tools</span></td>
+                            <td style="color: var(--slate-500); font-size: 0.78rem;">28 mins ago</td>
+                            <td><span class="badge badge-amber">Gate Required</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
     </div>
 
-    <!-- ================================================================ -->
-    <!-- DECOY PAGES (harmless, but look vulnerable)                       -->
-    <!-- Linked so the crawler discovers them.                             -->
-    <!-- ================================================================ -->
-    <h2 style="margin: 30px 0 16px; color: #555; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
-        🪤 Decoy Pages (safe — linked so the crawler finds them)
-    </h2>
-    <div class="card-grid">
+    <!-- Right Column: Profile Directory & AI Copilot Preview -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
 
-        <!-- Decoy 1: Echo (safe XSS look-alike) -->
-        <div class="card" style="border-left-color:#388e3c;">
-            <h3>Decoy 1</h3>
-            <h2>🟢 Echo Search (Safe)</h2>
-            <p>Reflects input but HTML-escapes it. Looks like XSS — is safe.</p>
-            <form action="/decoy/echo" method="GET" class="inline-form">
-                <input type="text" name="q" placeholder="Try a script tag..." value="hello">
-                <button type="submit" class="btn">Echo</button>
-            </form>
+        <!-- Team Member Directory & Profile View -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                        <span>Team Directory & Account View</span>
+                    </div>
+                    <div class="card-subtitle">Inspect organizational roles and account privileges</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Form preserved for crawler discovery of /user/profile -->
+                <form action="/user/profile" method="GET" style="display: flex; gap: 10px; align-items: center; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label class="form-label">User ID Identifier:</label>
+                        <input type="number" name="id" class="form-control" value="1" min="1" max="100">
+                    </div>
+                    <div style="padding-top: 24px;">
+                        <button type="submit" class="btn btn-secondary">
+                            <span>Open Profile</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: var(--slate-600); margin-bottom: 8px;">Quick Member Lookup:</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                            <span><strong>ID 1:</strong> alice (Administrator)</span>
+                            <a href="/user/profile?id=1" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                            <span><strong>ID 2:</strong> bob (Operations User)</span>
+                            <a href="/user/profile?id=2" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                            <span><strong>ID 3:</strong> charlie (Engineering)</span>
+                            <a href="/user/profile?id=3" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Decoy 2: Login bypass look-alike -->
-        <div class="card" style="border-left-color:#388e3c;">
-            <h3>Decoy 2</h3>
-            <h2>🟢 Decoy Login (Always Welcome)</h2>
-            <p>Shows "Welcome" on every response. Looks like a bypass — is not.</p>
-            <a href="/decoy/login" class="btn">Try Decoy Login</a>
+        <!-- AI Assistant Copilot Workspace Preview -->
+        <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--primary);">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                        <span>AegisCopilot Workspace</span>
+                    </div>
+                    <div class="card-subtitle">Autonomous agent with deterministic tool policies</div>
+                </div>
+                <span class="badge badge-indigo">AegisScan 2.0</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.86rem; color: var(--slate-600); margin-bottom: 16px; line-height: 1.5;">
+                    Simulated enterprise copilot providing automated mathematical calculation, document retrieval, and transactional workflow execution.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="/assistant" class="btn btn-primary" style="justify-content: space-between;">
+                        <span>Launch Assistant Studio</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <a href="/assistant/documents" class="btn btn-outline btn-sm">Document Store</a>
+                        <a href="/assistant/tools" class="btn btn-outline btn-sm">Tool Registry</a>
+                    </div>
+                    <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn btn-secondary btn-sm" style="text-align: center;">
+                        AI Security Manifest (.json)
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <!-- Decoy 3: Public product catalogue -->
-        <div class="card" style="border-left-color:#388e3c;">
-            <h3>Decoy 3</h3>
-            <h2>🟢 Product Catalogue (IDOR look-alike)</h2>
-            <p>Each product ID shows different PUBLIC data. Looks like IDOR — is public catalogue.</p>
-            <form action="/decoy/product" method="GET" class="profile-form">
-                <span>Product ID:</span>
-                <input type="number" name="id" value="1" min="1" max="5">
-                <button type="submit" class="btn">View</button>
-            </form>
-        </div>
-
-    </div>
-
-    <!-- Known vulnerabilities summary (helpful for viva) -->
-    <div class="vuln-list">
-        <h2>📋 Known Vulnerabilities in AegisLab</h2>
-        <ul>
-            <li>
-                <span class="badge">SQLi</span>
-                <strong>POST /login</strong> — raw SQL string concatenation, no parameterised queries
-            </li>
-            <li>
-                <span class="badge">XSS</span>
-                <strong>GET /search?q=...</strong> — user input reflected without HTML escaping
-            </li>
-            <li>
-                <span class="badge">IDOR</span>
-                <strong>GET /user/profile?id=...</strong> — no ownership/authorisation check
-            </li>
-            <li>
-                <span class="badge">Headers</span>
-                <strong>All routes</strong> — missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options
-            </li>
-            <li>
-                <span class="badge">Cookie</span>
-                <strong>Session cookie</strong> — HttpOnly=False, Secure=False
-            </li>
-            <li style="margin-top: 10px; border-top: 2px dashed #c5cae9; padding-top: 10px;">
-                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
-                <strong>POST /assistant/query</strong> — Indirect prompt injection via ingested document (leaks canary)
-            </li>
-            <li>
-                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
-                <strong>GET /assistant/tools</strong> — Poisoned tool descriptions instructing agent override
-            </li>
-            <li>
-                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
-                <strong>POST /assistant/tools/rugpull</strong> — Post-approval tool parameter & schema hash tampering
-            </li>
-            <li>
-                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
-                <strong>GET /assistant?q=...</strong> — Unsafe AI response rendered in HTML without escaping
-            </li>
-            <li>
-                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
-                <strong>POST /assistant/query</strong> — Unapproved execution of high-impact <code>send_email</code> tool
-            </li>
-            <li>
-                <span class="badge" style="background:#388e3c;">Decoy / AI</span>
-                <strong>doc-03</strong> — Benign decoy document mentioning canary concepts (Negative Control)
-            </li>
-        </ul>
     </div>
 
 </div>
 
-</body>
-</html>
+<!-- Enterprise Partner Integrations & Decoy Services -->
+<div style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--navy-900);">Partner Integrations & Catalogue Services</h2>
+            <p style="font-size: 0.82rem; color: var(--slate-500);">Decoy and auxiliary customer endpoints linked for testing</p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+        <!-- Decoy 1: Echo Search (Safe look-alike) -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Echo Search Diagnostics</h3>
+                    <span class="badge badge-emerald">Escaped Input</span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
+                    Reflects queries safely with strict HTML entity sanitization.
+                </p>
+                <form action="/decoy/echo" method="GET" style="display: flex; gap: 8px;">
+                    <input type="text" name="q" class="form-control" value="hello" placeholder="Diagnostic query..." style="font-size: 0.82rem;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Run</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Decoy 2: Decoy Login (Always Welcome) -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Partner SSO Gateway</h3>
+                    <span class="badge badge-emerald">Decoy SSO</span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
+                    Simulated federated authentication portal for external collaborators.
+                </p>
+                <a href="/decoy/login" class="btn btn-secondary btn-sm" style="width: 100%;">
+                    Open Partner SSO
+                </a>
+            </div>
+        </div>
+
+        <!-- Decoy 3: Public product catalogue -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Public Product Storefront</h3>
+                    <span class="badge badge-emerald">Public Items</span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
+                    Browse public catalog items. Safe multi-ID parameter endpoint.
+                </p>
+                <form action="/decoy/product" method="GET" style="display: flex; gap: 8px;">
+                    <input type="number" name="id" class="form-control" value="1" min="1" max="5" style="font-size: 0.82rem;">
+                    <button type="submit" class="btn btn-secondary btn-sm">View Item</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

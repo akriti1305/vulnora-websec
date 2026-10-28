@@ -42,12 +42,15 @@ AegisScan 2.0 delivers an integrated, two-tier security audit:
                            ▼
                ┌────────────────────────────────────────────────────────┐
                │             AegisLab Benchmark (Port 5001)             │
+               │  - Modern Full-Width SaaS Customer Portal (AegisCloud) │
                │  - 9 Traditional Layer 1 Vulnerabilities               │
                │  - 6 AI-Agent Layer 2 Security Flaws                   │
                │  - 4 Benign Decoys / Controls (True Negatives)         │
                │  - Toggleable Secure Mode: /assistant/config           │
                └────────────────────────────────────────────────────────┘
 ```
+
+> **AegisLab Enterprise Redesign**: AegisLab features a realistic customer dashboard (KPI cards, knowledge search, team directory, and an AI assistant copilot studio) without educational spoilers or garish warning banners, providing an authentic SaaS customer portal for AegisScan to audit.
 
 ---
 

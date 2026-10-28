@@ -1,188 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AegisLab — Search (XSS Vulnerable)</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends "layout.html" %}
+{% set active_page = "search" %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-        }
+{% block title %}Explore & Search — AegisCloud Enterprise{% endblock %}
 
-        .warning-banner {
-            background: #d32f2f;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
+{% block breadcrumb %}
+<span>Explore & Search &bull; Content Discovery</span>
+{% endblock %}
 
-        .container {
-            max-width: 720px;
-            margin: 50px auto;
-            padding: 0 20px;
-        }
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
 
-        .vuln-tag {
-            display: inline-block;
-            background: #d32f2f;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
+    <!-- Search Header -->
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
+            Enterprise Content Search
+        </h1>
+        <p style="color: var(--slate-500); font-size: 0.9rem; margin-top: 4px;">
+            Search indexed policies, internal guidelines, knowledge store records, and corporate directory
+        </p>
+    </div>
 
-        h1 {
-            font-size: 1.8rem;
-            color: #1a237e;
-            margin-bottom: 6px;
-        }
+    <!-- Search Bar Card -->
+    <div class="card" style="box-shadow: var(--shadow-sm); margin-bottom: 24px;">
+        <div class="card-body" style="padding: 24px;">
+            <!-- Form preserved for crawler & scanner GET /search?q=... -->
+            <form action="/search" method="GET" style="display: flex; gap: 12px; align-items: center;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" name="q" value="{{ query }}" class="form-control"
+                           placeholder="Type a query (e.g. security policy, financial briefing, audit)..."
+                           style="padding-left: 42px; font-size: 0.96rem; padding-top: 12px; padding-bottom: 12px;">
+                    <svg style="position: absolute; left: 14px; top: 14px; width: 18px; height: 18px; color: var(--slate-400);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 0.92rem;">
+                    <span>Search</span>
+                </button>
+            </form>
 
-        .subtitle {
-            color: #888;
-            font-size: 0.88rem;
-            margin-bottom: 28px;
-        }
+            <!-- Filter Tabs -->
+            <div style="display: flex; gap: 8px; margin-top: 18px; border-top: 1px solid var(--slate-100); padding-top: 16px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" style="background: var(--navy-900); color: white;">All Categories</button>
+                <button type="button" class="btn btn-outline btn-sm">Knowledge Base</button>
+                <button type="button" class="btn btn-outline btn-sm">Policies & Compliance</button>
+                <button type="button" class="btn btn-outline btn-sm">User Directory</button>
+            </div>
+        </div>
+    </div>
 
-        /* Search form */
-        .search-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-
-        .search-form input[type="text"] {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        .search-form input:focus {
-            outline: none;
-            border-color: #1a237e;
-        }
-
-        .search-form button {
-            padding: 12px 24px;
-            background: #d32f2f;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .search-form button:hover { background: #b71c1c; }
-
-        /* Result box — this is where XSS payload is reflected */
-        .result-box {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-        }
-
-        .result-box h2 {
-            font-size: 1rem;
-            color: #555;
-            margin-bottom: 10px;
-        }
-
-        .result-content {
-            font-size: 1rem;
-            color: #333;
-            padding: 12px;
-            background: #f9f9f9;
-            border-radius: 4px;
-            border-left: 3px solid #d32f2f;
-            /* The query variable (Markup'd/unescaped) is rendered here */
-        }
-
-        .hint-box {
-            background: #fff8e1;
-            border: 1px solid #ffc107;
-            border-radius: 6px;
-            padding: 14px;
-            font-size: 0.82rem;
-            color: #555;
-        }
-
-        .hint-box strong { color: #333; }
-
-        .hint-box code {
-            background: #f5f5f5;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: monospace;
-            color: #d32f2f;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #1a237e;
-            text-decoration: none;
-            font-size: 0.88rem;
-        }
-
-        .back-link:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-
-<div class="warning-banner">
-    ⚠️ AegisLab — INTENTIONALLY VULNERABLE — Academic Use Only ⚠️
-</div>
-
-<div class="container">
-
-    <span class="vuln-tag">⚠ REFLECTED XSS VULNERABLE</span>
-    <h1>🔍 Search</h1>
-    <p class="subtitle">Search query is reflected back into HTML without any escaping</p>
-
-    <!-- GET /search?q=... -->
-    <form action="/search" method="GET" class="search-form">
-        <input type="text" name="q"
-               value="{{ query }}"
-               placeholder="Type your search query...">
-        <button type="submit">Search</button>
-    </form>
-
+    <!-- Search Results Section -->
     {% if query %}
-    <div class="result-box">
-        <h2>Search results for:</h2>
+    <div style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--navy-900);">
+                Search Results for Query:
+            </h2>
+            <span class="badge badge-slate">Live Reflection</span>
+        </div>
+
         <!--
-            VULNERABILITY: The variable {{ query }} is wrapped in Markup() in app.py
-            so Jinja2 does NOT escape it. Whatever HTML/JS the user typed is rendered
-            directly as raw HTML in the browser.
+            CRITICAL BENCHMARK:
+            The variable {{ query }} is passed as Markup(query) in vulnerable mode.
+            It must be rendered directly without escape filter for the XSS benchmark.
         -->
-        <div class="result-content">{{ query }}</div>
+        <div class="card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
+            <div class="card-body" style="padding: 20px;">
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--slate-500); text-transform: uppercase; margin-bottom: 6px;">
+                    Query Echo Stream:
+                </div>
+                <div id="search-reflection-output" style="font-size: 1.05rem; color: var(--navy-900); background: var(--slate-50); padding: 14px 18px; border-radius: var(--radius-sm); border: 1px solid var(--slate-200); word-break: break-word;">
+                    {{ query }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Realistic Matching Documents Feed -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-body" style="padding: 18px 22px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span class="badge badge-indigo" style="margin-bottom: 6px;">Knowledge Store</span>
+                            <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--navy-900);">
+                                AegisLab Acceptable Use & Operations Policy (doc-01)
+                            </h3>
+                            <p style="font-size: 0.84rem; color: var(--slate-600); margin-top: 4px;">
+                                Internal IT operations policy guidelines. All systems must maintain least privilege access. AI assistants operate as supportive tools.
+                            </p>
+                        </div>
+                        <a href="/assistant" class="btn btn-outline btn-sm">Inspect &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-body" style="padding: 18px 22px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span class="badge badge-amber" style="margin-bottom: 6px;">Financial Context</span>
+                            <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--navy-900);">
+                                Q3 Financial Review & Performance Briefing (doc-02)
+                            </h3>
+                            <p style="font-size: 0.84rem; color: var(--slate-600); margin-top: 4px;">
+                                Revenue grew 10% in quarterly evaluation. Ingested external context containing priority instructions for evaluation.
+                            </p>
+                        </div>
+                        <a href="/assistant" class="btn btn-outline btn-sm">Inspect &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-body" style="padding: 18px 22px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span class="badge badge-emerald" style="margin-bottom: 6px;">Security Whitepaper</span>
+                            <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--navy-900);">
+                                AI Safety Concepts and Canary Research (doc-03)
+                            </h3>
+                            <p style="font-size: 0.84rem; color: var(--slate-600); margin-top: 4px;">
+                                Academic overview of canary tokens and injection defense paradigms. Benign decoy negative control.
+                            </p>
+                        </div>
+                        <a href="/assistant" class="btn btn-outline btn-sm">Inspect &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card" style="text-align: center; padding: 50px 24px;">
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--navy-900);">Ready to search your enterprise workspace</h2>
+        <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 6px; max-width: 440px; margin-left: auto; margin-right: auto;">
+            Enter a search term above to explore policy documents, technical guides, catalog resources, and directory records.
+        </p>
+        <div style="margin-top: 24px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <a href="/search?q=security+guidelines" class="btn btn-secondary btn-sm">Search "security guidelines"</a>
+            <a href="/search?q=quarterly+briefing" class="btn btn-secondary btn-sm">Search "quarterly briefing"</a>
+            <a href="/search?q=canary" class="btn btn-secondary btn-sm">Search "canary"</a>
+        </div>
     </div>
     {% endif %}
 
-    <!-- XSS test hints -->
-    <div class="hint-box">
-        <strong>🧪 XSS Test Payloads:</strong><br><br>
-        Basic alert: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br>
-        Or just visit: <code>/search?q=&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br><br>
-        Image onerror: <code>&lt;img src=x onerror=alert('XSS')&gt;</code><br><br>
-        AegisScan marker: <code>&lt;script&gt;alert('aegisscan-xss')&lt;/script&gt;</code>
-    </div>
-
-    <a href="/" class="back-link">← Back to AegisLab Home</a>
-
 </div>
-</body>
-</html>
+{% endblock %}

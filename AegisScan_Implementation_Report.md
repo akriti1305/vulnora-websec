@@ -808,6 +808,54 @@ The demonstration script was completely rewritten to execute genuine scans again
 - **Execution Time**: ~13.6 seconds.
 - **Git Commit**: `feat: finalize AegisScan 2.0 dashboard and evaluation`
 
+---
+
+## 9. AegisLab Enterprise Customer Portal Redesign
+
+### 9.1 Overview & Scope Boundaries
+To transition AegisLab from an educational exercise into a realistic, enterprise-grade audit target for AegisScan 2.0, AegisLab (`http://127.0.0.1:5001`) underwent a comprehensive UI overhaul:
+- **Strict Boundary Enforced**: AegisScan's scanner dashboard, reports, styles, and templates at `http://127.0.0.1:8000` remained **100% unmodified**.
+- **Transformation**: Eliminated educational vulnerability spoilers ("Vulnerability 1", "SQL Injection", "XSS", "IDOR") and dominant red warning banners.
+- **Enterprise SaaS Identity**: Redesigned as **AegisCloud Enterprise Portal**, featuring a dark navy navigation sidebar (`#0f172a`), clean top navigation, and soft light canvas (`#f8fafc`).
+- **Subtle Training Indicator**: Replaced large warning banners with a persistent, discreet status pill: `"AegisLab • Local Security Training Environment"`.
+
+### 9.2 Redesigned Pages & Design System
+1. **Base Layout (`aegislab/templates/layout.html`)**:
+   - Modern full-width application shell with responsive sticky sidebar and top navigation.
+   - Clean SVG icons, refined typography (`Plus Jakarta Sans`), curated tokens, and responsive utilities.
+2. **Customer Dashboard (`aegislab/templates/index.html`)**:
+   - Welcome header, KPI status cards (Active Services, Ingested Knowledge Docs, Copilot Tools, RBAC Access).
+   - Enterprise Content Search form (`GET /search?q=hello`).
+   - Recent Organization Activity audit feed table.
+   - Account Directory quick-lookup widget (`GET /user/profile?id=1`).
+   - AegisCopilot studio preview and decoy service storefronts.
+3. **Identity & Access Gateway (`aegislab/templates/login.html`)**:
+   - Modern authentication card with well-spaced inputs (`username`, `password`).
+   - Preserved `POST /login` form and exact `"Logged in as:"` success marker required by SQLi detectors.
+   - Discreet sandbox credentials helper drawer.
+4. **Enterprise Content Search (`aegislab/templates/search.html`)**:
+   - Search bar with category filter tabs and matching document results.
+   - Preserved unescaped reflection (`Markup(query)`) in live reflection output for reflected XSS testing.
+5. **Account Management & Directory (`aegislab/templates/profile.html`)**:
+   - Realistic team member management view with initials avatar, role badge, credentials grid, and security settings simulation.
+   - Preserved `GET /user/profile?id=...` form and parameters for IDOR benchmarking.
+6. **AI Copilot Workspace (`aegislab/templates/assistant.html`)**:
+   - Conversational chat interface with message bubbles, discreet vulnerable/secure mode pill, quick-test scenario chips, and unescaped HTML response reflection (Scenario D).
+   - Knowledge document ingestion form (`POST /assistant/upload`).
+   - Mock tools registry with canonical SHA-256 schema hashes and anti-rug-pull status indicators.
+   - Live audit telemetry table with state reset trigger (`POST /assistant/reset`).
+7. **Partner Decoys (`decoy_echo.html`, `decoy_login.html`, `decoy_product.html`)**:
+   - Harmonized with the AegisCloud enterprise design system while preserving all negative control behaviors.
+
+### 9.3 Verification & Regression Results
+- **Unit & Integration Test Suite**: 87 / 87 tests passing (`TOTAL=87 FAILURES=0 ERRORS=0 WAS_SUCCESSFUL=True`).
+- **Live Deep Scan (`demo_phase12.py`)**:
+  - Baseline Scan (Vulnerable Mode): Confirmed 15 active vulnerabilities (SQLi, Reflected XSS on `/search` and `/assistant`, IDOR on `/user/profile` and `/decoy/product`, 4 Missing Security Headers, 2 Insecure Cookie Flags, AI Canary Leakage, Indirect Prompt Injection, Excessive Agency, and Context Taint Hijack).
+  - Rescan (Secure Mode): Confirmed 11 active vulnerabilities with 5 AI-agent flaws resolved; 0 newly detected.
+  - Ed25519 passport digital signature: `status: VALID`.
+  - Cryptographic append-only hash chain: `Ledger Status: VERIFIED`.
+
+
 
 
 

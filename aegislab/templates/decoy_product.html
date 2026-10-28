@@ -1,43 +1,76 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>AegisLab — Product Catalogue (Decoy)</title>
-    <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-        .product { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        .product h2 { margin: 0 0 8px; color: #1a237e; }
-        .price { font-size: 1.3rem; font-weight: bold; color: #d32f2f; margin-top: 8px; }
-        .nav a { margin-right: 10px; color: #1a237e; text-decoration: none; font-size: 0.9rem; }
-        .notice { background: #fff8e1; border: 1px solid #ffe082; padding: 10px; border-radius: 4px; font-size: 0.85rem; margin-top: 20px; }
-    </style>
-</head>
-<body>
-<h1>🛍️ Product Catalogue (Decoy)</h1>
-<p>Browse our public product listing. All products are publicly viewable — no account required.</p>
-<div class="nav">
-    {% for pid in ['1','2','3','4','5'] %}
-    <a href="/decoy/product?id={{ pid }}">Product {{ pid }}</a>
-    {% endfor %}
-</div>
+{% extends "layout.html" %}
+{% set active_page = "decoy_product" %}
 
-{% if product %}
-<div class="product">
-    <h2>{{ product.name }}</h2>
-    <p>{{ product.desc }}</p>
-    <p class="price">{{ product.price }}</p>
-    <p style="font-size:0.8rem;color:#888;">Product ID: {{ product_id }}</p>
-</div>
-{% else %}
-<div class="product">
-    <p>Product #{{ product_id }} not found.</p>
-</div>
-{% endif %}
+{% block title %}Product Catalogue (Decoy) — AegisCloud Enterprise{% endblock %}
 
-<div class="notice">
-    ℹ️ <strong>Decoy notice:</strong> This is a PUBLIC product catalogue. Every product ID
-    intentionally returns different public data. There is no private user information here.
-    An IDOR scanner may flag this page — that would be a false positive.
+{% block breadcrumb %}
+<span>Marketplace &bull; Public Product Catalogue</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
+                    Public Product Catalogue
+                </h1>
+                <span class="badge badge-emerald">Safe Decoy</span>
+            </div>
+            <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 4px;">
+                Public inventory listing. Each SKU ID returns different public data without authentication.
+            </p>
+        </div>
+
+        <form action="/decoy/product" method="GET" style="display: flex; gap: 8px; align-items: center; background: var(--white); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--slate-200);">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">Product ID:</label>
+            <input type="number" name="id" value="{{ product_id }}" min="1" max="5" class="form-control" style="width: 70px; padding: 5px 8px; font-size: 0.84rem;">
+            <button type="submit" class="btn btn-secondary btn-sm">Lookup SKU</button>
+        </form>
+    </div>
+
+    <!-- SKU Selector Pills -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+        {% for pid in ['1','2','3','4','5'] %}
+        <a href="/decoy/product?id={{ pid }}" class="btn btn-outline btn-sm {% if product_id|string == pid %}btn-secondary{% endif %}">
+            Product SKU #{{ pid }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if product %}
+    <div class="card" style="box-shadow: var(--shadow-sm);">
+        <div class="card-header">
+            <div>
+                <span class="badge badge-indigo" style="margin-bottom: 4px;">Verified SKU #{{ product_id }}</span>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--navy-900); margin: 0;">{{ product.name }}</h2>
+            </div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--emerald-600);">
+                {{ product.price }}
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="font-size: 0.95rem; color: var(--slate-700); line-height: 1.6; margin-bottom: 20px;">
+                {{ product.desc }}
+            </p>
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.82rem; color: var(--slate-600);">
+                <strong>Inventory Details:</strong> Publicly available cloud resource &bull; Available in all regions &bull; SLA 99.99%
+            </div>
+        </div>
+        <div class="card-footer">
+            <span style="color: var(--slate-500);">Product ID: {{ product_id }} &bull; Public data (non-sensitive)</span>
+            <a href="/" class="btn btn-outline btn-sm">&larr; Return to Dashboard</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 40px 20px;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--navy-900);">Product Not Found</h2>
+        <p style="color: var(--slate-500); font-size: 0.86rem; margin-top: 6px;">
+            Product #{{ product_id }} is not in the catalogue. Try selecting SKU #1 through #5.
+        </p>
+    </div>
+    {% endif %}
+
 </div>
-</body>
-</html>
+{% endblock %}
