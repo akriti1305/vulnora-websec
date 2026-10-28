@@ -377,7 +377,70 @@
   </div>
   {% endif %}
 
+  <!-- Cryptographic Scan Passport & Provenance Hash Chain (Phase 12) -->
+  {% if passport and passport.active %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin:1.8rem 0;box-shadow:0 4px 20px rgba(0,0,0,0.25);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span style="font-size:1.3rem;">🔏</span>
+        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">Cryptographic Scan Passport & Provenance Chain</h3>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #3fb950;font-size:.8rem;padding:.3rem .8rem;">✓ ED25519 SIGNED (RFC 8032)</span>
+        <span class="badge" style="background:rgba(88,166,255,.15);color:#58a6ff;border:1px solid #58a6ff;font-size:.8rem;padding:.3rem .8rem;">CHAIN SEQ #{{ passport.chain_sequence }}</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.2rem;">
+      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Signing Algorithm</div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-top:.2rem;">{{ passport.signing_algorithm }}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Schema v{{ passport.schema_version }}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Public Key ID</div>
+        <div style="font-size:.88rem;font-weight:700;color:#58a6ff;font-family:monospace;margin-top:.2rem;">{{ passport.public_key_identifier }}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Active Scanner Identity</div>
+      </div>
+      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Canonical Payload SHA-256</div>
+        <div style="font-size:.82rem;font-weight:700;color:#3fb950;font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.canonical_payload_hash }}">{{ passport.canonical_payload_hash[:16] }}...{{ passport.canonical_payload_hash[-8:] }}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Tamper-Evident Evidence Digest</div>
+      </div>
+      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Hash-Chain Head (H<sub>n</sub>)</div>
+        <div style="font-size:.82rem;font-weight:700;color:#e3b341;font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.chain_hash }}">{{ passport.chain_hash[:16] }}...{{ passport.chain_hash[-8:] }}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Linked to H<sub>{{ passport.chain_sequence - 1 }}</sub></div>
+      </div>
+    </div>
+
+    <!-- Actions & Verification Links -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;">
+      <div style="font-size:.82rem;color:var(--muted);">
+        <strong style="color:var(--text);">Cryptographic Verification Actions:</strong>
+        <span style="display:block;margin-top:.2rem;font-size:.75rem;color:var(--muted);">Verify signature integrity or export the raw signed JSON passport artifact.</span>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <a href="{{ passport.download_url }}" class="btn" style="background:#238636;color:#fff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+          📥 Download JSON Passport
+        </a>
+        <a href="{{ passport.verify_url }}" target="_blank" class="btn" style="background:rgba(88,166,255,.15);border:1px solid #58a6ff;color:#58a6ff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+          🔍 Verify Signature
+        </a>
+        <a href="{{ passport.history_verify_url }}" target="_blank" class="btn" style="background:rgba(227,179,65,.15);border:1px solid #e3b341;color:#e3b341;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+          ⛓️ Audit Hash Chain
+        </a>
+      </div>
+    </div>
+
+    <div style="margin-top:.8rem;font-size:.74rem;color:var(--muted);line-height:1.4;">
+      ℹ️ <strong>Provenance Notice:</strong> A digital signature proves the authenticity, origin, and integrity of the signed scan record against tampering. It does not certify that all findings are objectively free of false positives or false negatives.
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Findings -->
+
   <h2>&#x26A0; Findings (sorted by severity)</h2>
 
   {% if findings %}

@@ -481,7 +481,229 @@ Phase 11 introduces end-to-end data flow modeling and runtime permission evaluat
 - **Phase 12 Readiness**:
   - **Focus**: Cryptographic Provenance & Scan Passports.
   - Implement Ed25519 asymmetric cryptographic signing for scan reports and append-only hash chains ($H_n = \text{SHA256}(\text{Scan}_n + H_{n-1})$) to prevent tamper attacks on security audits.
-  - **Status**: **100% Ready for Phase 12**.
+  - **Status**: **Completed in Phase 12**.
+
+---
+
+### 8.9 Phase 12 Implementation: Cryptographic Provenance & Scan Passports (COMPLETED)
+
+#### 8.9.1 Overview & Architecture
+
+Phase 12 establishes cryptographic trust, non-repudiation, and audit-trail integrity across AegisScan 2.0. Scan findings are no longer mere volatile database entries; they are packaged into canonical, cryptographically signed **Scan Passports** using **Ed25519** digital signatures (`RFC 8032`) and chained via a **SHA-256 append-only hash-chain** ($H_n = \text{SHA256}(\text{canonical\_record}_n \parallel H_{n-1})$).
+
+```
++-----------------------------------------------------------------------------------------+
+|                                    AEGISSCAN SCANNER                                    |
+|                                                                                         |
+|  [Completed Scan Findings]                                                              |
+|            │                                                                            |
+|            ▼ (Evidence Sanitization & Redaction)                                        |
+|  [Deterministic Findings Evidence Digests (SHA-256)]                                    |
+|            │                                                                            |
+|            ▼ (RFC 8785 Lexicographical JSON Sorting)                                    |
+|  [Canonical Payload Bytes] ───► SHA-256 ───► Canonical Payload Hash                     |
+|            │                                                                            |
+|            ▼ (Ed25519 Private Key Signing)                                              |
+|  [Digital Signature (Base64)]                                                           |
+|            │                                                                            |
+|            ▼                                                                            |
+|  [Signed Scan Passport (JSON v2.0)] ───► Stored in Database & Downloadable              |
+|            │                                                                            |
+|            ▼                                                                            |
+|  [SHA-256 Append-Only Hash Chain]                                                       |
+|    H_0 = 0000...0000 (GENESIS_HASH)                                                     |
+|    H_1 = SHA256(Record_1 || H_0)                                                        |
+|    H_n = SHA256(Record_n || H_(n-1)) ───► Emits Signed Chain Head Checkpoint            |
++-----------------------------------------------------------------------------------------+
+```
+
+#### 8.9.2 Files Created & Modified
+
+1. **`aegisscan/crypto/__init__.py`** *(Created)*:
+   - Central package exports: `KeyManager`, `create_scan_passport`, `verify_scan_passport`, `record_scan_in_chain`, `verify_hash_chain`.
+2. **`aegisscan/crypto/key_manager.py`** *(Created)*:
+   - Persistent Ed25519 asymmetric keypair management using Python `cryptography`.
+   - Keys stored in gitignored `aegisscan/secrets/` directory (`ed25519_private.pem`, `ed25519_public.pem`).
+   - Enforces 0o600 owner-only file permissions.
+   - Keys persist across application restarts; keys are never regenerated per scan.
+   - Public keys exportable in PEM, raw bytes, hex, Base64, and short fingerprint (`ed25519:<16-hex-chars>`).
+   - Private keys are never printed, logged, or returned via any API route.
+3. **`aegisscan/crypto/scan_passport.py`** *(Created)*:
+   - Schema v2.0 deterministic passport constructor and independent verifier.
+   - RFC 8785 canonical serialization (`json.dumps(sort_keys=True, separators=(',', ':'))`).
+   - Sensitive canary token (`AEGIS_CANARY_...`) and credential sanitization before evidence hashing.
+   - Independent signature verifier: recalculates canonical payload hash, validates Ed25519 signature, rejects modified findings/metadata/timestamps/IDs.
+   - Distinguishes `VALID`, `INVALID`, and `UNVERIFIABLE` states.
+4. **`aegisscan/crypto/hash_chain.py`** *(Created)*:
+   - Persistent SHA-256 append-only scan history chain linking consecutive scans.
+   - Computes $H_n = \text{SHA256}(\text{canonical\_record}_n \parallel H_{n-1})$ with explicit genesis hash anchor (`"0" * 64`).
+   - Detects sequence gaps, missing records, broken parent pointers, and tampered payload hashes.
+   - Generates signed chain head checkpoints.
+5. **`aegisscan/models.py`** *(Modified)*:
+   - Added `ScanPassport` model (`scan_passports` table) storing raw JSON, payload hash, signature, and public key ID.
+   - Added `ScanChainRecord` model (`scan_chain_records` table) storing sequence number, previous hash, payload hash, chain hash, and timestamp.
+   - Linked both via 1-to-1 relationships on `Scan`.
+6. **`aegisscan/api/routes.py`** *(Modified)*:
+   - Integrated Step 11/11 in `start_scan`: automatically creates signed passport and appends to hash chain upon scan completion.
+   - Updated `get_report`: passes passport and chain metadata to HTML report renderer.
+   - Added 4 API endpoints:
+     * `GET /api/scans/{scan_id}/passport` (supports `?download=true` for JSON file download)
+     * `GET /api/scans/{scan_id}/passport/verify` (independent verification endpoint)
+     * `GET /api/passports/public-key` (scanner public key export)
+     * `GET /api/scans/history/verify` (hash chain audit & signed checkpoint)
+7. **`aegisscan/report/__init__.py` & `aegisscan/templates/report.html`** *(Modified)*:
+   - Added dedicated "🔏 Cryptographic Scan Passport & Provenance Chain" panel.
+   - Visual status badges (`✓ ED25519 SIGNED`, `CHAIN SEQ #N`), signing algorithm details, truncated SHA-256 hash with tooltip, public key ID, and action buttons (Download JSON Passport, Verify Signature, Audit Hash Chain).
+8. **`.gitignore` & `aegisscan/requirements.txt`** *(Modified)*:
+   - Added `secrets/` and `*/secrets/` to `.gitignore`.
+   - Added `cryptography>=42.0.0` to `requirements.txt`.
+9. **`tests/test_provenance_passports.py`** *(Created)*:
+   - 14 automated unit/integration tests verifying all crypto, passport, chain, persistence, tampering, and API functionalities.
+
+#### 8.9.3 Actual End-to-End Live Demonstration Output
+
+```
+================================================================================
+AEGISSCAN 2.0 — PHASE 12 END-TO-END DEMONSTRATION
+================================================================================
+
+[1] ACTIVE SCANNER ED25519 KEYPAIR:
+    Public Key ID       : ed25519:36e0a145c319c9a9
+    Public Key (Hex)    : 4efef625c80d9e2fc1b5186caa2d97c1595efbe8da40cb996c1e8d0f5d24fb19
+    Public Key (Base64) : Tv72JcgNni/BtRhsqi2XwVle++jaQMuZbB6ND10k+xk=
+
+[2] GENERATING PASSPORT FOR SCAN #2:
+    Scan ID             : 2
+    Target              : http://127.0.0.1:5001
+    Timestamp           : 2026-10-28T15:56:13.523486
+    Total Findings      : 14
+    Canonical Hash      : 98910c63164b64853d63e70a2002d368104e396c29b06563178f558c1b5a51e9
+    Digital Signature   : qLNNlX9k4L/3id5DLocF6KjDrHdnA1czjVRH2Qsm4Q+xqVweznjb2c95cASaFSRVq54WSpEgKlpxIoW8InanCw==
+    Chain Sequence      : #1
+    Chain Hash (H_1)    : 724239e4d5e19a66e4245bf79286b6e419f1b818238e5fa1020a96d8ea37e352
+
+[3] VERIFYING ORIGINAL PASSPORT SIGNATURE:
+    Status              : VALID
+    Valid               : True
+    Payload Hash Match  : True
+    Signature Valid     : True
+    Reason              : Ed25519 digital signature and canonical SHA-256 payload hash verified successfully.
+
+[4] TAMPERING DEMONSTRATION:
+    [Attacker action]   : Tampered with finding severity in passport copy (changed to 'Low').
+    Status              : INVALID
+    Valid               : False
+    Payload Hash Match  : False
+    Signature Valid     : False
+    Reason              : Payload hash mismatch: Data has been tampered with or modified (claimed 98910c63164b... != recalculated 2642d84e15c7...)
+
+[5] VERIFYING SCAN-HISTORY HASH CHAIN:
+    Chain Status        : VERIFIED
+    Valid               : True
+    Total Records       : 1
+    Chain Head Hash     : 724239e4d5e19a66e4245bf79286b6e419f1b818238e5fa1020a96d8ea37e352
+    Errors Detected     : []
+    Signed Checkpoint   : Seq #1, Head=724239e4d5e19a66..., Sig=VgbwpWC6QhuGR8bgTiDpGC2t...
+
+[6] KEY PERSISTENCE VERIFICATION ACROSS APPLICATION RESTARTS:
+    Initial Public Key ID : ed25519:36e0a145c319c9a9
+    Reloaded Public Key ID: ed25519:36e0a145c319c9a9
+    Keys Match Exactly    : True
+    Post-Restart Verify   : Status=VALID, Valid=True
+```
+
+#### 8.9.4 Example Complete Signed Scan Passport JSON
+
+```json
+{
+  "passport_schema_version": "2.0",
+  "scan_id": 2,
+  "target_identifier": "http://127.0.0.1:5001",
+  "scan_timestamp": "2026-10-28T15:56:13.523486",
+  "scan_mode": "standard",
+  "scanner_version": "AegisScan 2.0",
+  "findings_summary": {
+    "total_findings": 14,
+    "severity_breakdown": {
+      "Critical": 4,
+      "High": 2,
+      "Medium": 4,
+      "Low": 2,
+      "Info": 2
+    },
+    "vulnerability_types": {
+      "AI Assistant Discovered": 1,
+      "AI Canary Token Leakage": 1,
+      "AI Security Manifest Detected": 1,
+      "IDOR (Broken Access Control)": 2,
+      "Indirect Prompt Injection": 1,
+      "Insecure Cookie": 2,
+      "Missing Security Header": 4,
+      "Reflected XSS": 1,
+      "SQL Injection": 1
+    }
+  },
+  "findings_evidence_digests": [
+    {
+      "finding_id": 27,
+      "vulnerability_type": "AI Assistant Discovered",
+      "severity": "Info",
+      "status": "confirmed",
+      "location": "http://127.0.0.1:5001/assistant",
+      "evidence_digest": "20ff6bbd98215aa5280748aa2ad65d0555de4bb976e5f38342143edde04f9d01"
+    },
+    {
+      "finding_id": 29,
+      "vulnerability_type": "AI Canary Token Leakage",
+      "severity": "Critical",
+      "status": "confirmed",
+      "location": "http://127.0.0.1:5001/assistant/query (vector: response_body)",
+      "evidence_digest": "1c32db69c8a2384ff19b2f18e29e9e1e1136e881bb9f2cea75ce4f6ad5564e63"
+    },
+    {
+      "finding_id": 16,
+      "vulnerability_type": "SQL Injection",
+      "severity": "Critical",
+      "status": "confirmed",
+      "location": "http://127.0.0.1:5001/login (field: username)",
+      "evidence_digest": "daa2e7d7c3cdd416003e289ff75dba5103e4a6d66cb2c21fa3c09b7674b13b5d"
+    }
+  ],
+  "validation_statuses": {
+    "confirmed": 13,
+    "potential": 1,
+    "not_reproducible": 0
+  },
+  "overall_risk_summary": "Critical",
+  "signing_algorithm": "Ed25519",
+  "public_key_identifier": "ed25519:36e0a145c319c9a9",
+  "canonical_payload_hash": "98910c63164b64853d63e70a2002d368104e396c29b06563178f558c1b5a51e9",
+  "digital_signature": "qLNNlX9k4L/3id5DLocF6KjDrHdnA1czjVRH2Qsm4Q+xqVweznjb2c95cASaFSRVq54WSpEgKlpxIoW8InanCw=="
+}
+```
+
+#### 8.9.5 Test Suite Metrics
+
+- Total Passing Tests: **80 passing tests** (100% pass rate)
+  - 17 Layer 1 traditional web security tests
+  - 13 Phase 7 AegisLab AI assistant & tools tests
+  - 10 Phase 8 & 9 AI feature discovery & prompt injection tests
+  - 15 Phase 10 Tool Integrity & Anti-Rug-Pull tests
+  - 11 Phase 11 Taint Tracking & Permission Analyzer tests
+  - 14 Phase 12 Cryptographic Provenance & Scan Passport tests
+- Command: `python -m unittest discover tests`
+- Execution Time: ~15.5s, **0 failures, 0 errors**.
+
+#### 8.9.6 Security Limitations & Phase 13 Readiness
+
+- **Known Limitations**:
+  - *Mutable Database Limitation*: A hash-chain stored in a standard SQLite file can be rewritten from scratch if an attacker gains write access to the SQLite file. To mitigate this, AegisScan exports signed checkpoints of the chain head ($H_n$) and supports external public-key pinning.
+  - *Key Management*: Local file-based storage in `secrets/` is appropriate for academic demonstration and single-tenant testing. Enterprise deployments require a Hardware Security Module (HSM) or cloud KMS (e.g., AWS KMS, HashiCorp Vault) for private key protection.
+  - *Provenance Scope*: Digital signatures prove author identity, timestamp, and payload integrity against tampering. They do not certify that scanner detection rules were omniscient or that zero false negatives exist.
+- **Phase 13 Readiness**:
+  - **Focus**: Unified Executive & Technical Reporting 2.0 and Comprehensive Empirical Evaluation.
+  - **Status**: **100% Ready for Phase 13**.
+
 
 
 

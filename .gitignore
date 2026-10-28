@@ -17,6 +17,8 @@ env/
 .env.*
 !.env.example
 keys/
+secrets/
+*/secrets/
 *.key
 *.pem
 *.priv

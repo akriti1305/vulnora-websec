@@ -25,12 +25,12 @@ import os
 from urllib.parse import urlparse
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Target, Scan, Finding, EvaluationRun as EvaluationRunModel
+from models import Target, Scan, Finding, EvaluationRun as EvaluationRunModel, ScanPassport, ScanChainRecord
 
 from discovery import crawler
 from detectors import sqli_detector, xss_detector, idor_detector
@@ -38,6 +38,14 @@ from scope import ScopeGuard
 from detectors import header_detector, cookie_detector
 from detectors import ai_discovery, prompt_injection_detector, tool_integrity_monitor
 from detectors import context_taint_tracker, agent_permission_analyzer
+from crypto import (
+    get_key_manager,
+    create_scan_passport,
+    verify_scan_passport,
+    get_or_create_scan_passport,
+    record_scan_in_chain,
+    verify_hash_chain,
+)
 import validation
 import risk
 import report
@@ -277,6 +285,11 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
         scan.finished_at = datetime.utcnow()
         db.commit()
 
+        # Step 11/11 -- Cryptographic Scan Passport & SHA-256 Hash Chain (Phase 12)
+        print(f"[AegisScan] Step 11/11 -- Generating signed scan passport & appending hash chain...")
+        passport, passport_record = get_or_create_scan_passport(db, scan_id=scan.id)
+        chain_record = record_scan_in_chain(db, scan_id=scan.id, payload_hash=passport["canonical_payload_hash"])
+
         print(f"[AegisScan] ===== Scan #{scan_id} done. Findings={len(all_dicts)} =====")
 
         return {
@@ -310,6 +323,19 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
                 "taint_graphs_count": len(perm_res.taint_graphs),
                 "unified_attack_paths_count": len(perm_res.unified_attack_paths),
             },
+            "passport": {
+                "canonical_payload_hash": passport["canonical_payload_hash"],
+                "signature": passport["digital_signature"],
+                "public_key_id": passport["public_key_identifier"],
+                "passport_url": f"http://127.0.0.1:8000/api/scans/{scan_id}/passport",
+                "verify_url": f"http://127.0.0.1:8000/api/scans/{scan_id}/passport/verify",
+            },
+            "hash_chain": {
+                "sequence_number": chain_record.sequence_number,
+                "chain_hash": chain_record.chain_hash,
+                "previous_hash": chain_record.previous_hash,
+                "history_verify_url": "http://127.0.0.1:8000/api/scans/history/verify",
+            },
             "evaluation": {
                 "pre_validation" : {
                     "precision": eval_pre.precision,
@@ -330,6 +356,7 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
             },
             "report_url": f"http://127.0.0.1:8000/api/scans/{scan_id}/report",
         }
+
 
     except Exception as e:
         scan.status      = "failed"
@@ -537,6 +564,10 @@ def get_report(scan_id: int, db: Session = Depends(get_db)):
             "fn_list"  : json.loads(er.fn_list or "[]"),
         }
 
+    # Load or generate passport and hash-chain record for report provenance panel
+    passport_dict, _ = get_or_create_scan_passport(db, scan_id=scan.id)
+    chain_record = db.query(ScanChainRecord).filter(ScanChainRecord.scan_id == scan.id).first()
+
     html = report.generate_html_report(
         scan_id          = scan_id,
         target_url       = target.base_url if target else "Unknown",
@@ -545,6 +576,12 @@ def get_report(scan_id: int, db: Session = Depends(get_db)):
         scan_started_at  = scan.started_at,
         scan_finished_at = scan.finished_at,
         eval_data        = eval_data,
+        passport_data    = passport_dict,
+        chain_data       = {
+            "sequence_number": chain_record.sequence_number if chain_record else 1,
+            "chain_hash": chain_record.chain_hash if chain_record else "",
+            "previous_hash": chain_record.previous_hash if chain_record else "",
+        } if chain_record else None,
     )
     return HTMLResponse(content=html, status_code=200)
 
@@ -673,4 +710,89 @@ def lab_scenario_e(payload: dict = Body(...)):
         target_base_url=target_url,
         scope_guard=guard
     )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# GET /api/scans/{scan_id}/passport -- Cryptographically signed scan passport
+# ---------------------------------------------------------------------------
+@router.get("/scans/{scan_id}/passport", summary="Get or download signed scan passport")
+def get_scan_passport_endpoint(
+    scan_id: int,
+    download: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns the cryptographically signed Scan Passport.
+    If ?download=true, returns the passport as an attached JSON download file.
+    """
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail=f"Scan {scan_id} not found")
+
+    passport, _ = get_or_create_scan_passport(db, scan_id=scan.id)
+
+    if download:
+        content = json.dumps(passport, indent=2)
+        return Response(
+            content=content,
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="scan_{scan_id}_passport.json"'}
+        )
+    return passport
+
+
+# ---------------------------------------------------------------------------
+# GET /api/scans/{scan_id}/passport/verify -- Verify scan passport signature
+# ---------------------------------------------------------------------------
+@router.get("/scans/{scan_id}/passport/verify", summary="Verify scan passport digital signature")
+def verify_scan_passport_endpoint(
+    scan_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Independently verifies the Ed25519 signature and SHA-256 canonical payload hash
+    for the specified scan's passport.
+    """
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail=f"Scan {scan_id} not found")
+
+    passport, _ = get_or_create_scan_passport(db, scan_id=scan.id)
+    verification = verify_scan_passport(passport)
+    return verification
+
+
+# ---------------------------------------------------------------------------
+# GET /api/passports/public-key -- Scanner Ed25519 public key
+# ---------------------------------------------------------------------------
+@router.get("/passports/public-key", summary="Export scanner Ed25519 public key")
+def get_scanner_public_key():
+    """
+    Exports the scanner's active Ed25519 public key in PEM, Base64, and Hex formats
+    along with its key identifier for independent signature verification.
+    """
+    km = get_key_manager()
+    return {
+        "signing_algorithm": "Ed25519",
+        "public_key_identifier": km.get_public_key_id(),
+        "public_key_hex": km.get_public_key_hex(),
+        "public_key_base64": km.get_public_key_b64(),
+        "public_key_pem": km.get_public_key_pem(),
+        "curve": "Ed25519 (Curve25519)",
+        "key_type": "SubjectPublicKeyInfo",
+    }
+
+
+# ---------------------------------------------------------------------------
+# GET /api/scans/history/verify -- Audit SHA-256 scan history hash-chain
+# ---------------------------------------------------------------------------
+@router.get("/scans/history/verify", summary="Verify scan history hash-chain integrity")
+def verify_scans_history_endpoint(db: Session = Depends(get_db)):
+    """
+    Audits the entire append-only SHA-256 hash-chain of all completed scans.
+    Verifies sequential continuity, parent hash links, and payload hashes.
+    Emits a signed checkpoint of the current chain head.
+    """
+    result = verify_hash_chain(db)
     return result

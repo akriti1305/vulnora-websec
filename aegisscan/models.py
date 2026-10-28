@@ -64,9 +64,12 @@ class Scan(Base):
     target   = relationship("Target",       back_populates="scans")
     findings = relationship("Finding",      back_populates="scan")
     evaluations = relationship("EvaluationRun", back_populates="scan")
+    passport_record = relationship("ScanPassport", uselist=False, back_populates="scan")
+    chain_record    = relationship("ScanChainRecord", uselist=False, back_populates="scan")
 
     def __repr__(self):
         return f"<Scan id={self.id} target_id={self.target_id} status='{self.status}'>"
+
 
 
 # ---------------------------------------------------------------------------
@@ -145,4 +148,52 @@ class EvaluationRun(Base):
             f"<EvaluationRun scan_id={self.scan_id} stage={self.stage} "
             f"P={self.precision:.2f} R={self.recall:.2f} F1={self.f1_score:.2f}>"
         )
+
+
+# ---------------------------------------------------------------------------
+# Table 5: ScanPassport
+# ---------------------------------------------------------------------------
+# Cryptographically signed scan passport.
+# Contains deterministic findings digests, payload hash, Ed25519 signature,
+# and public key identifier.
+# ---------------------------------------------------------------------------
+class ScanPassport(Base):
+    __tablename__ = "scan_passports"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    scan_id        = Column(Integer, ForeignKey("scans.id"), nullable=False, unique=True)
+    passport_json  = Column(Text,    nullable=False)
+    payload_hash   = Column(String,  nullable=False, index=True)
+    signature      = Column(String,  nullable=False)
+    public_key_id  = Column(String,  nullable=False)
+    created_at     = Column(DateTime, default=datetime.utcnow)
+
+    scan = relationship("Scan", back_populates="passport_record")
+
+    def __repr__(self):
+        return f"<ScanPassport scan_id={self.scan_id} hash='{self.payload_hash[:12]}...'>"
+
+
+# ---------------------------------------------------------------------------
+# Table 6: ScanChainRecord
+# ---------------------------------------------------------------------------
+# Append-only SHA-256 hash-chain linking completed scans sequentially.
+# H_n = SHA256(canonical_record_n || H_(n-1))
+# ---------------------------------------------------------------------------
+class ScanChainRecord(Base):
+    __tablename__ = "scan_chain_records"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    sequence_number = Column(Integer, unique=True, nullable=False, index=True)
+    scan_id         = Column(Integer, ForeignKey("scans.id"), nullable=False, unique=True)
+    previous_hash   = Column(String,  nullable=False)
+    payload_hash    = Column(String,  nullable=False)
+    chain_hash      = Column(String,  nullable=False, index=True)
+    timestamp       = Column(DateTime, default=datetime.utcnow)
+
+    scan = relationship("Scan", back_populates="chain_record")
+
+    def __repr__(self):
+        return f"<ScanChainRecord seq={self.sequence_number} scan_id={self.scan_id} hash='{self.chain_hash[:12]}...'>"
+
 

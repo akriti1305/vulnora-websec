@@ -29,6 +29,8 @@ def generate_html_report(
     scan_started_at,
     scan_finished_at,
     eval_data: Optional[Dict[str, Any]] = None,
+    passport_data: Optional[Dict[str, Any]] = None,
+    chain_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Render the HTML security report.
@@ -91,6 +93,23 @@ def generate_html_report(
         "taint_path_findings": taint_paths
     }
 
+    # Phase 12 Cryptographic Passport & Provenance Chain summary
+    has_passport = bool(passport_data)
+    passport_info = {
+        "active": has_passport,
+        "schema_version": passport_data.get("passport_schema_version", "2.0") if passport_data else "2.0",
+        "signing_algorithm": passport_data.get("signing_algorithm", "Ed25519") if passport_data else "Ed25519",
+        "public_key_identifier": passport_data.get("public_key_identifier", "N/A") if passport_data else "N/A",
+        "canonical_payload_hash": passport_data.get("canonical_payload_hash", "") if passport_data else "",
+        "digital_signature": passport_data.get("digital_signature", "") if passport_data else "",
+        "download_url": f"/api/scans/{scan_id}/passport?download=true",
+        "verify_url": f"/api/scans/{scan_id}/passport/verify",
+        "history_verify_url": "/api/scans/history/verify",
+        "chain_sequence": chain_data.get("sequence_number", 1) if chain_data else 1,
+        "chain_hash": chain_data.get("chain_hash", "") if chain_data else "",
+        "previous_hash": chain_data.get("previous_hash", "") if chain_data else "",
+    } if has_passport else {"active": False}
+
     html = template.render(
         scan_id          = scan_id,
         target_url       = target_url,
@@ -104,8 +123,10 @@ def generate_html_report(
         eval_data        = eval_data or {},
         tool_integrity   = tool_integrity_info,
         taint_permission = taint_permission_info,
+        passport         = passport_info,
     )
     return html
+
 
 
 def generate_home_page(
