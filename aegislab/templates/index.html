@@ -262,6 +262,17 @@
             <a href="/login" class="btn btn-red">Login to Trigger</a>
         </div>
 
+        <!-- Card 6: AI-Agent Security Lab (AegisScan 2.0 / Phase 7) -->
+        <div class="card" style="border-left-color: #1a237e;">
+            <h3 style="color: #1a237e;">AegisScan 2.0 Lab</h3>
+            <h2>🤖 AI Assistant & Tool Lab</h2>
+            <p>Deterministic AI-agent simulator with controlled tools, canary protection, document ingestion, and 6 security scenarios.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <a href="/assistant" class="btn" style="background:#1a237e;">Open Assistant</a>
+                <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn" style="background:#455a64;">View Manifest</a>
+            </div>
+        </div>
+
     </div>
 
     <!-- ================================================================ -->
@@ -329,6 +340,30 @@
             <li>
                 <span class="badge">Cookie</span>
                 <strong>Session cookie</strong> — HttpOnly=False, Secure=False
+            </li>
+            <li style="margin-top: 10px; border-top: 2px dashed #c5cae9; padding-top: 10px;">
+                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
+                <strong>POST /assistant/query</strong> — Indirect prompt injection via ingested document (leaks canary)
+            </li>
+            <li>
+                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
+                <strong>GET /assistant/tools</strong> — Poisoned tool descriptions instructing agent override
+            </li>
+            <li>
+                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
+                <strong>POST /assistant/tools/rugpull</strong> — Post-approval tool parameter & schema hash tampering
+            </li>
+            <li>
+                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
+                <strong>GET /assistant?q=...</strong> — Unsafe AI response rendered in HTML without escaping
+            </li>
+            <li>
+                <span class="badge" style="background:#1a237e;">Layer 2: AI</span>
+                <strong>POST /assistant/query</strong> — Unapproved execution of high-impact <code>send_email</code> tool
+            </li>
+            <li>
+                <span class="badge" style="background:#388e3c;">Decoy / AI</span>
+                <strong>doc-03</strong> — Benign decoy document mentioning canary concepts (Negative Control)
             </li>
         </ul>
     </div>

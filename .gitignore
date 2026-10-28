@@ -12,10 +12,20 @@ env/
 *.sqlite
 *.sqlite3
 
-# Secrets and environment settings
+# Secrets, keys, and environment settings
 .env
 .env.*
 !.env.example
+keys/
+*.key
+*.pem
+*.priv
+*.crt
+*.cert
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
 
 # Editor and operating system files
 .vscode/

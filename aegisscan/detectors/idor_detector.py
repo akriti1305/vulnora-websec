@@ -20,6 +20,7 @@ IMPORTANT -- read-only probes only:
   We never attempt to modify or delete any records.
 """
 
+import re
 import httpx
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from dataclasses import dataclass, field
@@ -34,20 +35,42 @@ ID_PARAM_NAMES = {"id", "user_id", "uid", "profile_id", "account_id", "pid"}
 # How many adjacent IDs to try
 PROBE_IDS = [1, 2, 3, 4, 5]
 
+# Personal data indicators
+EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+PERSONAL_DATA_LABELS = ["email", "phone", "address", "ssn", "dob", "birth", "mobile", "contact"]
+
+
+def _has_personal_data(html: str) -> bool:
+    """
+    Check if the response body contains personal-data indicators:
+      - Email address pattern
+      - Common labels like email, phone, address
+    """
+    if EMAIL_REGEX.search(html):
+        return True
+    lower = html.lower()
+    for label in PERSONAL_DATA_LABELS:
+        if re.search(r"\b" + re.escape(label) + r"\b", lower):
+            return True
+    return False
+
 
 @dataclass
 class IdorFinding:
     """
-    A confirmed IDOR finding.
+    An IDOR finding (confirmed or potential).
 
     baseline_url    : the original URL that worked (e.g. /user/profile?id=1)
     probed_url      : the URL with a different ID that ALSO worked
     baseline_content: a snippet of the baseline response body
-    probed_content  : a snippet of the probed response body (different user)
+    probed_content  : a snippet of the probed response body
     param_name      : the query parameter that was changed (e.g. "id")
     original_id     : the ID value in the crawled URL
-    probed_id       : the ID value that returned someone else's data
+    probed_id       : the ID value that returned different data
     evidence        : short human-readable proof for the report
+    status          : "confirmed" (personal data exposed) or "potential" (manual review needed)
+    severity        : "Critical" or "Medium"
+    note            : explanation for potential findings
     """
     baseline_url: str
     probed_url: str
@@ -57,6 +80,9 @@ class IdorFinding:
     original_id: str
     probed_id: str
     evidence: str
+    status: str = "confirmed"
+    severity: str = "Critical"
+    note: str = ""
 
 
 def detect(discovery: DiscoveryResult) -> List[IdorFinding]:
@@ -140,13 +166,29 @@ def detect(discovery: DiscoveryResult) -> List[IdorFinding]:
                             baseline_snippet = _text_snippet(baseline_text, 200)
                             probed_snippet   = _text_snippet(probed_resp.text, 200)
 
-                            evidence = (
-                                f"URL parameter '{param_name}' changed from "
-                                f"'{original_id}' to '{probe_id_str}'. "
-                                f"Both returned HTTP 200 with different content, "
-                                f"indicating a different user's data was exposed "
-                                f"without any authorisation check."
-                            )
+                            if _has_personal_data(probed_resp.text):
+                                finding_status = "confirmed"
+                                finding_severity = "Critical"
+                                finding_note = ""
+                                evidence = (
+                                    f"URL parameter '{param_name}' changed from "
+                                    f"'{original_id}' to '{probe_id_str}'. "
+                                    f"Both returned HTTP 200 with different content, "
+                                    f"indicating a different user's data was exposed "
+                                    f"without any authorisation check."
+                                )
+                            else:
+                                finding_status = "potential"
+                                finding_severity = "Medium"
+                                finding_note = (
+                                    "Different content returned for different IDs; "
+                                    "manual review needed to decide whether the data is private."
+                                )
+                                evidence = (
+                                    f"URL parameter '{param_name}' changed from "
+                                    f"'{original_id}' to '{probe_id_str}'. "
+                                    f"Both returned HTTP 200 with different content."
+                                )
 
                             findings.append(IdorFinding(
                                 baseline_url     = url,
@@ -157,11 +199,13 @@ def detect(discovery: DiscoveryResult) -> List[IdorFinding]:
                                 original_id      = original_id,
                                 probed_id        = probe_id_str,
                                 evidence         = evidence,
+                                status           = finding_status,
+                                severity         = finding_severity,
+                                note             = finding_note,
                             ))
                             print(
-                                f"  [IDOR]   FOUND! {param_name}={original_id} -> "
-                                f"{param_name}={probe_id_str} both returned 200 "
-                                f"with different content."
+                                f"  [IDOR]   FOUND ({finding_status})! {param_name}={original_id} -> "
+                                f"{param_name}={probe_id_str} both returned 200."
                             )
                             # One finding per URL/param is enough
                             break

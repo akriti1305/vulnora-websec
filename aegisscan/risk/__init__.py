@@ -128,16 +128,22 @@ def score_xss_findings(validated_findings) -> List[ScoredFinding]:
 # ---------------------------------------------------------------------------
 
 def score_idor_findings(idor_findings) -> List[ScoredFinding]:
-    """Score IDOR findings (all confirmed directly)."""
+    """Score IDOR findings (confirmed or potential)."""
     scored = []
     for f in idor_findings:
-        print(f"  [Risk/IDOR] {f.baseline_url} param={f.param_name} -> Critical")
+        sev = getattr(f, "severity", "Critical")
+        stat = getattr(f, "status", "confirmed")
+        note = getattr(f, "note", "")
+        evidence = f.evidence
+        if note:
+            evidence = f"{evidence}\nNote: {note}"
+        print(f"  [Risk/IDOR] {f.baseline_url} param={f.param_name} -> {sev} ({stat})")
         scored.append(ScoredFinding(
             vuln_type          = "IDOR (Broken Access Control)",
-            severity           = "Critical",
-            status             = "confirmed",
+            severity           = sev,
+            status             = stat,
             location           = f"{f.baseline_url} (param: {f.param_name})",
-            evidence           = f.evidence,
+            evidence           = evidence,
             remediation_advice = IDOR_REMEDIATION,
             payload            = f"?{f.param_name}={f.probed_id}",
         ))

@@ -180,6 +180,10 @@ def evaluate_scan(
     fp_names: List[str] = []
 
     for f in findings:
+        # Stage 2 (post_validation) evaluates confirmed findings only
+        if stage == "post_validation" and f.get("status") != "confirmed":
+            continue
+
         f_type     = f.get("vulnerability_type", "")
         f_path     = _location_path(f.get("location", ""))
         f_evidence = f.get("evidence", "")

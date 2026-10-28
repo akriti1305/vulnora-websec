@@ -179,6 +179,10 @@ Vulnora includes an automated evaluation harness (`aegisscan/evaluation/`) that 
 - Windows PowerShell
 
 ### 1. Set Up and Run AegisLab (Terminal 1)
+
+> [!CAUTION]
+> **AegisLab Safety Notice**: AegisLab is **intentionally vulnerable** and contains real web application security flaws designed for local testing. **It must ONLY be run on localhost (`127.0.0.1`)** and never exposed to the internet or external networks.
+
 ```powershell
 # Navigate to the target app directory
 cd D:\PRJ4\aegislab
@@ -198,7 +202,7 @@ python app.py
 # $env:AEGISLAB_SECURE = "1"
 # python app.py
 ```
-*AegisLab will start at `http://127.0.0.1:5001`.*
+*AegisLab will start at `http://127.0.0.1:5001` (localhost only).*
 
 ### 2. Set Up and Run Vulnora Scanner (Terminal 2)
 ```powershell
@@ -241,6 +245,10 @@ Vulnora is an academic prototype and portfolio demonstration tool. It has severa
 ---
 
 ## 9. Authorized Use & Ethical Warning
+
+> [!CAUTION]
+> **AegisLab Intentionally Vulnerable Target Notice:**
+> AegisLab is an **intentionally vulnerable** application containing deliberate security flaws (such as SQL injection, reflected XSS, and broken access control) for testing purposes. **It must ONLY be run on localhost (`127.0.0.1` / `::1`)** in a safe, isolated test environment. Never expose AegisLab to public networks, open ports, or remote hosts.
 
 > [!WARNING]
 > **STRICTLY FOR AUTHORIZED DEFENSIVE AUDITING ONLY**

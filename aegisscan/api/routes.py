@@ -25,7 +25,7 @@ import os
 from urllib.parse import urlparse
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
@@ -34,7 +34,10 @@ from models import Target, Scan, Finding, EvaluationRun as EvaluationRunModel
 
 from discovery import crawler
 from detectors import sqli_detector, xss_detector, idor_detector
+from scope import ScopeGuard
 from detectors import header_detector, cookie_detector
+from detectors import ai_discovery, prompt_injection_detector, tool_integrity_monitor
+from detectors import context_taint_tracker, agent_permission_analyzer
 import validation
 import risk
 import report
@@ -174,13 +177,46 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
         hdr_scored = risk.score_header_findings(hdr_raw)
 
         # ---- Step 6: Cookies -----------------------------------------------
-        print("[AegisScan] Step 6/6 -- Cookie flags...")
+        print("[AegisScan] Step 6/8 -- Cookie flags...")
         ck_raw    = cookie_detector.detect(disc)
         ck_scored = risk.score_cookie_findings(ck_raw)
 
+        # ---- Step 7: AI Feature & Manifest Discovery (Phase 8) -------------
+        print("[AegisScan] Step 7/8 -- AI Feature & Manifest Discovery...")
+        scan_mode = payload.get("scan_mode", "deep").lower()
+        ai_disc = ai_discovery.detect_ai_features(disc, target_url, scan_mode=scan_mode)
+
+        # ---- Step 8: Indirect Prompt Injection & Canary Validation (Phase 9)
+        print("[AegisScan] Step 8/9 -- Indirect Prompt Injection & Canary Validation...")
+        ai_prompt_findings = prompt_injection_detector.detect_indirect_prompt_injection(disc, ai_disc)
+
+        # ---- Step 9: Tool Integrity & Anti-Rug-Pull Monitor (Phase 10) ------
+        print("[AegisScan] Step 9/10 -- Tool Integrity & Anti-Rug-Pull Verification...")
+        guard = ScopeGuard()
+        tool_integrity_res = tool_integrity_monitor.verify_tool_integrity(
+            ai_discovery_result=ai_disc,
+            target_base_url=target_url,
+            scan_mode=scan_mode,
+            scope_guard=guard
+        )
+        tool_integrity_findings = tool_integrity_res.findings
+
+        # ---- Step 10: Context Taint Tracking & Excessive Agency (Phase 11) ---
+        print("[AegisScan] Step 10/10 -- Context Taint Tracking & Excessive Agency Analysis...")
+        perm_res = agent_permission_analyzer.analyze_agent_permissions(
+            ai_discovery_result=ai_disc,
+            target_base_url=target_url,
+            scan_mode=scan_mode,
+            scope_guard=guard,
+            prompt_findings=ai_prompt_findings,
+            tool_findings=tool_integrity_findings
+        )
+        perm_findings = perm_res.findings
+
         # ---- Collect all scored findings ------------------------------------
         all_scored = (
-            sqli_scored + xss_scored + idor_scored + hdr_scored + ck_scored
+            sqli_scored + xss_scored + idor_scored + hdr_scored + ck_scored +
+            ai_disc.findings + ai_prompt_findings + tool_integrity_findings + perm_findings
         )
         all_dicts = [_scored_to_dict(sf) for sf in all_scored]
 
@@ -251,11 +287,28 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
             "forms_found"   : len(disc.all_forms),
             "findings_count": len(all_dicts),
             "breakdown"     : {
-                "sqli"   : len(sqli_scored),
-                "xss"    : len(xss_scored),
-                "idor"   : len(idor_scored),
-                "headers": len(hdr_scored),
-                "cookies": len(ck_scored),
+                "sqli"               : len(sqli_scored),
+                "xss"                : len(xss_scored),
+                "idor"               : len(idor_scored),
+                "headers"            : len(hdr_scored),
+                "cookies"            : len(ck_scored),
+                "ai_discovery"       : len(ai_disc.findings),
+                "ai_injection"       : len(ai_prompt_findings),
+                "tool_integrity"     : len(tool_integrity_findings),
+                "permission_analysis": len(perm_findings),
+            },
+            "tool_integrity_summary": {
+                "verified_tools": tool_integrity_res.verified_count,
+                "changed_tools": tool_integrity_res.changed_count,
+                "missing_baseline_tools": tool_integrity_res.missing_baseline_count,
+                "total_tools": tool_integrity_res.total_tools,
+            },
+            "permission_summary": {
+                "unapproved_actions": perm_res.unapproved_actions_count,
+                "properly_gated_actions": perm_res.properly_gated_actions_count,
+                "approval_gate_enforced": perm_res.approval_gate_enforced,
+                "taint_graphs_count": len(perm_res.taint_graphs),
+                "unified_attack_paths_count": len(perm_res.unified_attack_paths),
             },
             "evaluation": {
                 "pre_validation" : {
@@ -561,3 +614,63 @@ def run_evaluate(scan_id: int, db: Session = Depends(get_db)):
         "fp_list"  : json.loads(eval_run.fp_list),
         "fn_list"  : json.loads(eval_run.fn_list),
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /api/lab/rugpull-scenario -- Controlled Scenario C verification runner
+# ---------------------------------------------------------------------------
+@router.post("/lab/rugpull-scenario", summary="Execute controlled Scenario C Tool Rug-Pull benchmark")
+def lab_rugpull_scenario(payload: dict = Body(...)):
+    """
+    Executes the 10-step Tool Rug-Pull verification against authorized local lab.
+    """
+    target_url = payload.get("target_url", "http://127.0.0.1:5001")
+    guard = ScopeGuard()
+    if not guard.is_allowed(target_url):
+        raise HTTPException(status_code=403, detail=f"Target {target_url} is out of authorized scope.")
+
+    result = tool_integrity_monitor.run_controlled_lab_rugpull_scenario(
+        target_base_url=target_url,
+        scope_guard=guard
+    )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# POST /api/lab/poison-scenario -- Controlled Scenario B verification runner
+# ---------------------------------------------------------------------------
+@router.post("/lab/poison-scenario", summary="Execute controlled Scenario B Poisoned Tool Description benchmark")
+def lab_poison_scenario(payload: dict = Body(...)):
+    """
+    Executes the Scenario B Poisoned Tool Description verification against authorized local lab.
+    """
+    target_url = payload.get("target_url", "http://127.0.0.1:5001")
+    guard = ScopeGuard()
+    if not guard.is_allowed(target_url):
+        raise HTTPException(status_code=403, detail=f"Target {target_url} is out of authorized scope.")
+
+    result = tool_integrity_monitor.run_controlled_lab_poison_scenario(
+        target_base_url=target_url,
+        scope_guard=guard
+    )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# POST /api/lab/scenario-e -- Controlled Scenario E approval gate runner
+# ---------------------------------------------------------------------------
+@router.post("/lab/scenario-e", summary="Execute controlled Scenario E Approval Gate benchmark")
+def lab_scenario_e(payload: dict = Body(...)):
+    """
+    Executes the controlled Scenario E high-impact action approval gate verification.
+    """
+    target_url = payload.get("target_url", "http://127.0.0.1:5001")
+    guard = ScopeGuard()
+    if not guard.is_allowed(target_url):
+        raise HTTPException(status_code=403, detail=f"Target {target_url} is out of authorized scope.")
+
+    result = agent_permission_analyzer.run_controlled_lab_scenario_e(
+        target_base_url=target_url,
+        scope_guard=guard
+    )
+    return result

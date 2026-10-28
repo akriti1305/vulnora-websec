@@ -56,6 +56,41 @@ def generate_html_report(
         sev = f.get("severity", "Info")
         severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
+    # AI Tool Integrity summary
+    verified_tools = [f for f in sorted_findings if f.get("vulnerability_type") == "Tool Integrity Verified"]
+    changed_tools = [f for f in sorted_findings if f.get("vulnerability_type") in ("Tool Metadata Rug-Pull", "Poisoned Tool Description")]
+    unbaselined_tools = [f for f in sorted_findings if f.get("vulnerability_type") == "Tool Baseline Unavailable"]
+
+    has_tool_integrity = bool(verified_tools or changed_tools or unbaselined_tools)
+    tool_integrity_info = {
+        "active": has_tool_integrity,
+        "verified_count": len(verified_tools),
+        "changed_count": len(changed_tools),
+        "unbaselined_count": len(unbaselined_tools),
+        "total_count": len(verified_tools) + len(changed_tools) + len(unbaselined_tools),
+        "status": "COMPROMISED" if changed_tools else ("VERIFIED" if verified_tools else "BASELINE_UNAVAILABLE"),
+        "verified_tools": verified_tools,
+        "changed_tools": changed_tools,
+        "unbaselined_tools": unbaselined_tools,
+    }
+
+    # Phase 11 Taint & Permission analysis summary
+    excessive_agency = [f for f in sorted_findings if f.get("vulnerability_type") == "Excessive Agency: Unapproved High-Impact Action"]
+    gate_verified = [f for f in sorted_findings if f.get("vulnerability_type") == "AI Agent Approval Gate Verified"]
+    taint_paths = [f for f in sorted_findings if f.get("vulnerability_type") == "Context Taint Hijack: Complete Attack Path"]
+
+    has_taint_perm = bool(excessive_agency or gate_verified or taint_paths)
+    taint_permission_info = {
+        "active": has_taint_perm,
+        "excessive_agency_count": len(excessive_agency),
+        "gate_verified_count": len(gate_verified),
+        "taint_paths_count": len(taint_paths),
+        "status": "EXCESSIVE_AGENCY_DETECTED" if excessive_agency else ("APPROVAL_GATED" if gate_verified else "NOT_TESTED"),
+        "excessive_agency_findings": excessive_agency,
+        "gate_verified_findings": gate_verified,
+        "taint_path_findings": taint_paths
+    }
+
     html = template.render(
         scan_id          = scan_id,
         target_url       = target_url,
@@ -67,6 +102,8 @@ def generate_html_report(
         confirmed_count  = confirmed_count,
         severity_counts  = severity_counts,
         eval_data        = eval_data or {},
+        tool_integrity   = tool_integrity_info,
+        taint_permission = taint_permission_info,
     )
     return html
 

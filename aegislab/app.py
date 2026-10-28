@@ -56,6 +56,13 @@ app.config["SESSION_COOKIE_HTTPONLY"] = False   # ← vulnerable: JS can steal i
 app.config["SESSION_COOKIE_SECURE"]   = False   # ← vulnerable: sent over HTTP too
 # -------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Phase 7 — AegisLab 2.0 AI Assistant & Security Lab Blueprint
+# ---------------------------------------------------------------------------
+from ai_assistant import ai_blueprint
+app.register_blueprint(ai_blueprint)
+
+
 
 # ---------------------------------------------------------------------------
 # Database — In-Memory SQLite
