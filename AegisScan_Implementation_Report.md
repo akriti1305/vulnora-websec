@@ -777,10 +777,10 @@ AegisScan 2.0 implements differential comparison across 5 mutually exclusive sta
 4. `newly_detected`: Vulnerabilities identified in the rescan that were absent in the baseline.
 5. `not_retested`: Baseline findings that were not evaluated during the rescan (e.g., when rescanning in Basic mode).
 
-**Honesty Rule**: AegisScan never assumes Layer 1 flaws are resolved merely because AI Secure Mode is toggled. When AegisLab is switched to Secure Mode, the differential engine reports:
-- **Previously Confirmed**: 17
-- **Still Confirmed**: 16
-- **Resolved After Retest**: 1 (Reflected XSS on `/assistant?q=` safely neutralized by output sanitization)
+**Honesty Rule**: AegisScan never assumes Layer 1 flaws are resolved merely because AI Secure Mode is toggled. When AegisLab is switched to Secure Mode, all AI-agent vulnerabilities are verified resolved while traditional Layer 1 vulnerabilities remain active. The differential engine reports:
+- **Previously Confirmed**: 15 (14 confirmed vulnerabilities + 1 potential IDOR)
+- **Still Confirmed**: 10 (Layer 1 flaws: SQLi, Reflected XSS on /search, 2 IDORs, 4 Missing Security Headers, 2 Insecure Cookies)
+- **Resolved After Retest**: 5 (ALL 4 AI-agent flaws resolved: Indirect Prompt Injection, AI Canary Token Leakage, Excessive Agency: Unapproved High-Impact Action, Context Taint Hijack Attack Path, plus Reflected XSS on `/assistant?q=`)
 - **Newly Detected**: 0
 - **Not Retested**: 0
 

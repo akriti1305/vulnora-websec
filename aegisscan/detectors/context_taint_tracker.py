@@ -330,9 +330,9 @@ def correlate_attack_paths(
         for f in prompt_findings
     )
 
-    # Check for complete taint graphs
+    # Check for complete taint graphs (only confirm if prompt injection succeeded in current scan)
     for tg in taint_graphs:
-        if tg.is_complete_attack_path:
+        if tg.is_complete_attack_path and has_prompt_injection:
             stages = [
                 {
                     "stage": "1_UNTRUSTED_DOCUMENT",

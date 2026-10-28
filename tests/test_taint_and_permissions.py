@@ -77,12 +77,12 @@ class TestTaintAndPermissions(unittest.TestCase):
 
         # Reset AegisLab AI assistant state before each test
         with httpx.Client(transport=self.transport, base_url=self.base_url) as client:
-            client.post("/assistant/reset")
+            client.post("/assistant/reset", json={"secure_mode": False})
 
     def tearDown(self):
         self.db.close()
         with httpx.Client(transport=self.transport, base_url=self.base_url) as client:
-            client.post("/assistant/reset")
+            client.post("/assistant/reset", json={"secure_mode": False})
 
     # -----------------------------------------------------------------------
     # 1. Taint Tracking & Graph Construction

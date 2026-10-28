@@ -117,6 +117,17 @@ def detect(discovery: DiscoveryResult) -> List[CookieFinding]:
                 if form.method != "POST":
                     continue
 
+                # Only probe forms that look like authentication/login endpoints
+                # to avoid triggering unintended side-effects or state resets on non-auth forms
+                is_auth_form = (
+                    "login" in form.action.lower()
+                    or "signin" in form.action.lower()
+                    or "auth" in form.action.lower()
+                    or any(f.name in ("password", "pass", "pwd") for f in form.fields)
+                )
+                if not is_auth_form:
+                    continue
+
                 # Refuse to send credentials to out-of-scope form actions
                 if not guard.is_allowed(form.action):
                     print(f"  [ScopeGuard] [Cookies] skipped out-of-scope form action: {form.action}")

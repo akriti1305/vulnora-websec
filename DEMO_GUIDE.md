@@ -99,9 +99,9 @@ Run the live automated demonstration script to show tamper rejection in real tim
 **Talking Points**:
 - *"Security teams need to know: did our patch actually work, or did it introduce new regressions?"*
 - *"Our differential engine classifies retests into 5 distinct buckets:"*
-  - **Previously Confirmed**: 17
-  - **Still Confirmed**: 16
-  - **Resolved After Retest**: 1 (Reflected XSS on `/assistant?q=` safely neutralized)
+  - **Previously Confirmed**: 15 (14 confirmed + 1 potential IDOR)
+  - **Still Confirmed**: 10 (Layer 1 traditional vulnerabilities remain active)
+  - **Resolved After Retest**: 5 (ALL AI vulnerabilities resolved: Prompt Injection, Canary Leakage, Excessive Agency, Context Taint Hijack, and Reflected XSS on `/assistant`)
   - **Newly Detected**: 0
   - **Not Retested**: 0
 - *"Notice our **Honesty Rule**: we never falsely claim that Layer 1 vulnerabilities (like SQLi on `/login`) were fixed merely because the AI assistant's secure mode was enabled. A finding is only marked resolved if it was **actively re-tested and verified clean**."*

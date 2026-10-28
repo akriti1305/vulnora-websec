@@ -198,14 +198,15 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
         if scan_mode == "basic":
             print("[AegisScan] Basic mode selected: Skipping deep AI agent active auditing.")
             from detectors.ai_discovery import AIDiscoveryResult
-            from detectors.tool_integrity_monitor import ToolIntegrityAuditResult
+            from detectors.tool_integrity_monitor import ToolIntegritySummary
             from detectors.agent_permission_analyzer import PermissionAnalysisResult
-            ai_disc = AIDiscoveryResult(found=False, endpoints=[], manifest=None, findings=[])
+            ai_disc = AIDiscoveryResult(target_base_url=target_url, scan_mode=scan_mode, manifest=None, findings=[])
             ai_prompt_findings = []
             tool_integrity_findings = []
             perm_findings = []
-            tool_integrity_res = ToolIntegrityAuditResult(
-                verified_count=0, changed_count=0, missing_baseline_count=0, total_tools=0, findings=[]
+            tool_integrity_res = ToolIntegritySummary(
+                verified_count=0, changed_count=0, missing_baseline_count=0, unable_to_inspect_count=0,
+                total_tools=0, results=[], findings=[]
             )
             perm_res = PermissionAnalysisResult(
                 tools_evaluated=[], unapproved_actions_count=0, properly_gated_actions_count=0,

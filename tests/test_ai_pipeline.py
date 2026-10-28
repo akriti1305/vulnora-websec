@@ -77,14 +77,14 @@ class TestAIPipeline(unittest.TestCase):
 
         # Reset lab state
         with httpx.Client(transport=self.transport, base_url=self.base_url) as client:
-            client.post("/assistant/reset")
+            client.post("/assistant/reset", json={"secure_mode": False})
 
     def tearDown(self):
         """Clean up database and reset lab state."""
         self.db.close()
         Base.metadata.drop_all(bind=self.engine)
         with httpx.Client(transport=self.transport, base_url=self.base_url) as client:
-            client.post("/assistant/reset")
+            client.post("/assistant/reset", json={"secure_mode": False})
 
     def _get_mock_discovery(self) -> DiscoveryResult:
         """Helper building a minimal DiscoveryResult including assistant link and form."""

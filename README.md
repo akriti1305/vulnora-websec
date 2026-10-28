@@ -117,11 +117,11 @@ Open two PowerShell windows:
 3. **Run Rescan**: Launch a second scan against `http://127.0.0.1:5001` (Scan ID `B`).
 4. **Compare**: On the dashboard home page, enter Baseline Scan `A` and Comparison Scan `B`, then click **Compare Scans**.
 5. The differential engine partitions findings into 5 states:
-   - `Previously Confirmed`
-   - `Still Confirmed`
-   - `Resolved After Retest`
-   - `Newly Detected`
-   - `Not Retested`
+   - `Previously Confirmed`: 15 (14 confirmed + 1 potential)
+   - `Still Confirmed`: 10 (Layer 1 traditional vulnerabilities remain active)
+   - `Resolved After Retest`: 5 (ALL AI vulnerabilities resolved: Prompt Injection, Canary Leakage, Excessive Agency, Context Taint Hijack, and Reflected XSS on `/assistant`)
+   - `Newly Detected`: 0
+   - `Not Retested`: 0
 
 ### 5.3 Verifying Signed Passports & Tampering Detection
 - **Download Passport**: From any scan report, click **Download Signed Passport (.json)**.

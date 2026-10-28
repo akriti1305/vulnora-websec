@@ -609,6 +609,10 @@ def assistant_query():
     mode_override = None
     if "mode" in data:
         mode_override = data["mode"].lower() in ("secure", "fixed", "1")
+    elif request.headers.get("X-Aegis-Mode"):
+        mode_override = request.headers.get("X-Aegis-Mode", "").lower() in ("secure", "fixed", "1")
+    elif request.args.get("mode"):
+        mode_override = request.args.get("mode", "").lower() in ("secure", "fixed", "1")
 
     res = simulate_ai_agent(
         query=query,
@@ -797,8 +801,15 @@ def assistant_reset():
     """
     POST /assistant/reset — Resets all state back to initial test baseline.
     Essential for repeatable, clean automated test runs.
+    Accepts optional payload {"secure_mode": bool}. If omitted, defaults to _ENV_SECURE.
     """
     global DOCUMENT_STORE, AUDIT_LOG, SIMULATED_OUTBOX, WORKING_TOOLS, STATE_CONFIG
+
+    data = (request.get_json(silent=True) or {}) if request.is_json else (request.form.to_dict() if request.form else {})
+    if "secure_mode" in data:
+        curr_secure = str(data["secure_mode"]).lower() in ("true", "1", "yes", "on")
+    else:
+        curr_secure = STATE_CONFIG.get("secure_mode", _ENV_SECURE)
 
     DOCUMENT_STORE.clear()
     DOCUMENT_STORE.update({doc["id"]: dict(doc) for doc in DEFAULT_DOCUMENTS})
@@ -808,12 +819,12 @@ def assistant_reset():
     WORKING_TOOLS.update(json.loads(json.dumps(BASELINE_TOOLS)))
     STATE_CONFIG.clear()
     STATE_CONFIG.update({
-        "secure_mode": _ENV_SECURE,
-        "scenario_a_indirect_injection": True,
+        "secure_mode": curr_secure,
+        "scenario_a_indirect_injection": not curr_secure,
         "scenario_b_poisoned_tool": False,
         "scenario_c_rugpull": False,
-        "scenario_d_unsafe_html": True,
-        "scenario_e_unapproved_action": True,
+        "scenario_d_unsafe_html": not curr_secure,
+        "scenario_e_unapproved_action": not curr_secure,
     })
 
     if request.accept_mimetypes.accept_html and not request.is_json:
@@ -833,6 +844,13 @@ def assistant_config():
             if key in data:
                 val = str(data[key]).lower() in ("true", "1", "yes", "on")
                 STATE_CONFIG[key] = val
+        if "secure_mode" in data:
+            sm = str(data["secure_mode"]).lower() in ("true", "1", "yes", "on")
+            STATE_CONFIG["secure_mode"] = sm
+            STATE_CONFIG["scenario_a_indirect_injection"] = not sm
+            STATE_CONFIG["scenario_b_poisoned_tool"] = False
+            STATE_CONFIG["scenario_d_unsafe_html"] = not sm
+            STATE_CONFIG["scenario_e_unapproved_action"] = not sm
         if request.accept_mimetypes.accept_html and not request.is_json:
             return redirect(url_for("ai_assistant.assistant_ui"))
 

@@ -111,6 +111,7 @@ def run_live_demonstration():
     try:
         with httpx.Client(timeout=3) as c:
             c.post(f"{target_url}/assistant/config", json={"secure_mode": False})
+            c.post(f"{target_url}/assistant/reset")
     except Exception:
         pass
 
@@ -176,9 +177,11 @@ def run_live_demonstration():
     print("-" * 82)
     try:
         with httpx.Client(timeout=3) as c:
-            c.post(f"{target_url}/assistant/config", json={"secure_mode": True})
-    except Exception:
-        pass
+            r_reset = c.post(f"{target_url}/assistant/reset")
+            r_cfg = c.post(f"{target_url}/assistant/config", json={"secure_mode": True})
+            print(f"  [+] Switched AegisLab to Secure Mode: {r_cfg.json().get('state_config', {})}")
+    except Exception as e:
+        print(f"  [!] Failed to switch AegisLab to Secure Mode: {e}")
 
     scan2_res = start_scan({
         "target_url": target_url,
