@@ -209,35 +209,127 @@
 
 {% if compare %}
 <!-- ===== Summary Banner ===== -->
-{% set has_fixed = compare.fixed_count > 0 %}
-{% set has_new   = compare.new_count   > 0 %}
-<div class="banner {% if has_fixed and not has_new %}good{% elif has_new %}bad{% else %}mixed{% endif %}">
+{% set has_resolved = compare.resolved_after_retest_count > 0 %}
+{% set has_new      = compare.newly_detected_count > 0 %}
+<div class="banner {% if has_resolved and not has_new %}good{% elif has_new %}bad{% else %}mixed{% endif %}">
   <div class="banner-stat">
-    <span class="num" style="color:var(--green)">{{ compare.fixed_count }}</span>
-    <span class="lbl">✅ Issues Fixed</span>
+    <span class="num" style="color:var(--green)">{{ compare.resolved_after_retest_count }}</span>
+    <span class="lbl">✅ Resolved Retested</span>
   </div>
   <div class="banner-stat">
-    <span class="num" style="color:var(--yellow)">{{ compare.persists_count }}</span>
-    <span class="lbl">⚠️ Still Open</span>
+    <span class="num" style="color:var(--yellow)">{{ compare.still_confirmed_count }}</span>
+    <span class="lbl">⚠️ Still Confirmed</span>
   </div>
   <div class="banner-stat">
-    <span class="num" style="color:var(--red)">{{ compare.new_count }}</span>
-    <span class="lbl">🆕 New Issues</span>
+    <span class="num" style="color:var(--red)">{{ compare.newly_detected_count }}</span>
+    <span class="lbl">🆕 Newly Detected</span>
   </div>
+  <div class="banner-stat">
+    <span class="num" style="color:var(--accent)">{{ compare.previously_confirmed_count }}</span>
+    <span class="lbl">📋 Baseline Total</span>
+  </div>
+  {% if compare.not_retested_count > 0 %}
+  <div class="banner-stat">
+    <span class="num" style="color:var(--muted)">{{ compare.not_retested_count }}</span>
+    <span class="lbl">⏸️ Not Retested</span>
+  </div>
+  {% endif %}
   <div style="flex:1;text-align:right;color:var(--muted);font-size:.85rem;">
-    Scan A had <strong style="color:var(--text)">{{ compare.total_in_a }}</strong> findings<br>
-    Scan B has <strong style="color:var(--text)">{{ compare.total_in_b }}</strong> findings
+    Scan A [{{ compare.scan_a_mode|upper }}]: <strong style="color:var(--text)">{{ compare.total_in_a }}</strong> findings<br>
+    Scan B [{{ compare.scan_b_mode|upper }}]: <strong style="color:var(--text)">{{ compare.total_in_b }}</strong> findings
   </div>
 </div>
 
-<!-- ===== Fixed ===== -->
+<!-- ===== Layer 1 vs Layer 2 Audit Summary Grid ===== -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2rem;">
+  <!-- Layer 1 Card -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;">
+    <h3 style="font-size:0.95rem;color:var(--accent);margin-bottom:0.75rem;">🌐 Layer 1: Traditional Web Security</h3>
+    <div style="font-size:0.84rem;color:var(--muted);line-height:1.6;">
+      <div>• SQL Injection: 
+        {% if compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "SQL Injection")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved after retest</strong>
+        {% elif compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "SQL Injection")|list|length > 0 %}
+        <strong style="color:var(--red);">Still confirmed</strong>
+        {% else %}
+        <span style="color:var(--muted);">Not detected in baseline</span>
+        {% endif %}
+      </div>
+      <div>• Reflected XSS: 
+        {% if compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Reflected XSS")|list|length > 0 %}
+        <strong style="color:var(--yellow);">Still confirmed</strong>
+        {% elif compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Reflected XSS")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved after retest</strong>
+        {% else %}
+        <span style="color:var(--muted);">Not detected</span>
+        {% endif %}
+      </div>
+      <div>• IDOR / Access Control: 
+        {% if compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "IDOR (Broken Access Control)")|list|length > 0 %}
+        <strong style="color:var(--yellow);">Still confirmed</strong>
+        {% elif compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "IDOR (Broken Access Control)")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved after retest</strong>
+        {% else %}
+        <span style="color:var(--muted);">Not detected</span>
+        {% endif %}
+      </div>
+      <div>• Security Headers: 
+        <strong style="color:var(--yellow);">Persisting missing controls</strong> ({{ compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Missing Security Header")|list|length }} missing)
+      </div>
+      <div>• Cookie Configuration: 
+        <strong style="color:var(--yellow);">Persisting insecure flags</strong> ({{ compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Insecure Cookie")|list|length }} flags)
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 2 Card -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;">
+    <h3 style="font-size:0.95rem;color:var(--accent);margin-bottom:0.75rem;">🤖 Layer 2: AI-Agent Security</h3>
+    <div style="font-size:0.84rem;color:var(--muted);line-height:1.6;">
+      <div>• Indirect Prompt Injection: 
+        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved &amp; Defended</strong>
+        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
+        <strong style="color:var(--red);">Still confirmed</strong>
+        {% elif compare.not_retested|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
+        <strong style="color:var(--muted);">Not retested (Basic mode)</strong>
+        {% else %}
+        <span style="color:var(--muted);">Clean</span>
+        {% endif %}
+      </div>
+      <div>• AI Canary Disclosure: 
+        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "AI Canary Token Leakage")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved &amp; Secret Protected</strong>
+        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "AI Canary Token Leakage")|list|length > 0 %}
+        <strong style="color:var(--red);">Still confirmed</strong>
+        {% else %}
+        <span style="color:var(--muted);">Protected</span>
+        {% endif %}
+      </div>
+      <div>• Excessive Agency / Approval Gate: 
+        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Excessive Agency: Unapproved High-Impact Action")|list|length > 0 %}
+        <strong style="color:var(--green);">Resolved &rarr; Approval Gate Enforced</strong>
+        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "Excessive Agency: Unapproved High-Impact Action")|list|length > 0 %}
+        <strong style="color:var(--red);">Still confirmed (Unapproved actions)</strong>
+        {% else %}
+        <span style="color:var(--muted);">Gated</span>
+        {% endif %}
+      </div>
+      <div>• Tool Integrity / Anti-Rug-Pull: 
+        <strong style="color:var(--green);">Verified Baseline</strong> (Canonical hashes match)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 1. Resolved After Retest ===== -->
 <div class="section">
   <div class="section-title fixed">
-    ✅ Fixed ({{ compare.fixed_count }}) — in Scan #{{ scan_a_id }}, NOT in Scan #{{ scan_b_id }}
+    ✅ Resolved After Retest ({{ compare.resolved_after_retest_count }}) &mdash; Confirmed in Scan #{{ scan_a_id }}, actively retested and defended in Scan #{{ scan_b_id }}
   </div>
-  {% if compare.fixed %}
+  {% if compare.resolved_after_retest %}
   <div class="card-list">
-    {% for f in compare.fixed %}
+    {% for f in compare.resolved_after_retest %}
     <div class="card-item">
       <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
       <div>
@@ -248,18 +340,18 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-note">No issues were fixed between these two scans.</div>
+  <div class="empty-note">No confirmed vulnerabilities were verified resolved.</div>
   {% endif %}
 </div>
 
-<!-- ===== Still Open ===== -->
+<!-- ===== 2. Still Confirmed ===== -->
 <div class="section">
   <div class="section-title persists">
-    ⚠️ Still Open ({{ compare.persists_count }}) — in both scans
+    ⚠️ Still Confirmed ({{ compare.still_confirmed_count }}) &mdash; Present in both scans
   </div>
-  {% if compare.persists %}
+  {% if compare.still_confirmed %}
   <div class="card-list">
-    {% for f in compare.persists %}
+    {% for f in compare.still_confirmed %}
     <div class="card-item">
       <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
       <div>
@@ -270,18 +362,18 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-note">No persisting issues.</div>
+  <div class="empty-note">No persisting vulnerabilities.</div>
   {% endif %}
 </div>
 
-<!-- ===== New Issues ===== -->
+<!-- ===== 3. Newly Detected ===== -->
 <div class="section">
   <div class="section-title new-sec">
-    🆕 New Issues ({{ compare.new_count }}) — in Scan #{{ scan_b_id }}, NOT in Scan #{{ scan_a_id }}
+    🆕 Newly Detected ({{ compare.newly_detected_count }}) &mdash; Absent in Scan #{{ scan_a_id }}, detected in Scan #{{ scan_b_id }}
   </div>
-  {% if compare.new %}
+  {% if compare.newly_detected %}
   <div class="card-list">
-    {% for f in compare.new %}
+    {% for f in compare.newly_detected %}
     <div class="card-item">
       <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
       <div>
@@ -292,14 +384,36 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-note" style="border-radius: 6px;">No new issues introduced.</div>
+  <div class="empty-note" style="border-radius: 6px;">No new issues introduced in re-scan.</div>
   {% endif %}
 </div>
+
+<!-- ===== 4. Not Retested ===== -->
+{% if compare.not_retested %}
+<div class="section">
+  <div class="section-title" style="background:#1c2128;color:var(--muted);">
+    ⏸️ Not Retested ({{ compare.not_retested_count }}) &mdash; Omitted because Scan #{{ scan_b_id }} was run in {{ compare.scan_b_mode|upper }} mode
+  </div>
+  <div class="card-list">
+    {% for f in compare.not_retested %}
+    <div class="card-item">
+      <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
+      <div>
+        <div class="item-type">{{ f.vulnerability_type }}</div>
+        <div class="item-loc">{{ f.location }} (Cannot claim resolved: feature not tested in re-scan)</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% else %}
 <div style="background:var(--surface); border: 1px dashed var(--border); border-radius: 8px; padding: 2.5rem; text-align: center; color: var(--muted); margin-bottom: 2rem;">
   Select two scans from the dropdown above and click <strong>Compare</strong> to view the differential analysis.
 </div>
 {% endif %}
+
 
 <div class="footer">
   AegisScan &mdash; Before/After Comparison &mdash; Academic Cybersecurity Project

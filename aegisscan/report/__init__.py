@@ -31,20 +31,44 @@ def generate_html_report(
     eval_data: Optional[Dict[str, Any]] = None,
     passport_data: Optional[Dict[str, Any]] = None,
     chain_data: Optional[Dict[str, Any]] = None,
+    scan_mode: str = "deep",
 ) -> str:
     """
-    Render the HTML security report.
-
-    Args:
-        scan_id, target_url, target_name : scan metadata
-        all_findings  : list of finding dicts (vulnerability_type, severity,
-                         status, location, evidence, payload, remediation)
-        scan_started_at, scan_finished_at : datetime objects
-        eval_data     : dict keyed by stage ("pre_validation"/"post_validation")
-                        each value has precision, recall, f1, TP, FP, FN,
-                        tp_list, fp_list, fn_list
+    Render the HTML security report with honest classification separating:
+      - Confirmed vulnerabilities
+      - Potential vulnerabilities
+      - Verified security controls
+      - Informational discoveries
+      - Not reproducible / not tested
     """
     template = _jinja_env.get_template("report.html")
+    from risk import classify_finding_category
+
+    # Categorize findings
+    confirmed_vulns = []
+    potential_vulns = []
+    verified_controls = []
+    info_discoveries = []
+    not_reproducible = []
+    not_tested = []
+
+    for f in all_findings:
+        cat = f.get("category") or classify_finding_category(f.get("vulnerability_type", ""), f.get("status", ""))
+        f["category"] = cat
+        if cat == "confirmed_vulnerability":
+            confirmed_vulns.append(f)
+        elif cat == "potential_vulnerability":
+            potential_vulns.append(f)
+        elif cat == "verified_control":
+            verified_controls.append(f)
+        elif cat == "informational":
+            info_discoveries.append(f)
+        elif cat == "not_reproducible":
+            not_reproducible.append(f)
+        elif cat == "not_tested":
+            not_tested.append(f)
+        else:
+            potential_vulns.append(f)
 
     SEV_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
     sorted_findings = sorted(
@@ -52,11 +76,11 @@ def generate_html_report(
         key=lambda f: SEV_ORDER.get(f.get("severity", "Info"), 5)
     )
 
-    confirmed_count = sum(1 for f in sorted_findings if f.get("status") == "confirmed")
-    severity_counts = {}
+    severity_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0, "Info": 0}
     for f in sorted_findings:
         sev = f.get("severity", "Info")
-        severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        if sev in severity_counts:
+            severity_counts[sev] += 1
 
     # AI Tool Integrity summary
     verified_tools = [f for f in sorted_findings if f.get("vulnerability_type") == "Tool Integrity Verified"]
@@ -114,11 +138,22 @@ def generate_html_report(
         scan_id          = scan_id,
         target_url       = target_url,
         target_name      = target_name,
+        scan_mode        = scan_mode,
         findings         = sorted_findings,
+        confirmed_vulns  = confirmed_vulns,
+        potential_vulns  = potential_vulns,
+        verified_controls= verified_controls,
+        info_discoveries = info_discoveries,
+        not_reproducible = not_reproducible,
+        not_tested       = not_tested,
         scan_started_at  = scan_started_at,
         scan_finished_at = scan_finished_at,
         total_findings   = len(sorted_findings),
-        confirmed_count  = confirmed_count,
+        active_vuln_count= len(confirmed_vulns) + len(potential_vulns),
+        confirmed_count  = len(confirmed_vulns),
+        potential_count  = len(potential_vulns),
+        verified_control_count = len(verified_controls),
+        informational_count    = len(info_discoveries),
         severity_counts  = severity_counts,
         eval_data        = eval_data or {},
         tool_integrity   = tool_integrity_info,
@@ -133,6 +168,7 @@ def generate_home_page(
     scans: List[dict],
     allowed_hosts: List[str],
     error_message: Optional[str] = None,
+    stats: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Render the Home dashboard page.
@@ -141,12 +177,14 @@ def generate_home_page(
         scans        : list of scan summary dicts for the past scans table
         allowed_hosts: list of host strings currently permitted by the scope guard
         error_message: optional error string to display in an alert banner
+        stats        : optional high-level KPI metrics dictionary
     """
     template = _jinja_env.get_template("index.html")
     html = template.render(
         scans         = scans,
         allowed_hosts = allowed_hosts,
         error_message = error_message,
+        stats         = stats or {},
     )
     return html
 

@@ -54,6 +54,50 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
+def upgrade_schema(db_engine=None):
+    """Ensure newly added Phase 12/13 columns exist in SQLite database."""
+    eng = db_engine or engine
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(eng)
+        tables = inspector.get_table_names()
+
+        with eng.connect() as conn:
+            # 1. Check scans table for scan_mode
+            if "scans" in tables:
+                cols = [c["name"] for c in inspector.get_columns("scans")]
+                if "scan_mode" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN scan_mode VARCHAR(32) DEFAULT 'deep'"))
+                    conn.commit()
+
+            # 2. Check findings table for category
+            if "findings" in tables:
+                cols = [c["name"] for c in inspector.get_columns("findings")]
+                if "category" not in cols:
+                    conn.execute(text("ALTER TABLE findings ADD COLUMN category VARCHAR(64) DEFAULT 'potential_vulnerability'"))
+                    conn.commit()
+
+            # 3. Check evaluation_runs table for true_negatives
+            if "evaluation_runs" in tables:
+                cols = [c["name"] for c in inspector.get_columns("evaluation_runs")]
+                if "true_negatives" not in cols:
+                    conn.execute(text("ALTER TABLE evaluation_runs ADD COLUMN true_negatives INTEGER DEFAULT 0"))
+                    conn.commit()
+    except Exception:
+        pass
+
+
+def init_db(db_engine=None):
+    """Initialize all tables and apply migrations."""
+    eng = db_engine or engine
+    Base.metadata.create_all(bind=eng)
+    upgrade_schema(eng)
+
+
+# Run upgrade on module load for persistent databases
+upgrade_schema(engine)
+
+
 # -----------------------------------------------------------------------
 # Dependency: get_db()
 # -----------------------------------------------------------------------

@@ -3,24 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AegisScan &mdash; Dashboard &amp; Scanner</title>
+  <title>AegisScan 2.0 &mdash; Unified Cyber Security Dashboard &amp; Evaluation Platform</title>
   <style>
     :root {
-      --bg:        #0d1117;
-      --surface:   #161b22;
-      --surface2:  #1c2128;
-      --border:    #30363d;
-      --text:      #c9d1d9;
-      --muted:     #8b949e;
-      --accent:    #58a6ff;
-      --green:     #3fb950;
-      --red:       #ff6b6b;
-      --yellow:    #e3b341;
-      --orange:    #ffa657;
-      --critical:  #ff6b6b;
-      --high:      #ffa657;
-      --medium:    #e3b341;
-      --low:       #3fb950;
+      --bg:           #0a0d12;
+      --surface:      #121720;
+      --surface2:     #1a212d;
+      --surface3:     #222b3b;
+      --border:       #2b3547;
+      --border-glow:  rgba(88, 166, 255, 0.25);
+      --text:         #e2e8f0;
+      --muted:        #8b9bb4;
+      --accent:       #38bdf8;
+      --accent-glow:  rgba(56, 189, 248, 0.2);
+      --green:        #34d399;
+      --green-bg:     rgba(52, 211, 153, 0.12);
+      --red:          #f87171;
+      --red-bg:       rgba(248, 113, 113, 0.12);
+      --yellow:       #fbbf24;
+      --yellow-bg:    rgba(251, 191, 36, 0.12);
+      --orange:       #fb923c;
+      --critical:     #ef4444;
+      --high:         #f97316;
+      --medium:       #f59e0b;
+      --low:          #10b981;
+      --info:         #38bdf8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -29,8 +36,8 @@
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 15px;
       line-height: 1.6;
-      padding: 2rem;
-      max-width: 1100px;
+      padding: 1.8rem 2.2rem;
+      max-width: 1240px;
       margin: 0 auto;
     }
 
@@ -39,170 +46,263 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 1.5rem;
+      padding-bottom: 1.4rem;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.8rem;
     }
-    .logo-wrap { display: flex; align-items: baseline; gap: 0.75rem; }
-    .logo {
-      font-size: 1.8rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #58a6ff, #a371f7);
+    .logo-wrap { display: flex; align-items: center; gap: 0.9rem; }
+    .shield-icon {
+      font-size: 2rem;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-decoration: none;
     }
-    .tagline { color: var(--muted); font-size: 0.85rem; }
+    .logo-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .version-tag {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .nav-links { display: flex; align-items: center; gap: 1.2rem; }
     .nav-links a {
       color: var(--muted);
       text-decoration: none;
       font-size: 0.88rem;
-      margin-left: 1.2rem;
-      transition: color 0.2s;
+      font-weight: 600;
+      transition: color 0.15s;
     }
     .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
-    /* Ethical Scope Banner */
-    .ethical-banner {
-      background: rgba(227, 179, 65, 0.08);
-      border: 1px solid rgba(227, 179, 65, 0.35);
+    /* Scope Banner */
+    .scope-banner {
+      background: linear-gradient(90deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
       border-radius: 8px;
-      padding: 0.85rem 1.2rem;
+      padding: 0.85rem 1.25rem;
       margin-bottom: 2rem;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.85rem;
-      font-size: 0.88rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.86rem;
     }
-    .ethical-banner .icon { font-size: 1.3rem; flex-shrink: 0; }
-    .ethical-banner strong { color: var(--yellow); }
-
-    /* Error Alert */
-    .alert-error {
-      background: rgba(255, 107, 107, 0.12);
-      border: 1px solid var(--red);
-      color: #ffb4b4;
-      padding: 0.9rem 1.2rem;
-      border-radius: 8px;
-      margin-bottom: 2rem;
-      font-size: 0.9rem;
+    .scope-text strong { color: #f8fafc; }
+    .scope-badges { display: flex; gap: 0.5rem; }
+    .host-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
     }
 
-    /* Grid for forms */
-    .grid-forms {
+    /* KPI Cards Grid */
+    .kpi-grid {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2.2rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      transition: transform 0.15s, border-color 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+    }
+    .kpi-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .kpi-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-top: 0.35rem;
+      line-height: 1.1;
+    }
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    /* Main Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 1.8rem;
       margin-bottom: 2.5rem;
     }
-    @media (max-width: 820px) {
-      .grid-forms { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
     }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.4rem 1.6rem;
+      border-radius: 12px;
+      padding: 1.5rem 1.8rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     }
     .card-title {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 700;
-      color: #fff;
+      color: #f8fafc;
       margin-bottom: 0.3rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
     }
     .card-subtitle {
       color: var(--muted);
-      font-size: 0.82rem;
-      margin-bottom: 1.2rem;
+      font-size: 0.84rem;
+      margin-bottom: 1.3rem;
     }
 
-    /* Form elements */
-    .form-group {
-      margin-bottom: 1rem;
-    }
+    /* Forms */
+    .form-group { margin-bottom: 1.15rem; }
     label {
       display: block;
       font-size: 0.83rem;
       font-weight: 600;
-      color: var(--text);
-      margin-bottom: 0.35rem;
+      color: #cbd5e1;
+      margin-bottom: 0.4rem;
     }
     input[type="text"], input[type="url"], select {
       width: 100%;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 6px;
-      color: var(--text);
-      padding: 0.55rem 0.75rem;
+      color: #f8fafc;
+      padding: 0.65rem 0.85rem;
       font-size: 0.9rem;
       font-family: inherit;
+      transition: border-color 0.15s;
     }
     input:focus, select:focus {
       outline: none;
       border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
     }
     .hint {
-      font-size: 0.75rem;
+      font-size: 0.76rem;
       color: var(--muted);
-      margin-top: 0.25rem;
+      margin-top: 0.3rem;
     }
 
+    /* Mode Radio Box */
+    .mode-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 0.3rem;
+    }
+    .mode-option {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .mode-option:hover { border-color: rgba(56, 189, 248, 0.5); }
+    .mode-option input { margin-right: 0.5rem; }
+    .mode-title { font-weight: 700; font-size: 0.88rem; color: #f8fafc; }
+    .mode-desc { font-size: 0.74rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* Checkbox */
+    .auth-checkbox-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 1.3rem;
+    }
+    .auth-checkbox-wrap input { margin-top: 0.2rem; cursor: pointer; }
+    .auth-checkbox-text { font-size: 0.8rem; color: #cbd5e1; }
+
+    /* Buttons */
     .btn {
       display: inline-block;
       width: 100%;
-      padding: 0.65rem 1rem;
+      padding: 0.75rem 1.2rem;
       border-radius: 6px;
       font-size: 0.92rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       border: none;
       text-align: center;
       text-decoration: none;
-      transition: background 0.15s, opacity 0.15s;
+      transition: all 0.15s;
     }
     .btn-primary {
-      background: #238636;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
       color: white;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
     }
-    .btn-primary:hover { background: #2ea043; }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8);
+      transform: translateY(-1px);
+    }
     .btn-secondary {
       background: var(--surface2);
       color: var(--accent);
       border: 1px solid var(--border);
     }
-    .btn-secondary:hover { background: #21262d; border-color: var(--accent); }
+    .btn-secondary:hover {
+      background: var(--surface3);
+      border-color: var(--accent);
+    }
 
-    /* Table */
-    .table-section { margin-top: 1rem; }
+    /* Scans Table */
+    .table-section { margin-top: 1.5rem; }
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+      margin-bottom: 1.1rem;
     }
     .section-header h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .scan-count-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 0.2rem 0.6rem;
-      border-radius: 12px;
-      font-size: 0.78rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #f8fafc;
     }
 
     .table-wrap {
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       overflow: hidden;
       background: var(--surface);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     }
     table {
       width: 100%;
@@ -211,68 +311,108 @@
     }
     th {
       background: var(--surface2);
-      padding: 0.7rem 0.9rem;
-      font-size: 0.78rem;
+      padding: 0.85rem 1rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       border-bottom: 1px solid var(--border);
     }
     td {
-      padding: 0.8rem 0.9rem;
+      padding: 0.95rem 1rem;
       border-bottom: 1px solid var(--border);
       font-size: 0.88rem;
       vertical-align: middle;
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(88, 166, 255, 0.03); }
+    tr:hover td { background: rgba(56, 189, 248, 0.025); }
 
-    .badge-status {
+    /* Badges */
+    .badge {
       display: inline-block;
       padding: 2px 8px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 0.74rem;
       font-weight: 700;
       text-transform: uppercase;
     }
-    .status-completed { background: #0d2318; color: var(--green); border: 1px solid #3fb95055; }
-    .status-running   { background: #1f2d3d; color: var(--accent); border: 1px solid #58a6ff55; }
-    .status-failed    { background: #2b0d0d; color: var(--red); border: 1px solid #ff6b6b55; }
+    .badge-deep  { background: rgba(129, 140, 248, 0.15); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.4); }
+    .badge-basic { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.4); }
+    .status-completed { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.4); }
+    .status-running   { background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.4); }
 
-    /* Severity mini-badges */
-    .sev-pill {
+    /* Category counts pills */
+    .cat-pill {
       display: inline-block;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: 4px;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 700;
-      margin-right: 2px;
+      margin-right: 4px;
     }
-    .sp-crit { background: rgba(255, 107, 107, 0.18); color: var(--critical); border: 1px solid rgba(255, 107, 107, 0.4); }
-    .sp-high { background: rgba(255, 166, 87, 0.18); color: var(--high); border: 1px solid rgba(255, 166, 87, 0.4); }
-    .sp-med  { background: rgba(227, 179, 65, 0.18); color: var(--medium); border: 1px solid rgba(227, 179, 65, 0.4); }
-    .sp-low  { background: rgba(63, 185, 80, 0.18); color: var(--low); border: 1px solid rgba(63, 185, 80, 0.4); }
+    .cp-vuln    { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.35); }
+    .cp-control { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.35); }
+    .cp-info    { background: rgba(56, 189, 248, 0.12); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.35); }
 
-    .action-link {
+    .action-btn {
       display: inline-block;
-      background: rgba(88, 166, 255, 0.1);
+      background: rgba(56, 189, 248, 0.1);
       color: var(--accent);
-      border: 1px solid rgba(88, 166, 255, 0.3);
-      padding: 0.25rem 0.65rem;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.35rem 0.8rem;
       border-radius: 5px;
       text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.8rem;
+      font-weight: 700;
       transition: background 0.15s;
     }
-    .action-link:hover { background: rgba(88, 166, 255, 0.2); }
+    .action-btn:hover { background: rgba(56, 189, 248, 0.22); }
 
-    .empty-state {
-      padding: 3rem 1rem;
-      text-align: center;
-      color: var(--muted);
+    .passport-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      text-decoration: none;
     }
+
+    /* Modal / Progress banner */
+    #progress-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(10, 13, 18, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .progress-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.2rem;
+      max-width: 480px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .spinner {
+      border: 3px solid rgba(56, 189, 248, 0.15);
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1.2rem;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     .footer {
       margin-top: 3.5rem;
@@ -280,7 +420,10 @@
       border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: 0.82rem;
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
   </style>
 </head>
@@ -289,83 +432,179 @@
   <!-- Navigation -->
   <div class="nav">
     <div class="logo-wrap">
-      <a href="/" class="logo">🛡️ AegisScan</a>
-      <span class="tagline">Vulnerability Scanner &amp; Evaluation Platform</span>
+      <div class="shield-icon">🛡️</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <span class="logo-title">AegisScan</span>
+          <span class="version-tag">v2.0 Provenance</span>
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);">Unified Web &amp; AI-Agent Security Scanner &amp; Evaluation Platform</div>
+      </div>
     </div>
     <div class="nav-links">
       <a href="/" class="active">Dashboard</a>
-      <a href="/compare">Compare Scans</a>
+      <a href="/compare">Scan Comparison</a>
+      <a href="/api/scans/history/verify" target="_blank">Audit Hash-Chain</a>
       <a href="/docs" target="_blank">API Docs</a>
     </div>
   </div>
 
-  <!-- Ethical Notice Banner -->
-  <div class="ethical-banner">
-    <div class="icon">⚠️</div>
-    <div>
-      <strong>Authorised &amp; Ethical Use Only:</strong> AegisScan is strictly restricted to authorised targets.
-      Default scope permits <code>localhost</code> and <code>127.0.0.1</code> only.
-      Scanning targets you do not own or lack written permission to assess is prohibited.
+  <!-- Scope Banner -->
+  <div class="scope-banner">
+    <div class="scope-text">
+      <strong>ScopeGuard Enforcement:</strong> Scanner is locked to verified localhost testbeds. Outbound network transmission is strictly prohibited.
+    </div>
+    <div class="scope-badges">
+      <span class="host-badge">127.0.0.1</span>
+      <span class="host-badge">localhost</span>
+      <span class="host-badge" style="color:var(--green)">ScopeGuard Active</span>
     </div>
   </div>
 
-  <!-- Error Alert (e.g. Scope violation) -->
+  <!-- Error Alert -->
   {% if error_message %}
-  <div class="alert-error">
+  <div style="background:var(--red-bg);border:1px solid var(--red);color:#fca5a5;padding:0.9rem 1.2rem;border-radius:8px;margin-bottom:1.8rem;font-size:0.88rem;">
     <strong>Scan Error:</strong> {{ error_message }}
   </div>
   {% endif %}
 
-  <!-- Top Action Cards -->
-  <div class="grid-forms">
+  <!-- Platform KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Completed Scans</div>
+      <div class="kpi-value" style="color:#f8fafc;">{{ stats.total_scans | default(scans|length) }}</div>
+      <div class="kpi-sub">Differential audit baseline</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Vulnerabilities</div>
+      <div class="kpi-value" style="color:var(--red);">{{ stats.total_active_vulns | default(0) }}</div>
+      <div class="kpi-sub">Confirmed &amp; potential flaws</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Verified Security Controls</div>
+      <div class="kpi-value" style="color:var(--green);">{{ stats.total_controls | default(0) }}</div>
+      <div class="kpi-sub">Tool integrity &amp; approval gates</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Signed Passports</div>
+      <div class="kpi-value" style="color:var(--accent);">{{ stats.total_passports | default(0) }}</div>
+      <div class="kpi-sub">Ed25519 tamper-evident</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Hash-Chain Status</div>
+      <div class="kpi-value" style="font-size:1.35rem;margin-top:0.6rem;color:{% if stats.chain_status == 'VERIFIED' %}var(--green){% else %}var(--yellow){% endif %};">
+        ✓ {{ stats.chain_status | default('VERIFIED') }}
+      </div>
+      <div class="kpi-sub">Continuous SHA-256 chain</div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Actions Grid -->
+  <div class="dashboard-grid">
 
     <!-- Card 1: Start New Scan -->
     <div class="card">
-      <div class="card-title">🚀 Launch New Scan</div>
-      <div class="card-subtitle">Crawl and test across OWASP Top 10 categories with differential control validation</div>
-      <form method="POST" action="/scan/start">
+      <div class="card-title">🚀 Launch Security Scan</div>
+      <div class="card-subtitle">Execute crawler, Layer 1 vulnerability detectors, and AI-agent verification</div>
+      
+      <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
         <div class="form-group">
-          <label for="target_url">Target URL</label>
+          <label for="target_url">Target Base URL</label>
           <input type="url" id="target_url" name="target_url" value="http://127.0.0.1:5001" required placeholder="http://127.0.0.1:5001">
-          <div class="hint">Permitted hosts: {{ allowed_hosts | join(', ') }}</div>
+          <div class="hint">Permitted authorized hosts: {{ allowed_hosts | join(', ') }}</div>
         </div>
+
         <div class="form-group">
           <label for="target_name">Target Name / Description</label>
-          <input type="text" id="target_name" name="target_name" value="AegisLab" required placeholder="e.g. AegisLab Benchmark">
+          <input type="text" id="target_name" name="target_name" value="AegisLab Testbed" required placeholder="e.g. AegisLab AI Benchmark">
         </div>
-        <button type="submit" class="btn btn-primary">Start Full Vulnerability Scan</button>
+
+        <div class="form-group">
+          <label>Scan Audit Mode</label>
+          <div class="mode-selector">
+            <label class="mode-option">
+              <div style="display:flex;align-items:center;">
+                <input type="radio" name="scan_mode" value="deep" checked>
+                <span class="mode-title">Deep Authorized</span>
+              </div>
+              <div class="mode-desc">Full OWASP L1 + AI discovery, prompt injection, tool integrity, taint flows</div>
+            </label>
+
+            <label class="mode-option">
+              <div style="display:flex;align-items:center;">
+                <input type="radio" name="scan_mode" value="basic">
+                <span class="mode-title">Basic Web Only</span>
+              </div>
+              <div class="mode-desc">Traditional Layer 1 checks only (SQLi, XSS, IDOR, headers, cookies)</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="auth-checkbox-wrap">
+          <input type="checkbox" id="auth_ack" required checked>
+          <label for="auth_ack" class="auth-checkbox-text">
+            <strong>Explicit Authorization:</strong> I certify that I have explicit authorization to assess this local target within ScopeGuard rules.
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="launch-btn">Start Security Scan &rarr;</button>
       </form>
     </div>
 
-    <!-- Card 2: Quick Scan Comparison -->
-    <div class="card">
-      <div class="card-title">🔍 Scan Comparison</div>
-      <div class="card-subtitle">Evaluate before vs. after scans to track fixed, persisting, or new vulnerabilities</div>
-      {% if scans and scans|length >= 2 %}
-      <form method="GET" action="/compare">
-        <div class="form-group">
-          <label for="scan_a">Baseline Scan (Before):</label>
-          <select name="a" id="scan_a" required>
-            {% for s in scans %}
-            <option value="{{ s.id }}">Scan #{{ s.id }} &mdash; {{ s.target_name }} ({{ s.findings_count }} findings)</option>
-            {% endfor %}
-          </select>
+    <!-- Right Side: Fast Compare & Provenance Audit -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Card 2: Differential Compare -->
+      <div class="card">
+        <div class="card-title">⚖️ Vulnerable vs Fixed Comparison</div>
+        <div class="card-subtitle">Evaluate baseline vs re-scan to verify genuine vulnerability remediation</div>
+
+        {% if scans and scans|length >= 2 %}
+        <form method="GET" action="/compare">
+          <div class="form-group">
+            <label for="scan_a">Baseline Scan (Scan A):</label>
+            <select name="a" id="scan_a" required>
+              {% for s in scans %}
+              <option value="{{ s.id }}">Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="scan_b">Re-Scan (Scan B):</label>
+            <select name="b" id="scan_b" required>
+              {% for s in scans %}
+              <option value="{{ s.id }}" {% if loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-secondary">Run Differential Comparison</button>
+        </form>
+        {% else %}
+        <div style="color:var(--muted);font-size:0.86rem;padding:1rem 0;">
+          Execute at least two scans to enable differential before/after comparison.
         </div>
-        <div class="form-group">
-          <label for="scan_b">Re-Scan (After):</label>
-          <select name="b" id="scan_b" required>
-            {% for s in scans %}
-            <option value="{{ s.id }}" {% if loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} ({{ s.findings_count }} findings)</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button type="submit" class="btn btn-secondary">Compare Scans</button>
-      </form>
-      {% else %}
-      <div style="color: var(--muted); font-size: 0.88rem; padding: 1.5rem 0;">
-        Run at least two scans to enable before/after differential comparison.
+        {% endif %}
       </div>
-      {% endif %}
+
+      <!-- Card 3: Provenance Verification Shortcut -->
+      <div class="card">
+        <div class="card-title">🔐 Cryptographic Trust Audit</div>
+        <div class="card-subtitle">Verify Ed25519 signatures and append-only SHA-256 scan-history chain</div>
+        <div style="font-size:0.84rem;color:#cbd5e1;margin-bottom:1rem;">
+          Every scan generates a canonical signed passport linked to the continuous ledger ($H_n = \text{SHA256}(R_n \parallel H_{n-1})$).
+        </div>
+        <div style="display:flex;gap:0.75rem;">
+          <a href="/api/scans/history/verify" target="_blank" class="btn btn-secondary" style="font-size:0.82rem;padding:0.6rem;">
+            🔍 Verify Hash Chain
+          </a>
+          <a href="/api/passports/public-key" target="_blank" class="btn btn-secondary" style="font-size:0.82rem;padding:0.6rem;">
+            🔑 Export Public Key
+          </a>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -373,8 +612,8 @@
   <!-- Past Scans Table Section -->
   <div class="table-section">
     <div class="section-header">
-      <h2>Recent Security Scans</h2>
-      <span class="scan-count-badge">{{ scans|length }} total scans</span>
+      <h2>Scan History &amp; Cryptographic Ledger</h2>
+      <span style="font-size:0.85rem;color:var(--muted);">{{ scans|length }} records linked</span>
     </div>
 
     <div class="table-wrap">
@@ -382,12 +621,13 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 50px;">#</th>
-            <th>Target</th>
-            <th>Started</th>
+            <th style="width: 60px;">#</th>
+            <th>Target &amp; Mode</th>
+            <th>Timestamp</th>
             <th>Status</th>
-            <th>Findings</th>
+            <th>Category Breakdown</th>
             <th>Severity Breakdown</th>
+            <th>Provenance</th>
             <th style="text-align: right;">Action</th>
           </tr>
         </thead>
@@ -396,52 +636,89 @@
           <tr>
             <td><strong>#{{ s.id }}</strong></td>
             <td>
-              <div style="font-weight: 600;">{{ s.target_name }}</div>
-              <code style="font-size: 0.78rem; color: var(--muted);">{{ s.target_url }}</code>
+              <div style="font-weight:700;color:#f8fafc;">{{ s.target_name }}</div>
+              <div style="display:flex;align-items:center;gap:0.4rem;margin-top:2px;">
+                <span class="badge badge-{{ s.scan_mode }}">{{ s.scan_mode }}</span>
+                <code style="font-size:0.76rem;color:var(--muted);">{{ s.target_url }}</code>
+              </div>
             </td>
-            <td style="color: var(--muted); font-size: 0.82rem;">{{ s.started_at }}</td>
+            <td style="color:var(--muted);font-size:0.82rem;">{{ s.started_at }}</td>
             <td>
-              <span class="badge-status status-{{ s.status }}">{{ s.status }}</span>
+              <span class="badge status-{{ s.status }}">{{ s.status }}</span>
             </td>
             <td>
-              <strong>{{ s.findings_count }}</strong> issue{{ 's' if s.findings_count != 1 else '' }}
+              <span class="cat-pill cp-vuln">{{ s.active_vulns_count }} Vulns</span>
+              <span class="cat-pill cp-control">{{ s.verified_controls_count }} Controls</span>
+              {% if s.informational_count > 0 %}
+              <span class="cat-pill cp-info">{{ s.informational_count }} Info</span>
+              {% endif %}
             </td>
             <td>
               {% if s.severity_counts.Critical > 0 %}
-              <span class="sev-pill sp-crit">{{ s.severity_counts.Critical }} Crit</span>
+              <span style="color:var(--critical);font-weight:700;font-size:0.78rem;">{{ s.severity_counts.Critical }} Crit</span>
               {% endif %}
               {% if s.severity_counts.High > 0 %}
-              <span class="sev-pill sp-high">{{ s.severity_counts.High }} High</span>
+              <span style="color:var(--high);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.High }} High</span>
               {% endif %}
               {% if s.severity_counts.Medium > 0 %}
-              <span class="sev-pill sp-med">{{ s.severity_counts.Medium }} Med</span>
+              <span style="color:var(--medium);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.Medium }} Med</span>
               {% endif %}
               {% if s.severity_counts.Low > 0 %}
-              <span class="sev-pill sp-low">{{ s.severity_counts.Low }} Low</span>
+              <span style="color:var(--low);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.Low }} Low</span>
               {% endif %}
               {% if s.findings_count == 0 %}
-              <span style="color: var(--muted); font-size: 0.8rem;">None</span>
+              <span style="color:var(--green);font-size:0.78rem;font-weight:700;">Clean</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.has_passport %}
+              <a href="{{ s.passport_verify_url }}" target="_blank" class="passport-badge">
+                ✓ Ed25519 Signed
+              </a>
+              {% else %}
+              <span style="color:var(--muted);font-size:0.78rem;">Pending</span>
               {% endif %}
             </td>
             <td style="text-align: right;">
-              <a href="{{ s.report_url }}" class="action-link">View Report &rarr;</a>
+              <a href="{{ s.report_url }}" class="action-btn">View Report &rarr;</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <div class="empty-state">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
-        <div>No scans recorded yet. Launch a scan above to begin.</div>
+      <div style="padding:3.5rem 1rem;text-align:center;color:var(--muted);">
+        <div style="font-size:2.2rem;margin-bottom:0.5rem;">🛡️</div>
+        <div>No security scans recorded yet. Enter target URL above and launch a scan.</div>
       </div>
       {% endif %}
     </div>
   </div>
 
+  <!-- Progress Overlay -->
+  <div id="progress-overlay">
+    <div class="progress-box">
+      <div class="spinner"></div>
+      <h3 style="color:#f8fafc;font-size:1.15rem;margin-bottom:0.4rem;">Executing Security Scan</h3>
+      <p style="color:var(--muted);font-size:0.86rem;line-height:1.5;">
+        Crawling endpoints, testing SQLi, XSS, IDOR, headers, cookies, and auditing AI agent boundaries. Generating cryptographic passport...
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function showScanProgress() {
+      document.getElementById('progress-overlay').style.display = 'flex';
+      const btn = document.getElementById('launch-btn');
+      btn.innerText = 'Scanning Target...';
+      btn.style.opacity = '0.7';
+    }
+  </script>
+
   <!-- Footer -->
   <div class="footer">
-    AegisScan &mdash; Academic Cybersecurity Project &mdash; Built for Authorised Evaluation and Defensive Auditing
+    <div>AegisScan 2.0 &mdash; Explainable Web &amp; AI-Agent Security Scanner with Cryptographic Provenance</div>
+    <div>Course Project &bull; Evaluation Benchmark &bull; Academic Defense</div>
   </div>
 
 </body>

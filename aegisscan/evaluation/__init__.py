@@ -1,204 +1,281 @@
 """
-evaluation/__init__.py -- AegisScan Evaluation Harness
-=======================================================
+evaluation/__init__.py -- AegisScan Evaluation Harness 2.0 (Phase 13)
+======================================================================
 Measures the scanner's accuracy against AegisLab's known ground truth.
 
-Ground truth (the "answer key"):
-  These are the KNOWN vulnerabilities intentionally built into AegisLab.
-  Every finding that matches one of these is a True Positive (TP).
-  Every finding that does NOT match is a False Positive (FP).
-  Every known flaw NOT found by the scanner is a False Negative (FN).
+Ground Truth Architecture:
+1. TRADITIONAL_GROUND_TRUTH:
+   9 intentional Layer 1 web flaws (SQLi on /login, XSS on /search, IDOR on /user/profile,
+   4 missing security headers, 2 insecure cookie flags).
+2. AI_AGENT_GROUND_TRUTH:
+   Intentional AI-agent vulnerabilities (Indirect Prompt Injection on /assistant/query,
+   AI Canary Token Disclosure, Reflected XSS on /assistant, Excessive Agency Unapproved Actions,
+   Tool Metadata Rug-Pull/Poisoning).
+3. BENIGN_CONTROLS_GROUND_TRUTH:
+   Known safe controls/decoys (Decoy login, Decoy product, Benign whitepaper doc-03, Calculate utility).
+   Correctly rejecting/defending these contributes to True Negatives (TN).
 
-Matching rule:
-  A finding matches a ground-truth item if BOTH match:
-    - vulnerability_type  (e.g. "SQL Injection")
-    - location path prefix (e.g. "/login")
-  We use the path portion only (not query string, not full host)
-  so the match works regardless of port, host, or query string.
-
-Metrics computed:
-  Precision = TP / (TP + FP)  -- of what the scanner reported, how much was right?
-  Recall    = TP / (TP + FN)  -- of the known flaws, how many were found?
-  F1        = 2 * P * R / (P + R)  -- harmonic mean (balance of P and R)
-
-Called TWICE per scan:
-  1. pre_validation  : using all raw findings (before control-request validation)
-  2. post_validation : using only confirmed findings
-
-This lets you see what the validation layer changed.
+Investigation of Pre- vs Post-Validation Precision:
+- Prior reports noted an apparent decrease in precision from pre-validation (81.8%) to
+  post-validation (56.2%).
+- Root Cause Identified: Denominator mismatch & ground-truth omission.
+  The pre-validation list only passed Layer 1 detectors, while post-validation passed all findings
+  including AI features (Phase 7-11) and verified controls. Because the static ground-truth table
+  only had Layer 1 vulnerabilities, real AI findings and verified security controls were incorrectly
+  counted as False Positives.
+- In Evaluation 2.0, findings are correctly classified, non-vulnerability controls are excluded from
+  vulnerability false positives, and metrics are computed cleanly for Traditional, AI, and Combined scopes.
 """
 
 import json
 from urllib.parse import urlparse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Set, Tuple
 from sqlalchemy.orm import Session
 
 from models import EvaluationRun
 
+# ---------------------------------------------------------------------------
+# Finding Classification Types
+# ---------------------------------------------------------------------------
+INFORMATIONAL_TYPES = {
+    "AI Assistant Discovered",
+    "AI Security Manifest Detected",
+    "Tool Baseline Unavailable",
+}
+
+VERIFIED_CONTROL_TYPES = {
+    "Tool Integrity Verified",
+    "AI Agent Approval Gate Verified",
+}
+
 
 # ---------------------------------------------------------------------------
-# AegisLab Ground Truth -- the "answer key"
+# 1. Traditional Ground Truth (Layer 1 Web Flaws)
 # ---------------------------------------------------------------------------
-# Each entry is one known vulnerability in AegisLab.
-# "path_prefix" matches any finding location that STARTS WITH this path.
-# "type" must match finding.vulnerability_type exactly.
-#
-# HOW TO READ THIS:
-#   If the scanner reports a finding with type="SQL Injection" and
-#   location containing "/login", that is a True Positive.
-#   If it reports type="SQL Injection" on "/search", that is a False Positive
-#   (there is no SQLi in /search -- only XSS).
-# ---------------------------------------------------------------------------
-AEGISLAB_GROUND_TRUTH: List[Dict[str, str]] = [
+TRADITIONAL_GROUND_TRUTH: List[Dict[str, Any]] = [
     {
         "name": "SQL Injection on /login",
         "type": "SQL Injection",
         "path_prefix": "/login",
+        "category": "traditional",
     },
     {
         "name": "Reflected XSS on /search",
         "type": "Reflected XSS",
         "path_prefix": "/search",
+        "category": "traditional",
     },
     {
         "name": "IDOR on /user/profile",
         "type": "IDOR (Broken Access Control)",
         "path_prefix": "/user/profile",
+        "category": "traditional",
     },
     {
         "name": "Missing Content-Security-Policy header",
         "type": "Missing Security Header",
-        "path_prefix": "/",          # any page -- headers are app-wide
+        "path_prefix": "/",
         "header_name": "Content-Security-Policy",
+        "category": "traditional",
     },
     {
         "name": "Missing Strict-Transport-Security header",
         "type": "Missing Security Header",
         "path_prefix": "/",
         "header_name": "Strict-Transport-Security",
+        "category": "traditional",
     },
     {
         "name": "Missing X-Frame-Options header",
         "type": "Missing Security Header",
         "path_prefix": "/",
         "header_name": "X-Frame-Options",
+        "category": "traditional",
     },
     {
         "name": "Missing X-Content-Type-Options header",
         "type": "Missing Security Header",
         "path_prefix": "/",
         "header_name": "X-Content-Type-Options",
+        "category": "traditional",
     },
     {
         "name": "Insecure Cookie: missing HttpOnly flag",
         "type": "Insecure Cookie",
         "path_prefix": "/",
         "flag": "HttpOnly",
+        "category": "traditional",
     },
     {
         "name": "Insecure Cookie: missing Secure flag",
         "type": "Insecure Cookie",
         "path_prefix": "/",
         "flag": "Secure",
+        "category": "traditional",
     },
+]
+
+
+# ---------------------------------------------------------------------------
+# 2. AI-Agent Ground Truth (Phase 7-11 AI Agent Security Flaws)
+# ---------------------------------------------------------------------------
+AI_AGENT_GROUND_TRUTH: List[Dict[str, Any]] = [
+    {
+        "name": "Reflected XSS on /assistant",
+        "type": "Reflected XSS",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+    {
+        "name": "Indirect Prompt Injection on /assistant/query",
+        "type": "Indirect Prompt Injection",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+    {
+        "name": "AI Canary Token Leakage on /assistant/query",
+        "type": "AI Canary Token Leakage",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+    {
+        "name": "Excessive Agency: Unapproved High-Impact Action",
+        "type": "Excessive Agency: Unapproved High-Impact Action",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+    {
+        "name": "Tool Metadata Rug-Pull on /assistant/tools",
+        "type": "Tool Metadata Rug-Pull",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+    {
+        "name": "Poisoned Tool Description on /assistant/tools",
+        "type": "Poisoned Tool Description",
+        "path_prefix": "/assistant",
+        "category": "ai_agent",
+    },
+]
+
+# Combined Ground Truth (full answer key)
+AEGISLAB_GROUND_TRUTH: List[Dict[str, Any]] = TRADITIONAL_GROUND_TRUTH + AI_AGENT_GROUND_TRUTH
+
+# Known Benign Decoy Controls for True Negative (TN) Assessment
+BENIGN_DECOY_CONTROLS: List[Dict[str, str]] = [
+    {"name": "Decoy Login (/decoy/login)", "path": "/decoy/login"},
+    {"name": "Decoy Product Catalogue (/decoy/product)", "path": "/decoy/product"},
+    {"name": "Benign AI Document (doc-03 Whitepaper)", "path": "/assistant/documents"},
+    {"name": "Safe Utility Tool (calculate)", "path": "/assistant/tools"},
 ]
 
 
 # ---------------------------------------------------------------------------
 # Matching helpers
 # ---------------------------------------------------------------------------
-
 def _location_path(location: str) -> str:
-    """
-    Extract the path from a finding location string.
-
-    Handles formats like:
-      "http://127.0.0.1:5001/login (field: username)"  -> "/login"
-      "http://127.0.0.1:5001/search (field: q)"        -> "/search"
-      "http://127.0.0.1:5001/"                          -> "/"
-    """
-    # Strip the "(field: ...)" or "(param: ...)" annotation
-    clean = location.split(" (")[0].strip()
+    """Extract clean URL path from finding location string."""
+    clean = (location or "").split(" (")[0].strip()
     try:
         return urlparse(clean).path or "/"
     except Exception:
         return "/"
 
 
-def _matches_ground_truth(finding_type: str, finding_path: str,
-                           finding_evidence: str, gt_item: Dict) -> bool:
-    """
-    Return True if a finding matches a ground-truth entry.
-
-    Basic match: type AND path prefix both match.
-    For header findings: also check evidence contains the header name.
-    For cookie findings: also check evidence contains the flag name.
-    """
+def _matches_ground_truth(
+    finding_type: str,
+    finding_path: str,
+    finding_evidence: str,
+    gt_item: Dict[str, Any]
+) -> bool:
+    """Check if finding attributes match ground-truth entry."""
     if finding_type != gt_item["type"]:
         return False
 
-    if not finding_path.startswith(gt_item["path_prefix"]):
+    # Path prefix match
+    path_prefix = gt_item.get("path_prefix", "/")
+    if path_prefix != "/" and not finding_path.startswith(path_prefix):
         return False
 
     # Extra specificity for header findings
     if "header_name" in gt_item:
-        return gt_item["header_name"].lower() in (finding_evidence or "").lower()
+        if gt_item["header_name"].lower() not in (finding_evidence or "").lower():
+            return False
 
     # Extra specificity for cookie findings
     if "flag" in gt_item:
-        return gt_item["flag"].lower() in (finding_evidence or "").lower()
+        if gt_item["flag"].lower() not in (finding_evidence or "").lower():
+            return False
 
     return True
 
 
 # ---------------------------------------------------------------------------
-# Core evaluation function
+# Evaluation Engine 2.0
 # ---------------------------------------------------------------------------
-
 def evaluate_scan(
     findings: List[Dict[str, Any]],
     stage: str,
     scan_id: int,
     db: Session,
+    scope: str = "all",
 ) -> EvaluationRun:
     """
-    Compare a list of findings against the AegisLab ground truth.
+    Evaluates findings against AegisLab ground truth.
 
     Args:
-        findings : list of dicts with keys:
-                     vulnerability_type, location, evidence, status
-        stage    : "pre_validation" or "post_validation"
-        scan_id  : integer scan ID for the DB record
-        db       : SQLAlchemy session for saving the EvaluationRun
-
-    Returns:
-        EvaluationRun object (already committed to DB)
+        findings : list of finding dicts
+        stage    : 'pre_validation', 'post_validation', 'traditional', or 'ai_agent'
+        scan_id  : integer scan ID
+        db       : database session
+        scope    : 'all', 'traditional', or 'ai_agent'
     """
-    # Track which ground-truth items were matched (to find FNs)
-    matched_gt_indices: set = set()
+    # Select appropriate ground truth subset
+    if scope == "traditional":
+        ground_truth = TRADITIONAL_GROUND_TRUTH
+    elif scope == "ai_agent":
+        ground_truth = AI_AGENT_GROUND_TRUTH
+    else:
+        ground_truth = AEGISLAB_GROUND_TRUTH
+
+    matched_gt_indices: Set[int] = set()
     tp_names: List[str] = []
     fp_names: List[str] = []
 
+    # Separate findings by category
     for f in findings:
-        # Stage 2 (post_validation) evaluates confirmed findings only
-        if stage == "post_validation" and f.get("status") != "confirmed":
-            continue
-
-        f_type     = f.get("vulnerability_type", "")
-        f_path     = _location_path(f.get("location", ""))
+        f_type = f.get("vulnerability_type", "")
+        f_status = f.get("status", "potential")
+        f_path = _location_path(f.get("location", ""))
         f_evidence = f.get("evidence", "")
 
+        # Skip informational discoveries & verified controls from vulnerability FP/TP counting
+        if f_type in INFORMATIONAL_TYPES or f_type in VERIFIED_CONTROL_TYPES:
+            continue
+
+        # In post_validation, evaluate confirmed vulnerabilities only
+        if stage in ("post_validation", "confirmed_only") and f_status != "confirmed":
+            continue
+
+        # If evaluating a specific scope, filter findings
+        if scope == "traditional":
+            if f_type in ("Indirect Prompt Injection", "AI Canary Token Leakage",
+                           "Excessive Agency: Unapproved High-Impact Action",
+                           "Tool Metadata Rug-Pull", "Poisoned Tool Description") or "/assistant" in f_path:
+                continue
+        elif scope == "ai_agent":
+            if f_type in ("SQL Injection", "Reflected XSS", "IDOR (Broken Access Control)", "Missing Security Header", "Insecure Cookie") and "/assistant" not in f_path:
+                continue
+
         matched = False
-        for idx, gt in enumerate(AEGISLAB_GROUND_TRUTH):
+        for idx, gt in enumerate(ground_truth):
             if _matches_ground_truth(f_type, f_path, f_evidence, gt):
                 if idx not in matched_gt_indices:
                     matched_gt_indices.add(idx)
                     tp_names.append(f"{gt['name']} [found at {f.get('location','?')[:60]}]")
-                # If already matched this GT item, subsequent findings for it are FPs
                 else:
                     fp_names.append(
-                        f"{f_type} at {f.get('location','?')[:60]} "
-                        f"(duplicate match for '{gt['name']}')"
+                        f"{f_type} at {f.get('location','?')[:60]} (duplicate match for '{gt['name']}')"
                     )
                 matched = True
                 break
@@ -206,41 +283,52 @@ def evaluate_scan(
         if not matched:
             fp_names.append(f"{f_type} at {f.get('location','?')[:60]}")
 
-    # False Negatives: ground-truth items never matched
+    # False Negatives: Ground-truth items that were not detected
     fn_names: List[str] = [
-        AEGISLAB_GROUND_TRUTH[i]["name"]
-        for i in range(len(AEGISLAB_GROUND_TRUTH))
+        ground_truth[i]["name"]
+        for i in range(len(ground_truth))
         if i not in matched_gt_indices
     ]
+
+    # True Negatives: Known benign decoy controls that were defended/not reported as confirmed vulns
+    tn_count = 0
+    confirmed_locations = {
+        _location_path(f.get("location", ""))
+        for f in findings if f.get("status") == "confirmed"
+    }
+    for b in BENIGN_DECOY_CONTROLS:
+        if b["path"] not in confirmed_locations:
+            tn_count += 1
 
     tp = len(tp_names)
     fp = len(fp_names)
     fn = len(fn_names)
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1        = (2 * precision * recall / (precision + recall)
-                 if (precision + recall) > 0 else 0.0)
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (2 * precision * recall / (precision + recall)
+          if (precision + recall) > 0 else 0.0)
 
     eval_run = EvaluationRun(
-        scan_id         = scan_id,
-        true_positives  = tp,
-        false_positives = fp,
-        false_negatives = fn,
-        precision       = round(precision, 4),
-        recall          = round(recall, 4),
-        f1_score        = round(f1, 4),
-        stage           = stage,
-        tp_list         = json.dumps(tp_names),
-        fp_list         = json.dumps(fp_names),
-        fn_list         = json.dumps(fn_names),
+        scan_id=scan_id,
+        true_positives=tp,
+        false_positives=fp,
+        false_negatives=fn,
+        true_negatives=tn_count,
+        precision=round(precision, 4),
+        recall=round(recall, 4),
+        f1_score=round(f1, 4),
+        stage=stage,
+        tp_list=json.dumps(tp_names),
+        fp_list=json.dumps(fp_names),
+        fn_list=json.dumps(fn_names),
     )
     db.add(eval_run)
     db.commit()
     db.refresh(eval_run)
 
     print(
-        f"  [Eval/{stage}] TP={tp} FP={fp} FN={fn} "
+        f"  [Eval/{stage}:{scope}] TP={tp} FP={fp} FN={fn} TN={tn_count} "
         f"P={precision:.1%} R={recall:.1%} F1={f1:.1%}"
     )
 

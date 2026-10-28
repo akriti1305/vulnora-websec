@@ -109,6 +109,7 @@ def validate_target_scope(target_url: str) -> None:
 # Helper: convert a ScoredFinding to a plain dict for DB + evaluation
 # ---------------------------------------------------------------------------
 def _scored_to_dict(sf) -> dict:
+    cat = getattr(sf, "category", "") or risk.classify_finding_category(sf.vuln_type, sf.status)
     return {
         "vulnerability_type": sf.vuln_type,
         "severity"          : sf.severity,
@@ -117,6 +118,7 @@ def _scored_to_dict(sf) -> dict:
         "evidence"          : sf.evidence,
         "payload"           : sf.payload,
         "remediation"       : sf.remediation_advice,
+        "category"          : cat,
     }
 
 
@@ -127,13 +129,16 @@ def _scored_to_dict(sf) -> dict:
 def start_scan(payload: dict, db: Session = Depends(get_db)):
     """
     Request body:
-        { "target_url": "http://127.0.0.1:5001", "target_name": "AegisLab" }
+        { "target_url": "http://127.0.0.1:5001", "target_name": "AegisLab", "scan_mode": "deep" }
 
-    Runs the full pipeline and returns a JSON summary.
+    Runs the scan pipeline and returns a JSON summary.
     View HTML report: GET /api/scans/{id}/report
     """
     target_url  = payload.get("target_url")
     target_name = payload.get("target_name", "Unnamed Target")
+    scan_mode   = str(payload.get("scan_mode", "deep")).strip().lower()
+    if scan_mode not in ("deep", "basic"):
+        scan_mode = "deep"
 
     if not target_url:
         raise HTTPException(status_code=400, detail="target_url is required")
@@ -148,13 +153,13 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(target)
 
-    scan = Scan(target_id=target.id, status="running", started_at=datetime.utcnow())
+    scan = Scan(target_id=target.id, status="running", scan_mode=scan_mode, started_at=datetime.utcnow())
     db.add(scan)
     db.commit()
     db.refresh(scan)
     scan_id = scan.id
 
-    print(f"\n[AegisScan] ===== Scan #{scan_id} started against {target_url} =====")
+    print(f"\n[AegisScan] ===== Scan #{scan_id} ({scan_mode.upper()}) started against {target_url} =====")
 
     try:
         # ---- Step 1: Crawl -----------------------------------------------
@@ -189,37 +194,54 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
         ck_raw    = cookie_detector.detect(disc)
         ck_scored = risk.score_cookie_findings(ck_raw)
 
-        # ---- Step 7: AI Feature & Manifest Discovery (Phase 8) -------------
-        print("[AegisScan] Step 7/8 -- AI Feature & Manifest Discovery...")
-        scan_mode = payload.get("scan_mode", "deep").lower()
-        ai_disc = ai_discovery.detect_ai_features(disc, target_url, scan_mode=scan_mode)
+        # ---- Steps 7-10: AI Layer Checks (Deep Authorized mode only) --------
+        if scan_mode == "basic":
+            print("[AegisScan] Basic mode selected: Skipping deep AI agent active auditing.")
+            from detectors.ai_discovery import AIDiscoveryResult
+            from detectors.tool_integrity_monitor import ToolIntegrityAuditResult
+            from detectors.agent_permission_analyzer import PermissionAnalysisResult
+            ai_disc = AIDiscoveryResult(found=False, endpoints=[], manifest=None, findings=[])
+            ai_prompt_findings = []
+            tool_integrity_findings = []
+            perm_findings = []
+            tool_integrity_res = ToolIntegrityAuditResult(
+                verified_count=0, changed_count=0, missing_baseline_count=0, total_tools=0, findings=[]
+            )
+            perm_res = PermissionAnalysisResult(
+                tools_evaluated=[], unapproved_actions_count=0, properly_gated_actions_count=0,
+                approval_gate_enforced=False, taint_graphs=[], unified_attack_paths=[], findings=[]
+            )
+        else:
+            # ---- Step 7: AI Feature & Manifest Discovery (Phase 8) -------------
+            print("[AegisScan] Step 7/8 -- AI Feature & Manifest Discovery...")
+            ai_disc = ai_discovery.detect_ai_features(disc, target_url, scan_mode=scan_mode)
 
-        # ---- Step 8: Indirect Prompt Injection & Canary Validation (Phase 9)
-        print("[AegisScan] Step 8/9 -- Indirect Prompt Injection & Canary Validation...")
-        ai_prompt_findings = prompt_injection_detector.detect_indirect_prompt_injection(disc, ai_disc)
+            # ---- Step 8: Indirect Prompt Injection & Canary Validation (Phase 9)
+            print("[AegisScan] Step 8/9 -- Indirect Prompt Injection & Canary Validation...")
+            ai_prompt_findings = prompt_injection_detector.detect_indirect_prompt_injection(disc, ai_disc)
 
-        # ---- Step 9: Tool Integrity & Anti-Rug-Pull Monitor (Phase 10) ------
-        print("[AegisScan] Step 9/10 -- Tool Integrity & Anti-Rug-Pull Verification...")
-        guard = ScopeGuard()
-        tool_integrity_res = tool_integrity_monitor.verify_tool_integrity(
-            ai_discovery_result=ai_disc,
-            target_base_url=target_url,
-            scan_mode=scan_mode,
-            scope_guard=guard
-        )
-        tool_integrity_findings = tool_integrity_res.findings
+            # ---- Step 9: Tool Integrity & Anti-Rug-Pull Monitor (Phase 10) ------
+            print("[AegisScan] Step 9/10 -- Tool Integrity & Anti-Rug-Pull Verification...")
+            guard = ScopeGuard()
+            tool_integrity_res = tool_integrity_monitor.verify_tool_integrity(
+                ai_discovery_result=ai_disc,
+                target_base_url=target_url,
+                scan_mode=scan_mode,
+                scope_guard=guard
+            )
+            tool_integrity_findings = tool_integrity_res.findings
 
-        # ---- Step 10: Context Taint Tracking & Excessive Agency (Phase 11) ---
-        print("[AegisScan] Step 10/10 -- Context Taint Tracking & Excessive Agency Analysis...")
-        perm_res = agent_permission_analyzer.analyze_agent_permissions(
-            ai_discovery_result=ai_disc,
-            target_base_url=target_url,
-            scan_mode=scan_mode,
-            scope_guard=guard,
-            prompt_findings=ai_prompt_findings,
-            tool_findings=tool_integrity_findings
-        )
-        perm_findings = perm_res.findings
+            # ---- Step 10: Context Taint Tracking & Excessive Agency (Phase 11) ---
+            print("[AegisScan] Step 10/10 -- Context Taint Tracking & Excessive Agency Analysis...")
+            perm_res = agent_permission_analyzer.analyze_agent_permissions(
+                ai_discovery_result=ai_disc,
+                target_base_url=target_url,
+                scan_mode=scan_mode,
+                scope_guard=guard,
+                prompt_findings=ai_prompt_findings,
+                tool_findings=tool_integrity_findings
+            )
+            perm_findings = perm_res.findings
 
         # ---- Collect all scored findings ------------------------------------
         all_scored = (
@@ -264,11 +286,13 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
             })
 
         print("[AegisScan] Running evaluation harness (pre-validation)...")
-        eval_pre  = evaluator.evaluate_scan(raw_dicts,  "pre_validation",  scan_id, db)
+        eval_pre  = evaluator.evaluate_scan(raw_dicts,  "pre_validation",  scan_id, db, scope="traditional")
         print("[AegisScan] Running evaluation harness (post-validation)...")
-        eval_post = evaluator.evaluate_scan(all_dicts, "post_validation", scan_id, db)
+        eval_post = evaluator.evaluate_scan(all_dicts, "post_validation", scan_id, db, scope="all")
+        eval_trad = evaluator.evaluate_scan(all_dicts, "traditional", scan_id, db, scope="traditional")
+        eval_ai   = evaluator.evaluate_scan(all_dicts, "ai_agent", scan_id, db, scope="ai_agent") if scan_mode == "deep" else None
 
-        # ---- Save findings to DB ------------------------------------------
+        # ---- Save findings to DB with honest categories -------------------
         for d in all_dicts:
             db.add(Finding(
                 scan_id            = scan_id,
@@ -278,6 +302,7 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
                 location           = d["location"],
                 evidence           = d["evidence"],
                 remediation_advice = d["remediation"],
+                category           = d.get("category") or risk.classify_finding_category(d["vulnerability_type"], d["status"]),
             ))
         db.commit()
 
@@ -287,18 +312,34 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
 
         # Step 11/11 -- Cryptographic Scan Passport & SHA-256 Hash Chain (Phase 12)
         print(f"[AegisScan] Step 11/11 -- Generating signed scan passport & appending hash chain...")
-        passport, passport_record = get_or_create_scan_passport(db, scan_id=scan.id)
+        passport, passport_record = get_or_create_scan_passport(db, scan_id=scan.id, scan_mode=scan_mode)
         chain_record = record_scan_in_chain(db, scan_id=scan.id, payload_hash=passport["canonical_payload_hash"])
 
-        print(f"[AegisScan] ===== Scan #{scan_id} done. Findings={len(all_dicts)} =====")
+        # Category breakdowns
+        confirmed_vulns = [d for d in all_dicts if d["category"] == "confirmed_vulnerability"]
+        potential_vulns = [d for d in all_dicts if d["category"] == "potential_vulnerability"]
+        verified_controls = [d for d in all_dicts if d["category"] == "verified_control"]
+        info_findings = [d for d in all_dicts if d["category"] == "informational"]
+        not_reproducible = [d for d in all_dicts if d["category"] == "not_reproducible"]
+        not_tested = [d for d in all_dicts if d["category"] == "not_tested"]
+
+        print(f"[AegisScan] ===== Scan #{scan_id} done. Active Vulns={len(confirmed_vulns) + len(potential_vulns)} Controls={len(verified_controls)} Total={len(all_dicts)} =====")
 
         return {
             "scan_id"       : scan_id,
             "target_url"    : target_url,
+            "scan_mode"     : scan_mode,
             "status"        : "completed",
             "pages_crawled" : len(disc.visited_urls),
             "forms_found"   : len(disc.all_forms),
             "findings_count": len(all_dicts),
+            "active_vulnerabilities_count": len(confirmed_vulns) + len(potential_vulns),
+            "confirmed_vulnerabilities_count": len(confirmed_vulns),
+            "potential_vulnerabilities_count": len(potential_vulns),
+            "verified_controls_count": len(verified_controls),
+            "informational_count": len(info_findings),
+            "not_reproducible_count": len(not_reproducible),
+            "not_tested_count": len(not_tested),
             "breakdown"     : {
                 "sqli"               : len(sqli_scored),
                 "xss"                : len(xss_scored),
@@ -344,6 +385,7 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
                     "TP": eval_pre.true_positives,
                     "FP": eval_pre.false_positives,
                     "FN": eval_pre.false_negatives,
+                    "TN": eval_pre.true_negatives,
                 },
                 "post_validation": {
                     "precision": eval_post.precision,
@@ -352,7 +394,26 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
                     "TP": eval_post.true_positives,
                     "FP": eval_post.false_positives,
                     "FN": eval_post.false_negatives,
+                    "TN": eval_post.true_negatives,
                 },
+                "traditional": {
+                    "precision": eval_trad.precision,
+                    "recall"   : eval_trad.recall,
+                    "f1"       : eval_trad.f1_score,
+                    "TP": eval_trad.true_positives,
+                    "FP": eval_trad.false_positives,
+                    "FN": eval_trad.false_negatives,
+                    "TN": eval_trad.true_negatives,
+                },
+                "ai_agent": {
+                    "precision": eval_ai.precision,
+                    "recall"   : eval_ai.recall,
+                    "f1"       : eval_ai.f1_score,
+                    "TP": eval_ai.true_positives,
+                    "FP": eval_ai.false_positives,
+                    "FN": eval_ai.false_negatives,
+                    "TN": eval_ai.true_negatives,
+                } if eval_ai else None,
             },
             "report_url": f"http://127.0.0.1:8000/api/scans/{scan_id}/report",
         }
@@ -374,11 +435,12 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
     """
     Compare scan A (baseline) vs scan B (re-scan).
 
-    Identity key: (vulnerability_type, normalised location path, extra)
-    Returns:
-      fixed    -- in A, NOT in B  (vulnerability was resolved)
-      new      -- in B, NOT in A  (new vulnerability appeared)
-      persists -- in both A and B (still open)
+    Categorizes findings into 5 explicit states:
+      1. previously_confirmed  -- confirmed vulnerabilities in Scan A
+      2. still_confirmed        -- confirmed in A, still present & confirmed in B
+      3. resolved_after_retest -- confirmed in A, verified absent after active retesting in B
+      4. newly_detected        -- absent in A, newly detected in B
+      5. not_retested          -- present in A, but relevant detector/mode was omitted in B
     """
     scan_a = db.query(Scan).filter(Scan.id == a).first()
     scan_b = db.query(Scan).filter(Scan.id == b).first()
@@ -398,12 +460,13 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
             path = clean
 
         extra = ""
-        if f.vulnerability_type == "Missing Security Header":
+        vt = f.vulnerability_type
+        if vt == "Missing Security Header":
             for h in ["Content-Security-Policy", "Strict-Transport-Security", "X-Frame-Options", "X-Content-Type-Options"]:
                 if h.lower() in (f.evidence or "").lower():
                     extra = h
                     break
-        elif f.vulnerability_type == "Insecure Cookie":
+        elif vt == "Insecure Cookie":
             for fl in ["HttpOnly", "Secure"]:
                 if fl.lower() in (f.evidence or "").lower():
                     extra = fl
@@ -412,38 +475,115 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
             extra = loc.split("field:")[-1].rstrip(")").strip()
         elif "param:" in loc:
             extra = loc.split("param:")[-1].rstrip(")").strip()
+        elif "tool:" in loc:
+            extra = loc.split("tool:")[-1].rstrip(")").strip()
+        elif "vector:" in loc:
+            extra = loc.split("vector:")[-1].rstrip(")").strip()
 
-        return (f.vulnerability_type, path, extra)
+        return (vt, path, extra)
 
-    keys_a = {finding_key(f): f for f in scan_a.findings}
-    keys_b = {finding_key(f): f for f in scan_b.findings}
+    def is_vuln(f):
+        cat = getattr(f, "category", "") or risk.classify_finding_category(f.vulnerability_type, f.status)
+        return cat in ("confirmed_vulnerability", "potential_vulnerability")
 
-    set_a = set(keys_a)
-    set_b = set(keys_b)
-
-    def fmt(f):
+    def fmt(f, retest_status=""):
         return {
             "vulnerability_type": f.vulnerability_type,
             "severity"          : f.severity,
             "status"            : f.status,
+            "category"          : getattr(f, "category", "") or risk.classify_finding_category(f.vulnerability_type, f.status),
             "location"          : f.location,
+            "evidence"          : f.evidence or "",
+            "retest_status"     : retest_status,
         }
 
-    fixed    = [fmt(keys_a[k]) for k in (set_a - set_b)]
-    new      = [fmt(keys_b[k]) for k in (set_b - set_a)]
-    persists = [fmt(keys_a[k]) for k in (set_a & set_b)]
+    # Extract confirmed and potential vulnerabilities (exclude verified controls and informational)
+    vulns_a = [f for f in scan_a.findings if is_vuln(f)]
+    vulns_b = [f for f in scan_b.findings if is_vuln(f)]
+
+    keys_a = {finding_key(f): f for f in vulns_a}
+    keys_b = {finding_key(f): f for f in vulns_b}
+
+    set_a = set(keys_a)
+    set_b = set(keys_b)
+
+    scan_b_mode = getattr(scan_b, "scan_mode", "deep") or "deep"
+    ai_vuln_types = {
+        "Indirect Prompt Injection",
+        "AI Canary Token Leakage",
+        "Tool Metadata Rug-Pull",
+        "Poisoned Tool Description",
+        "Excessive Agency: Unapproved High-Impact Action",
+        "Context Taint Hijack: Complete Attack Path"
+    }
+
+    previously_confirmed = [fmt(keys_a[k], "previously_confirmed") for k in set_a]
+    still_confirmed = [fmt(keys_a[k], "still_confirmed") for k in (set_a & set_b)]
+    newly_detected = [fmt(keys_b[k], "newly_detected") for k in (set_b - set_a)]
+
+    resolved_after_retest = []
+    not_retested = []
+
+    for k in (set_a - set_b):
+        f = keys_a[k]
+        vt = f.vulnerability_type
+        # If Scan B was basic mode, AI features were not retested
+        if scan_b_mode == "basic" and (vt in ai_vuln_types or "/assistant" in (f.location or "")):
+            not_retested.append(fmt(f, "not_retested"))
+        else:
+            resolved_after_retest.append(fmt(f, "resolved_after_retest"))
+
+    # Layer 1 & AI Specific breakdown
+    layer1_types = {"SQL Injection", "Reflected XSS", "IDOR (Broken Access Control)", "Missing Security Header", "Insecure Cookie"}
+
+    l1_resolved = [f for f in resolved_after_retest if f["vulnerability_type"] in layer1_types]
+    l1_persists = [f for f in still_confirmed if f["vulnerability_type"] in layer1_types]
+    l1_new      = [f for f in newly_detected if f["vulnerability_type"] in layer1_types]
+
+    ai_resolved = [f for f in resolved_after_retest if f["vulnerability_type"] in ai_vuln_types]
+    ai_persists = [f for f in still_confirmed if f["vulnerability_type"] in ai_vuln_types]
+    ai_new      = [f for f in newly_detected if f["vulnerability_type"] in ai_vuln_types]
+
+    # Security controls verified in Scan B
+    controls_b = [f for f in scan_b.findings if f.vulnerability_type in ("Tool Integrity Verified", "AI Agent Approval Gate Verified")]
 
     return {
         "scan_a"          : a,
         "scan_b"          : b,
+        "scan_a_mode"     : getattr(scan_a, "scan_mode", "deep"),
+        "scan_b_mode"     : scan_b_mode,
         "total_in_a"      : len(scan_a.findings),
         "total_in_b"      : len(scan_b.findings),
-        "fixed_count"     : len(fixed),
-        "new_count"       : len(new),
-        "persists_count"  : len(persists),
-        "fixed"           : fixed,
-        "new"             : new,
-        "persists"        : persists,
+        # Five explicit buckets
+        "previously_confirmed": previously_confirmed,
+        "still_confirmed"     : still_confirmed,
+        "resolved_after_retest": resolved_after_retest,
+        "newly_detected"       : newly_detected,
+        "not_retested"         : not_retested,
+        "previously_confirmed_count": len(previously_confirmed),
+        "still_confirmed_count"     : len(still_confirmed),
+        "resolved_after_retest_count": len(resolved_after_retest),
+        "newly_detected_count"       : len(newly_detected),
+        "not_retested_count"         : len(not_retested),
+        # Backward compatibility aliases
+        "fixed_count"     : len(resolved_after_retest),
+        "new_count"       : len(newly_detected),
+        "persists_count"  : len(still_confirmed),
+        "fixed"           : resolved_after_retest,
+        "new"             : newly_detected,
+        "persists"        : still_confirmed,
+        # Differential breakdowns
+        "layer1_breakdown": {
+            "resolved": l1_resolved,
+            "persists": l1_persists,
+            "new": l1_new,
+        },
+        "ai_breakdown": {
+            "resolved": ai_resolved,
+            "persists": ai_persists,
+            "new": ai_new,
+            "controls_verified": [fmt(f, "verified_control") for f in controls_b]
+        },
         "compare_report_url": f"http://127.0.0.1:8000/api/scans/compare/report?a={a}&b={b}",
     }
 
@@ -511,6 +651,7 @@ def get_findings(scan_id: int, db: Session = Depends(get_db)):
                 "vulnerability_type": f.vulnerability_type,
                 "status"            : f.status,
                 "severity"          : f.severity,
+                "category"          : getattr(f, "category", "") or risk.classify_finding_category(f.vulnerability_type, f.status),
                 "location"          : f.location,
                 "evidence"          : f.evidence,
                 "remediation_advice": f.remediation_advice,
@@ -536,6 +677,7 @@ def get_report(scan_id: int, db: Session = Depends(get_db)):
             "vulnerability_type": f.vulnerability_type,
             "severity"          : f.severity,
             "status"            : f.status,
+            "category"          : getattr(f, "category", "") or risk.classify_finding_category(f.vulnerability_type, f.status),
             "location"          : f.location,
             "evidence"          : f.evidence or "",
             "payload"           : "",

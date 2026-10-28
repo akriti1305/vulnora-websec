@@ -59,6 +59,7 @@ class Scan(Base):
     started_at  = Column(DateTime, default=datetime.utcnow)
     finished_at = Column(DateTime, nullable=True)   # None while still running
     status      = Column(String,   default="running")  # running / completed / failed
+    scan_mode   = Column(String,   default="deep")     # deep / basic
 
     # Relationships
     target   = relationship("Target",       back_populates="scans")
@@ -95,6 +96,7 @@ class Finding(Base):
     location            = Column(String, nullable=False)        # URL or parameter
     evidence            = Column(Text,   nullable=True)         # what was observed
     remediation_advice  = Column(Text,   nullable=True)         # how to fix it
+    category            = Column(String, default="vulnerability") # vulnerability / verified_control / informational / not_reproducible
 
     # Relationship back to the Scan
     scan = relationship("Scan", back_populates="findings")
@@ -115,6 +117,7 @@ class Finding(Base):
 # true_positives  : findings that correctly matched a known flaw
 # false_positives : findings that did NOT match any known flaw
 # false_negatives : known flaws the scanner MISSED entirely
+# true_negatives  : known benign controls correctly not flagged
 # precision       : TP / (TP + FP)
 # recall          : TP / (TP + FN)
 # f1_score        : harmonic mean of precision and recall
@@ -130,6 +133,7 @@ class EvaluationRun(Base):
     true_positives  = Column(Integer, default=0)
     false_positives = Column(Integer, default=0)
     false_negatives = Column(Integer, default=0)
+    true_negatives  = Column(Integer, default=0)
 
     precision       = Column(Float, default=0.0)
     recall          = Column(Float, default=0.0)

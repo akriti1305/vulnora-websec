@@ -133,6 +133,39 @@
     .badge.info       { background: rgba(88,166,255,.15);  color: var(--accent);   border: 1px solid var(--accent); }
     .badge.neutral   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
 
+    .cat-tag {
+      display: inline-block;
+      padding: .15rem .6rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-right: .4rem;
+    }
+    .ct-confirmed_vulnerability { background: rgba(255,107,107,.18); color: var(--critical); border: 1px solid var(--critical); }
+    .ct-potential_vulnerability { background: rgba(227,179,65,.18); color: var(--medium); border: 1px solid var(--medium); }
+    .ct-verified_control        { background: rgba(63,185,80,.18); color: var(--low); border: 1px solid var(--low); }
+    .ct-informational           { background: rgba(88,166,255,.18); color: var(--accent); border: 1px solid var(--accent); }
+    .ct-not_reproducible        { background: rgba(139,148,158,.18); color: var(--muted); border: 1px solid var(--border); }
+
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: .45rem .95rem;
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--surface2);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
     /* === Detail rows === */
     .detail-grid { display: grid; gap: .65rem; }
     .detail-row  { display: grid; grid-template-columns: 140px 1fr; gap: .5rem; align-items: start; }
@@ -231,20 +264,43 @@
   <!-- Scan metadata -->
   <table class="meta-table">
     <tr><td>Target</td><td>{{ target_name }} &mdash; <code>{{ target_url }}</code></td></tr>
+    <tr><td>Scan Mode</td><td><strong style="color:var(--accent);">{{ scan_mode | upper }} AUTHORIZED</strong></td></tr>
     <tr><td>Scan started</td><td>{{ scan_started_at }}</td></tr>
     <tr><td>Scan finished</td><td>{{ scan_finished_at }}</td></tr>
   </table>
 
-  <!-- Summary cards -->
-  <div class="summary-grid">
-    <div class="card c-accent">
-      <div class="label">Total Findings</div>
-      <div class="value">{{ total_findings }}</div>
+  <!-- Tier 1: Category Architecture -->
+  <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;margin-bottom:0.6rem;">
+    Finding Classification Summary
+  </div>
+  <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.2rem;">
+    <div class="card" style="border-left:4px solid var(--critical);">
+      <div class="label">Active Vulnerabilities</div>
+      <div class="value" style="color:var(--critical);">{{ active_vuln_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Confirmed: {{ confirmed_count }} | Potential: {{ potential_count }}</div>
     </div>
-    <div class="card c-critical">
-      <div class="label">Confirmed</div>
-      <div class="value">{{ confirmed_count }}</div>
+    <div class="card" style="border-left:4px solid var(--low);">
+      <div class="label">Verified Security Controls</div>
+      <div class="value" style="color:var(--low);">{{ verified_control_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Intact baselines &amp; gates</div>
     </div>
+    <div class="card" style="border-left:4px solid var(--accent);">
+      <div class="label">Informational Discoveries</div>
+      <div class="value" style="color:var(--accent);">{{ informational_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Manifests &amp; architecture</div>
+    </div>
+    <div class="card" style="border-left:4px solid var(--border);">
+      <div class="label">Total Audited Findings</div>
+      <div class="value" style="color:var(--text);">{{ total_findings }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Total items evaluated</div>
+    </div>
+  </div>
+
+  <!-- Tier 2: Severity Breakdown -->
+  <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;margin-bottom:0.6rem;">
+    Severity Distribution
+  </div>
+  <div class="summary-grid" style="margin-bottom:2rem;">
     <div class="card c-critical">
       <div class="label">Critical</div>
       <div class="value">{{ severity_counts.get('Critical', 0) }}</div>
@@ -439,17 +495,28 @@
   </div>
   {% endif %}
 
-  <!-- Findings -->
-
-  <h2>&#x26A0; Findings (sorted by severity)</h2>
+  <!-- Findings Section Header with Category Tabs -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:2rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+    <h2 style="margin:0;border:none;padding:0;color:var(--accent);">&#x26A0; Findings ({{ total_findings }})</h2>
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="filterFindings('all', this)">All ({{ total_findings }})</button>
+      <button class="filter-btn" onclick="filterFindings('confirmed_vulnerability', this)">Confirmed Vulns ({{ confirmed_count }})</button>
+      <button class="filter-btn" onclick="filterFindings('potential_vulnerability', this)">Potential ({{ potential_count }})</button>
+      <button class="filter-btn" onclick="filterFindings('verified_control', this)">Verified Controls ({{ verified_control_count }})</button>
+      <button class="filter-btn" onclick="filterFindings('informational', this)">Informational ({{ informational_count }})</button>
+    </div>
+  </div>
 
   {% if findings %}
     {% for f in findings %}
     {% set sev_class = f.severity | lower %}
-    <div class="finding sev-{{ sev_class }}">
+    <div class="finding sev-{{ sev_class }}" data-category="{{ f.category }}">
       <div class="finding-header">
         <div>
-          <div class="type-pill">{{ f.vulnerability_type }}</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+            <span class="cat-tag ct-{{ f.category }}">{{ f.category | replace('_', ' ') | upper }}</span>
+            <span class="type-pill">{{ f.vulnerability_type }}</span>
+          </div>
           <div class="finding-title">{{ f.vulnerability_type }} &mdash; {{ f.location }}</div>
         </div>
         <div class="badges">
@@ -565,6 +632,22 @@
   Generated by AegisScan &mdash; Academic Cybersecurity Project &mdash;
   For ethical / authorised use only.
 </div>
+
+<script>
+  function filterFindings(cat, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const items = document.querySelectorAll('.finding');
+    items.forEach(el => {
+      if (cat === 'all' || el.getAttribute('data-category') === cat) {
+        el.style.display = 'block';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  }
+</script>
 
 </body>
 </html>

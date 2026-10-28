@@ -41,6 +41,39 @@ class ScoredFinding:
     evidence: str
     remediation_advice: str
     payload: str = ""
+    category: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Finding Classification 2.0 (Phase 13)
+# ---------------------------------------------------------------------------
+def classify_finding_category(vuln_type: str, status: str) -> str:
+    """
+    Classifies a finding into one of:
+      - 'confirmed_vulnerability'
+      - 'potential_vulnerability'
+      - 'informational'
+      - 'verified_control'
+      - 'not_reproducible'
+      - 'not_tested'
+    """
+    v = (vuln_type or "").strip()
+    s = (status or "").strip().lower()
+
+    if s == "not_tested":
+        return "not_tested"
+    if s == "not_reproducible":
+        return "not_reproducible"
+    if v in ("Tool Integrity Verified", "AI Agent Approval Gate Verified") or s in ("verified", "verified_control"):
+        return "verified_control"
+    if v in ("AI Assistant Discovered", "AI Security Manifest Detected", "AI Tools Baselined", "Tool Baseline Unavailable") or s in ("info", "detected", "informational"):
+        if s not in ("confirmed", "potential"):
+            return "informational"
+    if s == "potential":
+        return "potential_vulnerability"
+    if s == "confirmed":
+        return "confirmed_vulnerability"
+    return "informational" if s in ("info", "detected") else "potential_vulnerability"
 
 
 # ---------------------------------------------------------------------------

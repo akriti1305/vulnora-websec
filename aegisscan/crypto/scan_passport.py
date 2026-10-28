@@ -160,17 +160,38 @@ def create_scan_passport(
         vt = d["vulnerability_type"]
         type_counts[vt] = type_counts.get(vt, 0) + 1
 
-    # Overall risk determination
-    if sev_counts.get("Critical", 0) > 0:
+    # Identify active vulnerabilities vs verified controls vs informational
+    active_vuln_digests = [
+        d for d in sorted_digests
+        if d["vulnerability_type"] not in (
+            "Tool Integrity Verified", "AI Agent Approval Gate Verified",
+            "AI Assistant Discovered", "AI Security Manifest Detected",
+            "AI Tools Baselined", "Tool Baseline Unavailable"
+        )
+        and d["status"] in ("confirmed", "potential")
+    ]
+    active_count = len(active_vuln_digests)
+    verified_controls_count = sum(
+        1 for d in sorted_digests
+        if d["vulnerability_type"] in ("Tool Integrity Verified", "AI Agent Approval Gate Verified")
+        or d["status"] in ("verified", "verified_control")
+    )
+    info_count = len(sorted_digests) - active_count - verified_controls_count
+
+    # Overall risk determination based on confirmed/potential vulnerabilities
+    vuln_sevs = {d["severity"] for d in active_vuln_digests}
+    if "Critical" in vuln_sevs:
         overall_risk = "Critical"
-    elif sev_counts.get("High", 0) > 0:
+    elif "High" in vuln_sevs:
         overall_risk = "High"
-    elif sev_counts.get("Medium", 0) > 0:
+    elif "Medium" in vuln_sevs:
         overall_risk = "Medium"
-    elif sev_counts.get("Low", 0) > 0:
+    elif "Low" in vuln_sevs:
         overall_risk = "Low"
-    elif sev_counts.get("Info", 0) > 0:
+    elif "Info" in vuln_sevs:
         overall_risk = "Info"
+    elif active_count == 0:
+        overall_risk = "Clean"
     else:
         overall_risk = "Clean"
 
@@ -184,6 +205,9 @@ def create_scan_passport(
         "scanner_version": SCANNER_VERSION,
         "findings_summary": {
             "total_findings": len(sorted_digests),
+            "active_vulnerabilities": active_count,
+            "verified_controls": verified_controls_count,
+            "informational_discoveries": info_count,
             "severity_breakdown": sev_counts,
             "vulnerability_types": type_counts,
         },
@@ -406,7 +430,8 @@ def save_scan_passport(db: Session, scan_id: int, passport: Dict[str, Any]) -> S
 def get_or_create_scan_passport(
     db: Session,
     scan_id: int,
-    key_mgr: Optional[KeyManager] = None
+    key_mgr: Optional[KeyManager] = None,
+    scan_mode: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], ScanPassport]:
     """
     Retrieves the stored passport for a scan, or generates and signs a new passport
@@ -424,13 +449,15 @@ def get_or_create_scan_passport(
     target = db.query(Target).filter(Target.id == scan.target_id).first()
     target_url = target.base_url if target else "Unknown"
 
+    effective_mode = scan_mode or getattr(scan, "scan_mode", "deep") or "deep"
+
     passport_dict = create_scan_passport(
         scan_id=scan.id,
         target_identifier=target_url,
         findings=scan.findings,
         scan_started_at=scan.started_at,
         scan_finished_at=scan.finished_at,
-        scan_mode="standard",
+        scan_mode=effective_mode,
         key_mgr=key_mgr
     )
     new_record = save_scan_passport(db, scan.id, passport_dict)
