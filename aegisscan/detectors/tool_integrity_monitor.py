@@ -363,7 +363,8 @@ def verify_tool_integrity(
         unable_to_inspect_count = 0
 
     if not tools_list:
-        if ai_discovery_result.has_ai_features and unable_to_inspect_count > 0:
+        ai_enabled = getattr(ai_discovery_result, "has_ai_features", False) or getattr(ai_discovery_result, "is_ai_enabled", False)
+        if ai_enabled and unable_to_inspect_count > 0:
             evidence_msg = f"Unable to inspect AI tool catalog at {tools_endpoint}: endpoint unreachable or returned empty list."
             results.append(ToolComparisonResult(
                 tool_name="catalog",

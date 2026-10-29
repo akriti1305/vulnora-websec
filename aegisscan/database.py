@@ -55,7 +55,7 @@ Base = declarative_base()
 
 
 def upgrade_schema(db_engine=None):
-    """Ensure newly added Phase 12/13 columns exist in SQLite database."""
+    """Ensure newly added Phase 12/13/14 columns and tables exist in SQLite database."""
     eng = db_engine or engine
     try:
         from sqlalchemy import inspect, text
@@ -63,21 +63,52 @@ def upgrade_schema(db_engine=None):
         tables = inspector.get_table_names()
 
         with eng.connect() as conn:
-            # 1. Check scans table for scan_mode
+            # 1. Check targets table for Phase 14 columns
+            if "targets" in tables:
+                target_cols = [c["name"] for c in inspector.get_columns("targets")]
+                if "target_type" not in target_cols:
+                    conn.execute(text("ALTER TABLE targets ADD COLUMN target_type VARCHAR(32) DEFAULT 'local'"))
+                    conn.commit()
+                if "is_verified" not in target_cols:
+                    conn.execute(text("ALTER TABLE targets ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
+                    conn.commit()
+                if "verified_at" not in target_cols:
+                    conn.execute(text("ALTER TABLE targets ADD COLUMN verified_at DATETIME"))
+                    conn.commit()
+                if "verification_method" not in target_cols:
+                    conn.execute(text("ALTER TABLE targets ADD COLUMN verification_method VARCHAR(32)"))
+                    conn.commit()
+
+            # 2. Check scans table for Phase 12/13/14 columns
             if "scans" in tables:
                 cols = [c["name"] for c in inspector.get_columns("scans")]
                 if "scan_mode" not in cols:
                     conn.execute(text("ALTER TABLE scans ADD COLUMN scan_mode VARCHAR(32) DEFAULT 'deep'"))
                     conn.commit()
+                if "target_type" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN target_type VARCHAR(32) DEFAULT 'local'"))
+                    conn.commit()
+                if "authorization_grant_id" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN authorization_grant_id INTEGER"))
+                    conn.commit()
+                if "requests_count" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN requests_count INTEGER DEFAULT 0"))
+                    conn.commit()
+                if "duration_seconds" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN duration_seconds FLOAT DEFAULT 0.0"))
+                    conn.commit()
+                if "scan_policy_json" not in cols:
+                    conn.execute(text("ALTER TABLE scans ADD COLUMN scan_policy_json TEXT"))
+                    conn.commit()
 
-            # 2. Check findings table for category
+            # 3. Check findings table for category
             if "findings" in tables:
                 cols = [c["name"] for c in inspector.get_columns("findings")]
                 if "category" not in cols:
                     conn.execute(text("ALTER TABLE findings ADD COLUMN category VARCHAR(64) DEFAULT 'potential_vulnerability'"))
                     conn.commit()
 
-            # 3. Check evaluation_runs table for true_negatives
+            # 4. Check evaluation_runs table for true_negatives
             if "evaluation_runs" in tables:
                 cols = [c["name"] for c in inspector.get_columns("evaluation_runs")]
                 if "true_negatives" not in cols:

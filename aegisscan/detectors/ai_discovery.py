@@ -95,6 +95,10 @@ class AIDiscoveryResult:
     deep_testing_authorized: bool = False
     findings: List[ScoredFinding] = field(default_factory=list)
 
+    @property
+    def has_ai_features(self) -> bool:
+        return self.is_ai_enabled
+
 
 def parse_and_validate_manifest(
     manifest_data: Any,

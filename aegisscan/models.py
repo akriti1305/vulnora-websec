@@ -16,7 +16,7 @@ Each Column(...) becomes one column in that table.
 
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Float,
+    Column, Integer, String, Float, Boolean,
     DateTime, ForeignKey, Text
 )
 from sqlalchemy.orm import relationship
@@ -27,22 +27,27 @@ from database import Base
 # Table 1: Target
 # ---------------------------------------------------------------------------
 # A Target is a website we want to scan.
-# Example: { id: 1, name: "AegisLab", base_url: "http://127.0.0.1:5001" }
+# Can be a local testbed or a verified external website.
 # ---------------------------------------------------------------------------
 class Target(Base):
     __tablename__ = "targets"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    name       = Column(String,  nullable=False)           # human-readable name
-    base_url   = Column(String,  nullable=False, unique=True)  # the URL to scan
-    created_at = Column(DateTime, default=datetime.utcnow) # auto-set on creation
+    id                  = Column(Integer, primary_key=True, index=True)
+    name                = Column(String,  nullable=False)           # human-readable name
+    base_url            = Column(String,  nullable=False, unique=True)  # the canonical URL
+    target_type         = Column(String,  default="local")         # "local" or "external"
+    is_verified         = Column(Boolean, default=False)           # verified ownership flag
+    verified_at         = Column(DateTime, nullable=True)
+    verification_method = Column(String,  nullable=True)          # "http" or "dns"
+    created_at          = Column(DateTime, default=datetime.utcnow) # auto-set on creation
 
-    # Relationship: one Target can have many Scans
-    # "back_populates" lets us go the other direction: scan.target
-    scans = relationship("Scan", back_populates="target")
+    # Relationships
+    scans      = relationship("Scan", back_populates="target")
+    challenges = relationship("VerificationChallenge", back_populates="target")
+    grants     = relationship("AuthorizationGrant", back_populates="target")
 
     def __repr__(self):
-        return f"<Target id={self.id} name='{self.name}' url='{self.base_url}'>"
+        return f"<Target id={self.id} name='{self.name}' url='{self.base_url}' type='{self.target_type}' verified={self.is_verified}>"
 
 
 # ---------------------------------------------------------------------------
@@ -54,12 +59,17 @@ class Target(Base):
 class Scan(Base):
     __tablename__ = "scans"
 
-    id          = Column(Integer,  primary_key=True, index=True)
-    target_id   = Column(Integer,  ForeignKey("targets.id"), nullable=False)
-    started_at  = Column(DateTime, default=datetime.utcnow)
-    finished_at = Column(DateTime, nullable=True)   # None while still running
-    status      = Column(String,   default="running")  # running / completed / failed
-    scan_mode   = Column(String,   default="deep")     # deep / basic
+    id                     = Column(Integer,  primary_key=True, index=True)
+    target_id              = Column(Integer,  ForeignKey("targets.id"), nullable=False)
+    started_at             = Column(DateTime, default=datetime.utcnow)
+    finished_at            = Column(DateTime, nullable=True)   # None while still running
+    status                 = Column(String,   default="running")  # running / completed / failed
+    scan_mode              = Column(String,   default="deep")     # deep / basic / local_lab / external_basic / external_deep
+    target_type            = Column(String,   default="local")    # local / external
+    authorization_grant_id = Column(Integer,  nullable=True)
+    requests_count         = Column(Integer,  default=0)
+    duration_seconds       = Column(Float,    default=0.0)
+    scan_policy_json       = Column(Text,     nullable=True)
 
     # Relationships
     target   = relationship("Target",       back_populates="scans")
@@ -69,7 +79,7 @@ class Scan(Base):
     chain_record    = relationship("ScanChainRecord", uselist=False, back_populates="scan")
 
     def __repr__(self):
-        return f"<Scan id={self.id} target_id={self.target_id} status='{self.status}'>"
+        return f"<Scan id={self.id} target_id={self.target_id} mode='{self.scan_mode}' status='{self.status}'>"
 
 
 
@@ -199,5 +209,81 @@ class ScanChainRecord(Base):
 
     def __repr__(self):
         return f"<ScanChainRecord seq={self.sequence_number} scan_id={self.scan_id} hash='{self.chain_hash[:12]}...'>"
+
+
+# ---------------------------------------------------------------------------
+# Table 7: VerificationChallenge
+# ---------------------------------------------------------------------------
+# Cryptographically random domain control challenge.
+# User hosts token at https://<target>/.well-known/aegisscan-verification.txt
+# ---------------------------------------------------------------------------
+class VerificationChallenge(Base):
+    __tablename__ = "verification_challenges"
+
+    id              = Column(Integer,  primary_key=True, index=True)
+    target_id       = Column(Integer,  ForeignKey("targets.id"), nullable=False, index=True)
+    challenge_token = Column(String,   nullable=False, index=True)
+    challenge_type  = Column(String,   default="http")  # "http" or "dns"
+    status          = Column(String,   default="pending")  # "pending", "verified", "expired", "revoked"
+    created_at      = Column(DateTime, default=datetime.utcnow)
+    expires_at      = Column(DateTime, nullable=False)
+    verified_at     = Column(DateTime, nullable=True)
+    last_checked_at = Column(DateTime, nullable=True)
+    failure_reason  = Column(Text,     nullable=True)
+
+    target = relationship("Target", back_populates="challenges")
+
+    def __repr__(self):
+        return f"<VerificationChallenge id={self.id} target_id={self.target_id} status='{self.status}'>"
+
+
+# ---------------------------------------------------------------------------
+# Table 8: AuthorizationGrant
+# ---------------------------------------------------------------------------
+# Formal authorization record establishing legal permission and scope bounds.
+# ---------------------------------------------------------------------------
+class AuthorizationGrant(Base):
+    __tablename__ = "authorization_grants"
+
+    id                     = Column(Integer,  primary_key=True, index=True)
+    target_id              = Column(Integer,  ForeignKey("targets.id"), nullable=False, index=True)
+    approved_hostname      = Column(String,   nullable=False)
+    authorized_by          = Column(String,   nullable=False)
+    scan_mode              = Column(String,   default="external_basic")  # "external_basic", "external_deep"
+    allowed_paths          = Column(Text,     default='["/"]')
+    excluded_paths         = Column(Text,     default='["/logout", "/signout", "/delete", "/admin"]')
+    max_requests           = Column(Integer,  default=100)
+    rate_limit_per_second  = Column(Float,    default=2.0)
+    valid_from             = Column(DateTime, default=datetime.utcnow)
+    expires_at             = Column(DateTime, nullable=False)
+    operator_acknowledgment= Column(Text,     nullable=False)
+    status                 = Column(String,   default="active")  # "active", "revoked", "expired"
+    created_at             = Column(DateTime, default=datetime.utcnow)
+
+    target = relationship("Target", back_populates="grants")
+
+    def __repr__(self):
+        return f"<AuthorizationGrant id={self.id} host='{self.approved_hostname}' mode='{self.scan_mode}' status='{self.status}'>"
+
+
+# ---------------------------------------------------------------------------
+# Table 9: AuditEvent
+# ---------------------------------------------------------------------------
+# Immutable append-only audit trail for target authorization events.
+# ---------------------------------------------------------------------------
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id         = Column(Integer,  primary_key=True, index=True)
+    timestamp  = Column(DateTime, default=datetime.utcnow, index=True)
+    event_type = Column(String,   nullable=False, index=True)
+    target_id  = Column(Integer,  nullable=True, index=True)
+    scan_id    = Column(Integer,  nullable=True, index=True)
+    operator   = Column(String,   default="system")
+    details    = Column(Text,     nullable=True)
+
+    def __repr__(self):
+        return f"<AuditEvent id={self.id} event='{self.event_type}' at={self.timestamp}>"
+
 
 

@@ -37,6 +37,8 @@ app = FastAPI(
 app.include_router(router)
 
 
+from authorization import get_target_status_summary
+
 def _get_scans_summary_list(db: Session):
     """Helper to query past scans with target names, modes, categories, and passports."""
     from risk import classify_finding_category
@@ -119,11 +121,20 @@ def home_page(error: Optional[str] = None, db: Session = Depends(get_db)):
         "chain_status": chain_status,
     }
 
+    # Registered targets status
+    targets = db.query(Target).order_by(Target.id.desc()).all()
+    targets_data = []
+    for t in targets:
+        s = get_target_status_summary(db, t.id)
+        if s:
+            targets_data.append(s)
+
     html = report.generate_home_page(
         scans=scans_data,
         allowed_hosts=allowed,
         error_message=error,
         stats=stats,
+        targets=targets_data,
     )
     return HTMLResponse(content=html, status_code=200)
 

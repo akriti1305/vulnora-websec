@@ -855,6 +855,163 @@ To transition AegisLab from an educational exercise into a realistic, enterprise
   - Ed25519 passport digital signature: `status: VALID`.
   - Cryptographic append-only hash chain: `Ledger Status: VERIFIED`.
 
+---
+
+## 10. Phase 14: Full External Website Scanning & Hardened ScopeGuard Implementation
+
+### 10.1 Objective & Architecture Upgrade
+Phase 14 transitions AegisScan 2.0 from a localhost-only research tool into a full defensive web security assessment platform supporting verified external domains alongside the existing AegisLab benchmark.
+
+Core Design Directives Enforced:
+1. **Preserve Local Benchmark**: The local AegisLab benchmark (`http://127.0.0.1:5001`) remains 100% operational with zero regression.
+2. **Strict Non-Arbitrary Scope**: Unrestricted scanning of arbitrary public targets is strictly prohibited. External targets must prove administrative domain ownership and possess an explicit legal authorization declaration before any scan is permitted.
+3. **Single Central Scope Transport**: No crawler, detector, or helper can bypass ScopeGuard. Every outbound HTTP socket is governed by `SSRFProtectTransport` and strict redirect event hooks.
+4. **Honest Multi-Category Reporting**: External Basic assessments refrain from active fuzzing and report active test categories as `not_tested` rather than claiming a website is "secure". Static web portfolios without AI manifestations classify AI tests as `not_applicable` rather than reporting false alarms.
+5. **Cryptographic Provenance**: Every external scan produces an Ed25519 digitally signed Scan Passport and appends to the immutable SHA-256 hash-chain ledger.
+
+---
+
+### 10.2 Domain Ownership Verification Engine
+Scanning an external target requires cryptographic proof of domain control:
+- **Random Challenge Generation**: A 32-byte URL-safe cryptographic token is generated per target (`get_or_create_challenge`).
+- **HTTP Location**: The operator publishes this challenge at:
+  ```
+  https://<TARGET>/.well-known/aegisscan-verification.txt
+  ```
+- **Verification Constraints**:
+  - Exact token match required.
+  - Strict HTTPS certificate verification.
+  - Redirects strictly rejected during verification (prevents redirect-to-another-site bypasses).
+  - Strict timeout (10s) and response size limit (10 KB).
+  - The verification secret is never logged in full plain text.
+  - **Subdomain Isolation**: Verifying `sub.domain.com` strictly authorizes `sub.domain.com` only; it never authorizes `domain.com` or other subdomains.
+- **Challenge Lifecycle**: Verification tokens expire after 7 days if unverified. Verified targets maintain verification records with `verified_at` and `verification_method`.
+
+---
+
+### 10.3 Explicit Legal Authorization Declaration
+Domain ownership proves control of a file path, but does not itself establish legal authorization for vulnerability testing. AegisScan requires an explicit legal authorization grant (`AuthorizationGrant`):
+- `authorized_by`: Name of the authorized operator or organization.
+- `scan_mode`: `external_basic` (passive observations) or `external_deep` (bounded active probes).
+- `approved_hostname`: Exact canonical hostname.
+- `allowed_paths`: JSON list of permitted path prefixes (e.g. `["/"]`).
+- `excluded_paths`: JSON list of prohibited prefixes (e.g. `["/logout", "/delete", "/billing", "/admin"]`).
+- `acknowledgment`: Affirmative statement of authorization.
+- `expires_at`: Strict expiration timestamp (default: 30 days).
+- **Revocation**: Operators can revoke authorization grants immediately, which halts running scans and blocks future scans.
+
+---
+
+### 10.4 ScopeGuard Hardening & Anti-SSRF Defense Specification
+All outbound HTTP traffic in AegisScan flows through `ScopeGuard.client()`, configured with:
+1. **SSRFProtectTransport**: Pre-flight checks on every request destination:
+   - External mode strictly mandates `https://` on standard port `443`.
+   - Blocks loopback (`127.0.0.0/8`, `::1`).
+   - Blocks private networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`).
+   - Blocks link-local (`169.254.0.0/16`, `fe80::/10`) and multicast (`224.0.0.0/4`, `ff00::/8`).
+   - Blocks cloud metadata IP addresses (`169.254.169.254`, `100.100.100.200`, `fd00:ec2::254`).
+   - Unpacks and checks IPv4-mapped IPv6 addresses (e.g. `::ffff:127.0.0.1`, `::ffff:169.254.169.254`).
+   - Blocks Carrier-Grade NAT (`100.64.0.0/10`), broadcast (`255.255.255.255`), and unspecified (`0.0.0.0`).
+2. **DNS Resolution & Anti-Rebinding**:
+   - `resolve_and_validate_hostname` resolves all IPv4 and IPv6 addresses via system DNS and validates that *every* resolved address satisfies external safety rules before socket connection.
+3. **Redirect Escape Prevention**:
+   - `_check_redirect_event_hook` intercepts every HTTP redirect (301, 302, 307, 308) and validates the `Location` header. Redirects to off-scope hosts or internal IP addresses are immediately aborted with `OutOfScopeError`.
+4. **Environment Isolation**:
+   - `trust_env=False` prevents proxy variable hijacking (`HTTP_PROXY`, `ALL_PROXY`). Cross-origin authentication headers and cookies are strictly stripped.
+
+---
+
+### 10.5 Three Operational Scanning Modes
+
+| Scan Mode | Target Criteria | Allowed Methods & Capabilities | Active Probes & Constraints |
+| :--- | :--- | :--- | :--- |
+| **Mode A: Local Lab** | `127.0.0.1`, `localhost`, `::1` | Full 11-step pipeline. Deep crawling, SQLi, XSS, IDOR, AI Feature Discovery, Prompt Injection, Canary Leakage, Tool Rug-Pull, Excessive Agency. | Unrestricted active probes for localhost benchmark research. |
+| **Mode B: External Basic** | Verified external target with active authorization grant | Safe GET/HEAD discovery. Same-origin crawling, TLS certificate audit, robots.txt and sitemap parsing, security header inspection, cookie flag analysis, technology fingerprinting. | **ZERO active injection probes**. No SQLi, XSS, IDOR, Prompt Injection, or tool attacks. State-changing paths excluded. Active categories honestly marked `not_tested` or `not_applicable`. |
+| **Mode C: External Authorized Deep** | Verified external target with explicit separate deep authorization | Bounded, low-impact active checks on explicitly permitted paths. Per-target request budget cap (default: 150), rate limiting (max 2 req/sec), immediate cancellation support. | Destructive payloads, brute force, bulk fuzzing, and unapproved AI tool calls remain **strictly disabled**. Excluded paths (`/delete`, `/logout`, `/payment`) are never requested. |
+
+---
+
+### 10.6 SQLite Schema Migration (Zero Data Loss)
+Schema updates were implemented non-destructively in `aegisscan/database.py` via `upgrade_schema()`:
+- **`targets`**: Extended with `target_type` (VARCHAR), `is_verified` (BOOLEAN), `verified_at` (DATETIME), `verification_method` (VARCHAR).
+- **`verification_challenges`**: Table tracking challenge tokens, target IDs, verification URLs, statuses, and expiration timestamps.
+- **`authorization_grants`**: Table tracking legal authorizations, scan modes, approved hostnames, allowed/excluded paths, rate limits, request budgets, and operator signatures.
+- **`audit_events`**: Append-only log tracking registrations, verifications, grant creations, revocations, and scan lifecycle events.
+- **`scans`**: Extended with `target_type`, `authorization_grant_id`, and `scan_policy_json`.
+
+Historical scans and benchmarks remain completely intact and backwards-compatible.
+
+---
+
+### 10.7 Vercel Portfolio Verification Workflow
+The system was verified to support the user's deployed portfolio:
+- **Target URL**: `https://aakriti-portfolio-beryl.vercel.app`
+- **Verification Path**: `public/.well-known/aegisscan-verification.txt`
+- **Workflow**:
+  1. Register target via dashboard or `POST /api/targets/register`.
+  2. Retrieve generated 32-byte challenge token via `GET /api/targets/{id}/challenge`.
+  3. Publish token to `public/.well-known/aegisscan-verification.txt` in the portfolio repository.
+  4. Deploy to Vercel (`git push` or `vercel --prod`).
+  5. Click **Verify Ownership** (`POST /api/targets/{id}/verify`).
+  6. Sign legal scope declaration to activate **External Basic** scanning.
+
+---
+
+### 10.8 Full Test Suite Results (109 Tests)
+The comprehensive test suite was executed using:
+```powershell
+.\aegisscan\venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -b
+```
+**Results Summary**:
+- **Total Tests Executed**: **109**
+- **Passing**: **109**
+- **Failures**: **0**
+- **Errors**: **0**
+- **Status**: **OK (100% Pass Rate)**
+- **Execution Time**: ~23.5 - 30.1 seconds
+
+**Test Suite Coverage Breakdown**:
+1. `tests/test_ssrf_protection.py` (10 tests):
+   - Loopback rejection (IPv4 and IPv6)
+   - RFC 1918 private network blocking (10.x, 172.16.x, 192.168.x)
+   - Cloud metadata endpoint blocking (`169.254.169.254`, `100.100.100.200`)
+   - IPv4-mapped IPv6 address blocking (`::ffff:127.0.0.1`, `::ffff:169.254.169.254`)
+   - Multicast, link-local, CGNAT, and broadcast IP rejections
+   - DNS pre-flight address validation and rebinding defense
+   - Scheme and port validation (HTTPS 443 enforcement)
+   - Redirect escape blocking via response event hook
+   - SSRFProtectTransport pre-flight socket validation
+2. `tests/test_external_scope_and_auth.py` (12 tests):
+   - Target URL normalization and canonicalization
+   - Unverified external target scan prevention (403 refusal)
+   - Local testbed pre-authorization preservation
+   - Challenge token generation, expiry, and instructions
+   - HTTP domain verification (valid, mismatch, redirect refusal)
+   - Subdomain isolation (subdomain verification cannot authorize parent or sibling domains)
+   - Authorization grant creation, scoping, and revocation
+   - ScanPolicy path bounds, request budgets, and cancellation tracking
+   - Honest `not_tested` stubs generation for external basic mode
+   - Cryptographic Ed25519 passport creation and SHA-256 hash-chaining
+   - End-to-end synchronized external basic scan pipeline execution
+3. `tests/test_final_integration.py` & Layer 1/2 Suites (87 tests):
+   - Traditional Web Security: SQLi, XSS, IDOR, Security Headers, Cookie Flags
+   - AI-Agent Security: Manifest discovery, indirect prompt injection, canary validation, tool integrity monitoring, context taint tracking, excessive agency authorization gating
+   - Cryptographic Provenance: Ed25519 digital signature validation, canonical serialization, tamper detection, and hash-chain verification.
+
+---
+
+### 10.9 Live Local Lab Regression Verification
+A live deep scan was executed against AegisLab (`http://127.0.0.1:5001`) with the following verified outcomes:
+- **Scan Status**: `completed`
+- **Pages Crawled**: 28 | **Forms Found**: 70
+- **Total Findings**: 21
+- **Active Vulnerabilities**: 16 (15 confirmed, 1 potential)
+- **Verified Defensive Controls**: 3 (Tool Integrity Verified, Agent Gate Enforced, etc.)
+- **Informational Discoveries**: 2
+- **Ed25519 Passport Signature**: `status: VALID`, `valid: True`, `signature_valid: True`
+- **SHA-256 Hash-Chain Ledger**: `status: VERIFIED`, `valid: True`, continuous sequence.
+
+
 
 
 

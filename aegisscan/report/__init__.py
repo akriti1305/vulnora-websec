@@ -32,6 +32,10 @@ def generate_html_report(
     passport_data: Optional[Dict[str, Any]] = None,
     chain_data: Optional[Dict[str, Any]] = None,
     scan_mode: str = "deep",
+    target_type: str = "local_lab",
+    scan_policy_data: Optional[Dict[str, Any]] = None,
+    requests_count: int = 0,
+    duration_seconds: Optional[float] = None,
 ) -> str:
     """
     Render the HTML security report with honest classification separating:
@@ -139,6 +143,10 @@ def generate_html_report(
         target_url       = target_url,
         target_name      = target_name,
         scan_mode        = scan_mode,
+        target_type      = target_type,
+        scan_policy      = scan_policy_data or {},
+        requests_count   = requests_count,
+        duration_seconds = duration_seconds,
         findings         = sorted_findings,
         confirmed_vulns  = confirmed_vulns,
         potential_vulns  = potential_vulns,
@@ -169,6 +177,7 @@ def generate_home_page(
     allowed_hosts: List[str],
     error_message: Optional[str] = None,
     stats: Optional[Dict[str, Any]] = None,
+    targets: Optional[List[dict]] = None,
 ) -> str:
     """
     Render the Home dashboard page.
@@ -178,6 +187,7 @@ def generate_home_page(
         allowed_hosts: list of host strings currently permitted by the scope guard
         error_message: optional error string to display in an alert banner
         stats        : optional high-level KPI metrics dictionary
+        targets      : list of registered target summary dicts
     """
     template = _jinja_env.get_template("index.html")
     html = template.render(
@@ -185,6 +195,7 @@ def generate_home_page(
         allowed_hosts = allowed_hosts,
         error_message = error_message,
         stats         = stats or {},
+        targets       = targets or [],
     )
     return html
 

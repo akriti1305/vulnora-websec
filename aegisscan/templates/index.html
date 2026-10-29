@@ -282,6 +282,74 @@
       background: var(--surface3);
       border-color: var(--accent);
     }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+    .btn-sm {
+      display: inline-block;
+      width: auto;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 5px;
+      font-weight: 700;
+    }
+
+    /* Target Network Switcher */
+    .network-switcher {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 1.25rem;
+      gap: 4px;
+    }
+    .net-tab {
+      flex: 1;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 6px;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .net-tab.active {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    /* Target Authorization Status Pills */
+    .status-pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 12px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .sp-verified { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.4); }
+    .sp-pending { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(251, 191, 36, 0.4); }
+    .sp-unregistered { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .sp-expired, .sp-revoked { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.4); }
+
+    /* Verification Box */
+    .verification-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.2rem;
+    }
 
     /* Scans Table */
     .table-section { margin-top: 1.5rem; }
@@ -507,48 +575,220 @@
       <div class="card-title">🚀 Launch Security Scan</div>
       <div class="card-subtitle">Execute crawler, Layer 1 vulnerability detectors, and AI-agent verification</div>
       
-      <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
+      <!-- Network Switcher -->
+      <div class="network-switcher">
+        <div class="net-tab active" id="tab-local" onclick="switchNetwork('local')">
+          🏠 Local Lab Benchmark
+        </div>
+        <div class="net-tab" id="tab-external" onclick="switchNetwork('external')">
+          🌐 External Authorized Website
+        </div>
+      </div>
+
+      <!-- LOCAL LAB FORM -->
+      <div id="local-lab-section">
+        <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
+          <input type="hidden" name="target_type" value="local">
+          
+          <div class="form-group">
+            <label for="target_url">Target Base URL</label>
+            <input type="url" id="target_url" name="target_url" value="http://127.0.0.1:5001" required placeholder="http://127.0.0.1:5001">
+            <div class="hint">Permitted authorized hosts: {{ allowed_hosts | join(', ') }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="target_name">Target Name / Description</label>
+            <input type="text" id="target_name" name="target_name" value="AegisLab Testbed" required placeholder="e.g. AegisLab AI Benchmark">
+          </div>
+
+          <div class="form-group">
+            <label>Scan Audit Mode</label>
+            <div class="mode-selector">
+              <label class="mode-option">
+                <div style="display:flex;align-items:center;">
+                  <input type="radio" name="scan_mode" value="deep" checked>
+                  <span class="mode-title">Deep Authorized</span>
+                </div>
+                <div class="mode-desc">Full OWASP L1 + AI discovery, prompt injection, tool integrity, taint flows</div>
+              </label>
+
+              <label class="mode-option">
+                <div style="display:flex;align-items:center;">
+                  <input type="radio" name="scan_mode" value="basic">
+                  <span class="mode-title">Basic Web Only</span>
+                </div>
+                <div class="mode-desc">Traditional Layer 1 checks only (SQLi, XSS, IDOR, headers, cookies)</div>
+              </label>
+            </div>
+          </div>
+
+          <div class="auth-checkbox-wrap">
+            <input type="checkbox" id="auth_ack" required checked>
+            <label for="auth_ack" class="auth-checkbox-text">
+              <strong>Explicit Authorization:</strong> I certify that I have explicit authorization to assess this local target within ScopeGuard rules.
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="launch-btn">Start Security Scan &rarr;</button>
+        </form>
+      </div>
+
+      <!-- EXTERNAL TARGET FORM -->
+      <div id="external-target-section" style="display: none;">
+        
+        <!-- Target Selector Dropdown -->
         <div class="form-group">
-          <label for="target_url">Target Base URL</label>
-          <input type="url" id="target_url" name="target_url" value="http://127.0.0.1:5001" required placeholder="http://127.0.0.1:5001">
-          <div class="hint">Permitted authorized hosts: {{ allowed_hosts | join(', ') }}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label style="margin:0;">Select Registered Target</label>
+            <button type="button" class="btn-sm btn-secondary" onclick="toggleRegisterForm()" id="btn-toggle-reg">+ Register New</button>
+          </div>
+          <select id="external_target_select" onchange="onTargetSelected(this.value)">
+            <option value="">-- Choose a registered target --</option>
+            {% for t in targets %}
+              {% if t.target_type == 'external' %}
+              <option value="{{ t.target_id }}" data-url="{{ t.base_url }}" data-name="{{ t.name }}" data-verified="{{ t.is_verified }}" data-status="{{ t.authorization_status }}" data-token="{{ t.active_challenge.challenge_token if t.active_challenge else '' }}" data-hostname="{{ t.hostname }}">
+                {{ t.name }} ({{ t.hostname }}) &mdash; [{{ t.authorization_status | upper }}]
+              </option>
+              {% endif %}
+            {% endfor %}
+          </select>
         </div>
 
-        <div class="form-group">
-          <label for="target_name">Target Name / Description</label>
-          <input type="text" id="target_name" name="target_name" value="AegisLab Testbed" required placeholder="e.g. AegisLab AI Benchmark">
+        <!-- Inline Target Registration Form -->
+        <div id="register-target-panel" class="verification-box" style="display: none; border-color: rgba(56, 189, 248, 0.4);">
+          <div style="font-weight: 700; color: #f8fafc; margin-bottom: 0.8rem; font-size: 0.95rem;">
+            🌐 Register External Target Domain
+          </div>
+          <div class="form-group">
+            <label for="reg_target_url">Target Base URL (HTTPS only)</label>
+            <input type="url" id="reg_target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app">
+            <div class="hint">External scans require HTTPS on standard port 443.</div>
+          </div>
+          <div class="form-group">
+            <label for="reg_target_name">Site Name / Label</label>
+            <input type="text" id="reg_target_name" placeholder="e.g. My Portfolio">
+          </div>
+          <div class="form-group">
+            <label for="reg_operator">Authorized Operator Name</label>
+            <input type="text" id="reg_operator" placeholder="e.g. Aakriti">
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="submitTargetRegistration()" id="btn-submit-reg">
+            Register Target &amp; Generate Token &rarr;
+          </button>
         </div>
 
-        <div class="form-group">
-          <label>Scan Audit Mode</label>
-          <div class="mode-selector">
-            <label class="mode-option">
-              <div style="display:flex;align-items:center;">
-                <input type="radio" name="scan_mode" value="deep" checked>
-                <span class="mode-title">Deep Authorized</span>
-              </div>
-              <div class="mode-desc">Full OWASP L1 + AI discovery, prompt injection, tool integrity, taint flows</div>
-            </label>
+        <!-- Verification & Status Card -->
+        <div id="target-status-card" style="display: none;">
+          <div class="verification-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-size: 0.84rem; color: var(--muted); font-weight: 700;">DOMAIN AUTHORIZATION STATUS</span>
+              <span id="target-status-badge" class="status-pill sp-unregistered">UNREGISTERED</span>
+            </div>
 
-            <label class="mode-option">
-              <div style="display:flex;align-items:center;">
-                <input type="radio" name="scan_mode" value="basic">
-                <span class="mode-title">Basic Web Only</span>
+            <!-- Pending Verification Block -->
+            <div id="pending-verification-block" style="display: none;">
+              <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.9rem;">
+                <div style="color: var(--yellow); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem;">
+                  ⚠️ Domain Ownership Verification Required
+                </div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+                  External target verification required. Add the verification token to your website before scanning.
+                </div>
               </div>
-              <div class="mode-desc">Traditional Layer 1 checks only (SQLi, XSS, IDOR, headers, cookies)</div>
-            </label>
+
+              <div style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--muted);">
+                Expected verification file URL:
+              </div>
+              <code id="display-verification-url" style="display:block; padding:0.4rem 0.6rem; background:#0a0d12; border:1px solid var(--border); border-radius:4px; font-size:0.78rem; word-break:break-all; margin-bottom:0.7rem;"></code>
+
+              <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">
+                Verification Token:
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.9rem;">
+                <input type="text" id="display-token" readonly style="font-family: monospace; font-size: 0.8rem; background: #0a0d12;">
+                <button type="button" class="btn-sm btn-secondary" onclick="copyToken()">Copy</button>
+              </div>
+
+              <!-- Vercel Guide Accordion -->
+              <details style="font-size: 0.8rem; color: var(--muted); background: rgba(0,0,0,0.2); padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid var(--border);">
+                <summary style="cursor: pointer; font-weight: 700; color: var(--accent);">Instructions for Vercel / Next.js Portfolio</summary>
+                <div style="margin-top: 0.6rem; line-height: 1.6; color: #cbd5e1;">
+                  1. In your project repository, navigate to the <code>public/</code> directory.<br>
+                  2. Create a folder named <code>.well-known</code>.<br>
+                  3. Create a file named <code>aegisscan-verification.txt</code>.<br>
+                  4. Paste the token above into the file (single line, no quotes).<br>
+                  5. Deploy to Vercel (<code>git push</code>).<br>
+                  6. Once live, click <strong>Verify Ownership Now</strong> below.
+                </div>
+              </details>
+
+              <button type="button" class="btn btn-secondary" onclick="verifyTargetOwnership()" id="btn-verify-ownership">
+                🔍 Verify Ownership Now
+              </button>
+              <div id="verify-result-msg" style="margin-top: 0.6rem; font-size: 0.82rem;"></div>
+            </div>
+
+            <!-- Verified Domain Block -->
+            <div id="verified-domain-block" style="display: none;">
+              <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 1rem;">
+                <div style="color: var(--green); font-size: 0.86rem; font-weight: 700;">
+                  ✓ Domain Control Verified (HTTP Challenge)
+                </div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem;">
+                  Target canonical hostname is verified and bound to this scanner.
+                </div>
+              </div>
+
+              <!-- External Scan Form -->
+              <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
+                <input type="hidden" name="target_type" value="external">
+                <input type="hidden" id="ext_form_target_url" name="target_url" value="">
+                <input type="hidden" id="ext_form_target_name" name="target_name" value="">
+
+                <div class="form-group">
+                  <label>Approved External Scan Mode</label>
+                  <div class="mode-selector">
+                    <label class="mode-option">
+                      <div style="display:flex;align-items:center;">
+                        <input type="radio" name="scan_mode" value="external_basic" checked>
+                        <span class="mode-title">External Basic</span>
+                      </div>
+                      <div class="mode-desc">Safe GET/HEAD discovery, headers, cookies, TLS cert, robots.txt, sitemap (Non-destructive)</div>
+                    </label>
+
+                    <label class="mode-option">
+                      <div style="display:flex;align-items:center;">
+                        <input type="radio" name="scan_mode" value="external_deep">
+                        <span class="mode-title">Authorized Deep</span>
+                      </div>
+                      <div class="mode-desc">Bounded active testing within approved paths and strict request budget</div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="verification-box" style="margin-bottom: 1rem; font-size: 0.82rem; color: var(--muted);">
+                  <div style="color: #f8fafc; font-weight: 700; margin-bottom: 0.3rem;">Approved Policy Boundaries:</div>
+                  <div>&bull; Allowed paths: <code>/</code> (same-origin only)</div>
+                  <div>&bull; Excluded paths: <code>/logout, /delete, /cancel, /payment</code></div>
+                  <div>&bull; Request budget: 50 requests max &bull; Rate limit: 2 req/sec</div>
+                </div>
+
+                <div class="auth-checkbox-wrap">
+                  <input type="checkbox" id="ext_auth_ack" required checked>
+                  <label for="ext_auth_ack" class="auth-checkbox-text">
+                    <strong>Legal Authorization Declaration:</strong> I certify that I am the verified owner or have explicit written authorization from the owner to assess this domain.
+                  </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="ext-launch-btn">Start Authorized External Scan &rarr;</button>
+              </form>
+            </div>
+
           </div>
         </div>
 
-        <div class="auth-checkbox-wrap">
-          <input type="checkbox" id="auth_ack" required checked>
-          <label for="auth_ack" class="auth-checkbox-text">
-            <strong>Explicit Authorization:</strong> I certify that I have explicit authorization to assess this local target within ScopeGuard rules.
-          </label>
-        </div>
+      </div>
 
-        <button type="submit" class="btn btn-primary" id="launch-btn">Start Security Scan &rarr;</button>
-      </form>
     </div>
 
     <!-- Right Side: Fast Compare & Provenance Audit -->
@@ -680,6 +920,9 @@
               {% endif %}
             </td>
             <td style="text-align: right;">
+              {% if s.status == 'running' %}
+              <button onclick="cancelScan({{ s.id }})" class="btn-sm btn-danger" style="margin-right:6px;cursor:pointer;">Cancel</button>
+              {% endif %}
               <a href="{{ s.report_url }}" class="action-btn">View Report &rarr;</a>
             </td>
           </tr>
@@ -700,18 +943,241 @@
     <div class="progress-box">
       <div class="spinner"></div>
       <h3 style="color:#f8fafc;font-size:1.15rem;margin-bottom:0.4rem;">Executing Security Scan</h3>
-      <p style="color:var(--muted);font-size:0.86rem;line-height:1.5;">
-        Crawling endpoints, testing SQLi, XSS, IDOR, headers, cookies, and auditing AI agent boundaries. Generating cryptographic passport...
+      <p style="color:var(--muted);font-size:0.86rem;line-height:1.5;margin-bottom:1.2rem;">
+        Crawling endpoints, inspecting headers, cookies, TLS certificates, and auditing security boundaries. Generating cryptographic passport...
       </p>
+      <button type="button" class="btn-sm btn-danger" onclick="cancelCurrentScan()">Cancel Scan</button>
     </div>
   </div>
 
   <script>
+    let currentScanId = null;
+
     function showScanProgress() {
       document.getElementById('progress-overlay').style.display = 'flex';
       const btn = document.getElementById('launch-btn');
-      btn.innerText = 'Scanning Target...';
-      btn.style.opacity = '0.7';
+      if (btn) {
+        btn.innerText = 'Scanning Target...';
+        btn.style.opacity = '0.7';
+      }
+      const extBtn = document.getElementById('ext-launch-btn');
+      if (extBtn) {
+        extBtn.innerText = 'Scanning External Target...';
+        extBtn.style.opacity = '0.7';
+      }
+    }
+
+    function switchNetwork(mode) {
+      const localTab = document.getElementById('tab-local');
+      const extTab = document.getElementById('tab-external');
+      const localSec = document.getElementById('local-lab-section');
+      const extSec = document.getElementById('external-target-section');
+
+      if (mode === 'local') {
+        localTab.classList.add('active');
+        extTab.classList.remove('active');
+        localSec.style.display = 'block';
+        extSec.style.display = 'none';
+      } else {
+        localTab.classList.remove('active');
+        extTab.classList.add('active');
+        localSec.style.display = 'none';
+        extSec.style.display = 'block';
+      }
+    }
+
+    function toggleRegisterForm() {
+      const panel = document.getElementById('register-target-panel');
+      const btn = document.getElementById('btn-toggle-reg');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        btn.innerText = 'Close Form';
+      } else {
+        panel.style.display = 'none';
+        btn.innerText = '+ Register New';
+      }
+    }
+
+    async function submitTargetRegistration() {
+      const urlInput = document.getElementById('reg_target_url').value.trim();
+      const nameInput = document.getElementById('reg_target_name').value.trim();
+      const opInput = document.getElementById('reg_operator').value.trim() || 'Operator';
+      const btn = document.getElementById('btn-submit-reg');
+
+      if (!urlInput) {
+        alert('Please enter a target URL (e.g. https://aakriti-portfolio-beryl.vercel.app)');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Registering Domain...';
+
+      try {
+        const resp = await fetch('/api/targets/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_url: urlInput,
+            target_name: nameInput,
+            authorized_by: opInput
+          })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+          alert('Registration error: ' + (data.detail || data.error || 'Failed to register'));
+          btn.disabled = false;
+          btn.innerText = 'Register Target & Generate Token →';
+          return;
+        }
+
+        // Add to select dropdown and select it
+        const sel = document.getElementById('external_target_select');
+        const opt = document.createElement('option');
+        opt.value = data.target_id;
+        opt.text = (data.name || urlInput) + ' (' + data.hostname + ') — [' + data.authorization_status.toUpperCase() + ']';
+        opt.setAttribute('data-url', data.base_url);
+        opt.setAttribute('data-name', data.name);
+        opt.setAttribute('data-verified', data.is_verified);
+        opt.setAttribute('data-status', data.authorization_status);
+        opt.setAttribute('data-token', data.active_challenge ? data.active_challenge.challenge_token : '');
+        opt.setAttribute('data-hostname', data.hostname);
+        sel.add(opt);
+        sel.value = data.target_id;
+
+        // Hide form and show verification
+        document.getElementById('register-target-panel').style.display = 'none';
+        document.getElementById('btn-toggle-reg').innerText = '+ Register New';
+        onTargetSelected(data.target_id);
+
+      } catch (err) {
+        alert('Connection error: ' + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Register Target & Generate Token →';
+      }
+    }
+
+    function onTargetSelected(targetId) {
+      const card = document.getElementById('target-status-card');
+      if (!targetId) {
+        card.style.display = 'none';
+        return;
+      }
+
+      const sel = document.getElementById('external_target_select');
+      const opt = sel.options[sel.selectedIndex];
+      const url = opt.getAttribute('data-url');
+      const name = opt.getAttribute('data-name');
+      const verified = opt.getAttribute('data-verified') === 'true';
+      const status = opt.getAttribute('data-status') || 'pending_verification';
+      const token = opt.getAttribute('data-token') || '';
+      const hostname = opt.getAttribute('data-hostname') || '';
+
+      card.style.display = 'block';
+
+      // Badge
+      const badge = document.getElementById('target-status-badge');
+      badge.className = 'status-pill ' + (verified ? 'sp-verified' : 'sp-pending');
+      badge.innerText = status.replace('_', ' ').toUpperCase();
+
+      const pendingBlock = document.getElementById('pending-verification-block');
+      const verifiedBlock = document.getElementById('verified-domain-block');
+
+      if (!verified) {
+        pendingBlock.style.display = 'block';
+        verifiedBlock.style.display = 'none';
+
+        document.getElementById('display-verification-url').innerText =
+          url.replace(/\/$/, '') + '/.well-known/aegisscan-verification.txt';
+        document.getElementById('display-token').value = token;
+        document.getElementById('verify-result-msg').innerHTML = '';
+      } else {
+        pendingBlock.style.display = 'none';
+        verifiedBlock.style.display = 'block';
+
+        document.getElementById('ext_form_target_url').value = url;
+        document.getElementById('ext_form_target_name').value = name;
+      }
+    }
+
+    function copyToken() {
+      const tokenInput = document.getElementById('display-token');
+      tokenInput.select();
+      navigator.clipboard.writeText(tokenInput.value);
+      alert('Verification token copied to clipboard!');
+    }
+
+    async function verifyTargetOwnership() {
+      const sel = document.getElementById('external_target_select');
+      const targetId = sel.value;
+      if (!targetId) return;
+
+      const btn = document.getElementById('btn-verify-ownership');
+      const resultDiv = document.getElementById('verify-result-msg');
+
+      btn.disabled = true;
+      btn.innerText = 'Probing /.well-known/aegisscan-verification.txt...';
+      resultDiv.innerHTML = '<span style="color:var(--accent);">Probing target via ScopeGuard HTTPS transport...</span>';
+
+      try {
+        const resp = await fetch('/api/targets/' + targetId + '/verify', {
+          method: 'POST'
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.verified) {
+          resultDiv.innerHTML = '<span style="color:var(--green);font-weight:700;">' + data.message + '</span>';
+          
+          // Automatically create initial external_basic authorization grant so user can scan immediately
+          await fetch('/api/targets/' + targetId + '/authorize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              authorized_by: 'Operator',
+              scan_mode: 'external_basic',
+              allowed_paths: ['/'],
+              excluded_paths: ['/logout', '/delete', '/cancel', '/payment'],
+              acknowledgment: 'I confirm ownership/authorization to assess this target.'
+            })
+          });
+
+          // Update option attributes
+          const opt = sel.options[sel.selectedIndex];
+          opt.setAttribute('data-verified', 'true');
+          opt.setAttribute('data-status', 'verified');
+          opt.text = opt.getAttribute('data-name') + ' (' + opt.getAttribute('data-hostname') + ') — [VERIFIED]';
+
+          setTimeout(() => {
+            onTargetSelected(targetId);
+          }, 1200);
+
+        } else {
+          resultDiv.innerHTML = '<span style="color:var(--red);font-weight:700;">Verification failed: ' + (data.detail || data.error || 'Challenge mismatch') + '</span>';
+        }
+      } catch (err) {
+        resultDiv.innerHTML = '<span style="color:var(--red);">Error connecting to scanner: ' + err + '</span>';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🔍 Verify Ownership Now';
+      }
+    }
+
+    async function cancelScan(scanId) {
+      if (!confirm('Are you sure you want to cancel Scan #' + scanId + '?')) return;
+      try {
+        const resp = await fetch('/api/scans/' + scanId + '/cancel', { method: 'POST' });
+        const data = await resp.json();
+        alert('Scan #' + scanId + ': ' + data.message);
+        window.location.reload();
+      } catch (err) {
+        alert('Failed to cancel scan: ' + err);
+      }
+    }
+
+    function cancelCurrentScan() {
+      document.getElementById('progress-overlay').style.display = 'none';
+      alert('Cancellation requested.');
     }
   </script>
 

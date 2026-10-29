@@ -264,7 +264,14 @@
   <!-- Scan metadata -->
   <table class="meta-table">
     <tr><td>Target</td><td>{{ target_name }} &mdash; <code>{{ target_url }}</code></td></tr>
+    <tr><td>Target Network</td><td><span class="badge" style="background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid var(--accent);">{{ target_type | upper }}</span></td></tr>
     <tr><td>Scan Mode</td><td><strong style="color:var(--accent);">{{ scan_mode | upper }} AUTHORIZED</strong></td></tr>
+    {% if requests_count %}
+    <tr><td>Traffic &amp; Budget</td><td>{{ requests_count }} HTTP request(s) {% if scan_policy and scan_policy.request_budget %}(Budget cap: {{ scan_policy.request_budget }}){% endif %}</td></tr>
+    {% endif %}
+    {% if duration_seconds %}
+    <tr><td>Scan Duration</td><td>{{ "%.2f"|format(duration_seconds) }} seconds</td></tr>
+    {% endif %}
     <tr><td>Scan started</td><td>{{ scan_started_at }}</td></tr>
     <tr><td>Scan finished</td><td>{{ scan_finished_at }}</td></tr>
   </table>
@@ -506,6 +513,9 @@
       <button class="filter-btn" onclick="filterFindings('potential_vulnerability', this)">Potential ({{ potential_count }})</button>
       <button class="filter-btn" onclick="filterFindings('verified_control', this)">Verified Controls ({{ verified_control_count }})</button>
       <button class="filter-btn" onclick="filterFindings('informational', this)">Informational ({{ informational_count }})</button>
+      {% if not_tested and not_tested|length > 0 %}
+      <button class="filter-btn" onclick="filterFindings('not_tested', this)">Not Tested ({{ not_tested|length }})</button>
+      {% endif %}
     </div>
   </div>
 
