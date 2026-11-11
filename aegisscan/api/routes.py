@@ -22,6 +22,8 @@ Full scan pipeline (POST /api/scans):
 """
 
 import os
+import threading
+import logging
 from urllib.parse import urlparse
 import json
 from datetime import datetime
@@ -97,6 +99,10 @@ def get_allowed_hosts() -> set:
 
 
 ACTIVE_POLICIES: dict = {}
+_SCAN_LOCK = threading.Lock()
+_ACTIVE_SCAN_IDS: set = set()
+MAX_CONCURRENT_SCANS = 2
+logger = logging.getLogger("aegisscan.execution")
 
 
 def validate_target_scope(
@@ -371,6 +377,9 @@ def cancel_scan_endpoint(scan_id: int, db: Session = Depends(get_db)):
     scan.finished_at = datetime.utcnow()
     db.commit()
 
+    with _SCAN_LOCK:
+        _ACTIVE_SCAN_IDS.discard(scan_id)
+
     db.add(AuditEvent(
         event_type="scan_cancelled",
         scan_id=scan.id,
@@ -383,71 +392,24 @@ def cancel_scan_endpoint(scan_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/scans -- Run a scan (Local Lab, External Basic, External Deep)
+# Internal Scan Pipeline Execution Engine
 # ---------------------------------------------------------------------------
-@router.post("/scans", summary="Start a new scan")
-def start_scan(payload: dict, db: Session = Depends(get_db)):
-    """
-    Request body:
-        { "target_url": "http://127.0.0.1:5001", "target_name": "AegisLab", "scan_mode": "deep" }
-    or for external:
-        { "target_url": "https://example.com", "target_name": "Example", "scan_mode": "external_basic" }
-    """
-    raw_target_url = payload.get("target_url")
-    target_name    = payload.get("target_name", "Unnamed Target")
-    requested_mode = str(payload.get("scan_mode", "deep")).strip().lower()
+def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise ValueError(f"Scan #{scan_id} not found in database")
+    target = db.query(Target).filter(Target.id == scan.target_id).first()
+    if not target:
+        raise ValueError(f"Target #{scan.target_id} not found for scan #{scan_id}")
 
-    if not raw_target_url:
-        raise HTTPException(status_code=400, detail="target_url is required")
-
-    # Scope and authorization validation
-    scope_info = validate_target_scope(raw_target_url, db=db, scan_mode=requested_mode)
-    target_type = scope_info["target_type"]
-    canonical_base = scope_info["canonical_base"]
-    hostname = scope_info["hostname"]
-
-    # -----------------------------------------------------------------------
-    # Branch 1: Local Lab Scans (Unchanged benchmark behavior)
-    # -----------------------------------------------------------------------
-    if target_type == "local":
-        scan_mode = "deep" if requested_mode not in ("basic", "external_basic") else "basic"
-        target = db.query(Target).filter(Target.base_url == canonical_base).first()
-        if not target:
-            target = Target(
-                name=target_name,
-                base_url=canonical_base,
-                target_type="local",
-                is_verified=True,
-                verified_at=datetime.utcnow(),
-                verification_method="pre_authorized"
-            )
-            db.add(target)
-            db.commit()
-            db.refresh(target)
-
-        policy = ScanPolicy(
-            target_url=canonical_base,
-            target_type="local_lab",
-            scan_mode=scan_mode,
-            target_id=target.id,
-            allowed_hostname=hostname,
-            request_budget=500,
-        )
-
-        scan = Scan(
-            target_id=target.id,
-            status="running",
-            scan_mode=scan_mode,
-            target_type="local",
-            started_at=datetime.utcnow(),
-            scan_policy_json=policy.to_json(),
-        )
-        db.add(scan)
-        db.commit()
-        db.refresh(scan)
-        scan_id = scan.id
+    canonical_base = target.base_url
+    scan_mode = scan.scan_mode or "deep"
+    policy = ACTIVE_POLICIES.get(scan_id)
+    if not policy and scan.scan_policy_json:
+        policy = ScanPolicy.from_dict(json.loads(scan.scan_policy_json))
         ACTIVE_POLICIES[scan_id] = policy
 
+    if scan.target_type == "local":
         print(f"\n[AegisScan] ===== Scan #{scan_id} ({scan_mode.upper()}) started against {canonical_base} =====")
 
         try:
@@ -712,6 +674,13 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
             scan.status      = "failed"
             scan.finished_at = datetime.utcnow()
             db.commit()
+            db.add(AuditEvent(
+                event_type="scan_failed",
+                scan_id=scan.id,
+                target_id=target.id,
+                details=f"Scan #{scan.id} failed: {str(e)}"
+            ))
+            db.commit()
             import traceback; traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
         finally:
@@ -721,55 +690,18 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
     # Branch 2: External Authorized Scans (Basic and Deep)
     # -----------------------------------------------------------------------
     else:
-        target = scope_info["target"]
-        grant  = scope_info["grant"]
-
-        # Map scan mode
-        if requested_mode in ("deep", "external_deep"):
-            scan_mode = "external_deep"
-        else:
-            scan_mode = "external_basic"
-
-        allowed_paths = json.loads(grant.allowed_paths) if grant.allowed_paths else ["/"]
-        excluded_paths = json.loads(grant.excluded_paths) if grant.excluded_paths else []
-        rate_delay = 1.0 / float(grant.rate_limit_per_second or 2.0)
-
-        policy = ScanPolicy(
-            target_url=canonical_base,
-            target_type="external",
-            scan_mode=scan_mode,
-            target_id=target.id,
-            authorization_grant_id=grant.id,
-            allowed_hostname=hostname,
-            allowed_paths=allowed_paths,
-            excluded_paths=excluded_paths,
-            request_budget=grant.max_requests or (50 if scan_mode == "external_basic" else 150),
-            rate_limit_delay=rate_delay,
-        )
-
-        scan = Scan(
-            target_id=target.id,
-            status="running",
-            scan_mode=scan_mode,
-            target_type="external",
-            authorization_grant_id=grant.id,
-            started_at=datetime.utcnow(),
-            scan_policy_json=policy.to_json(),
-        )
-        db.add(scan)
-        db.commit()
-        db.refresh(scan)
-        scan_id = scan.id
-        ACTIVE_POLICIES[scan_id] = policy
-
-        print(f"\n[AegisScan] ===== External Scan #{scan_id} ({scan_mode.upper()}) started against {canonical_base} =====")
+        grant = None
+        if scan.authorization_grant_id:
+            grant = db.query(AuthorizationGrant).filter(AuthorizationGrant.id == scan.authorization_grant_id).first()
 
         guard = ScopeGuard(
-            allowed_hosts={hostname},
+            allowed_hosts={policy.allowed_hostname},
             mode="external",
-            allowed_paths=allowed_paths,
-            excluded_paths=excluded_paths,
+            allowed_paths=policy.allowed_paths,
+            excluded_paths=policy.excluded_paths,
         )
+
+        print(f"\n[AegisScan] ===== External Scan #{scan_id} ({scan_mode.upper()}) started against {canonical_base} =====")
 
         try:
             # Step 1: Safe Crawl (GET/HEAD only)
@@ -902,10 +834,170 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
             scan.status      = "failed"
             scan.finished_at = datetime.utcnow()
             db.commit()
+            db.add(AuditEvent(
+                event_type="scan_failed",
+                scan_id=scan.id,
+                target_id=target.id,
+                operator=grant.authorized_by if grant else "operator",
+                details=f"External scan #{scan.id} failed: {str(e)}"
+            ))
+            db.commit()
             import traceback; traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
         finally:
             ACTIVE_POLICIES.pop(scan_id, None)
+
+
+def _scan_worker_thread(scan_id: int):
+    from database import SessionLocal
+    db_thread = SessionLocal()
+    try:
+        _execute_scan_pipeline(scan_id=scan_id, db=db_thread)
+    except Exception as e:
+        logger.exception("Background scan execution error for scan #%s: %s", scan_id, e)
+    finally:
+        db_thread.close()
+        with _SCAN_LOCK:
+            _ACTIVE_SCAN_IDS.discard(scan_id)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/scans -- Run a scan (Local Lab, External Basic, External Deep)
+# ---------------------------------------------------------------------------
+@router.post("/scans", summary="Start a new scan")
+def start_scan(payload: dict, db: Session = Depends(get_db)):
+    """
+    Request body:
+        { "target_url": "http://127.0.0.1:5001", "target_name": "AegisLab", "scan_mode": "deep" }
+    or for external:
+        { "target_url": "https://example.com", "target_name": "Example", "scan_mode": "external_basic" }
+    """
+    raw_target_url = payload.get("target_url")
+    target_name    = payload.get("target_name", "Unnamed Target")
+    requested_mode = str(payload.get("scan_mode", "deep")).strip().lower()
+    run_in_background = bool(payload.get("background") or payload.get("async"))
+
+    if not raw_target_url:
+        raise HTTPException(status_code=400, detail="target_url is required")
+
+    # Scope and authorization validation
+    scope_info = validate_target_scope(raw_target_url, db=db, scan_mode=requested_mode)
+    target_type = scope_info["target_type"]
+    canonical_base = scope_info["canonical_base"]
+    hostname = scope_info["hostname"]
+
+    # Concurrency limit check
+    with _SCAN_LOCK:
+        if len(_ACTIVE_SCAN_IDS) >= MAX_CONCURRENT_SCANS:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Maximum concurrent scans ({MAX_CONCURRENT_SCANS}) reached. Please wait for an active scan to complete."
+            )
+
+    if target_type == "local":
+        scan_mode = "deep" if requested_mode not in ("basic", "external_basic") else "basic"
+        target = db.query(Target).filter(Target.base_url == canonical_base).first()
+        if not target:
+            target = Target(
+                name=target_name,
+                base_url=canonical_base,
+                target_type="local",
+                is_verified=True,
+                verified_at=datetime.utcnow(),
+                verification_method="pre_authorized"
+            )
+            db.add(target)
+            db.commit()
+            db.refresh(target)
+
+        policy = ScanPolicy(
+            target_url=canonical_base,
+            target_type="local_lab",
+            scan_mode=scan_mode,
+            target_id=target.id,
+            allowed_hostname=hostname,
+            request_budget=500,
+        )
+
+        scan = Scan(
+            target_id=target.id,
+            status="running",
+            scan_mode=scan_mode,
+            target_type="local",
+            started_at=datetime.utcnow(),
+            scan_policy_json=policy.to_json(),
+        )
+        db.add(scan)
+        db.commit()
+        db.refresh(scan)
+        scan_id = scan.id
+        ACTIVE_POLICIES[scan_id] = policy
+
+    else:
+        target = scope_info["target"]
+        grant  = scope_info["grant"]
+
+        if requested_mode in ("deep", "external_deep"):
+            scan_mode = "external_deep"
+        else:
+            scan_mode = "external_basic"
+
+        allowed_paths = json.loads(grant.allowed_paths) if grant.allowed_paths else ["/"]
+        excluded_paths = json.loads(grant.excluded_paths) if grant.excluded_paths else []
+        rate_delay = 1.0 / float(grant.rate_limit_per_second or 2.0)
+
+        policy = ScanPolicy(
+            target_url=canonical_base,
+            target_type="external",
+            scan_mode=scan_mode,
+            target_id=target.id,
+            authorization_grant_id=grant.id,
+            allowed_hostname=hostname,
+            allowed_paths=allowed_paths,
+            excluded_paths=excluded_paths,
+            request_budget=grant.max_requests or (50 if scan_mode == "external_basic" else 150),
+            rate_limit_delay=rate_delay,
+        )
+
+        scan = Scan(
+            target_id=target.id,
+            status="running",
+            scan_mode=scan_mode,
+            target_type="external",
+            authorization_grant_id=grant.id,
+            started_at=datetime.utcnow(),
+            scan_policy_json=policy.to_json(),
+        )
+        db.add(scan)
+        db.commit()
+        db.refresh(scan)
+        scan_id = scan.id
+        ACTIVE_POLICIES[scan_id] = policy
+
+    with _SCAN_LOCK:
+        _ACTIVE_SCAN_IDS.add(scan_id)
+
+    if run_in_background:
+        thread = threading.Thread(
+            target=_scan_worker_thread,
+            args=(scan_id,),
+            daemon=True
+        )
+        thread.start()
+        return {
+            "scan_id": scan_id,
+            "target_url": canonical_base,
+            "scan_mode": scan_mode,
+            "status": "running",
+            "message": "Scan started in background",
+            "report_url": f"http://127.0.0.1:8000/api/scans/{scan_id}/report",
+        }
+    else:
+        try:
+            return _execute_scan_pipeline(scan_id=scan_id, db=db)
+        finally:
+            with _SCAN_LOCK:
+                _ACTIVE_SCAN_IDS.discard(scan_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1109,8 +1201,12 @@ def get_scan(scan_id: int, db: Session = Depends(get_db)):
         "scan_id"       : scan.id,
         "target_id"     : scan.target_id,
         "status"        : scan.status,
+        "scan_mode"     : scan.scan_mode,
+        "target_type"   : scan.target_type,
         "started_at"    : scan.started_at,
         "finished_at"   : scan.finished_at,
+        "duration_seconds": getattr(scan, "duration_seconds", 0.0),
+        "requests_count": getattr(scan, "requests_count", 0),
         "findings_count": len(scan.findings),
     }
 
@@ -1152,6 +1248,39 @@ def get_report(scan_id: int, db: Session = Depends(get_db)):
     if not scan:
         raise HTTPException(status_code=404, detail=f"Scan {scan_id} not found")
     target = db.query(Target).filter(Target.id == scan.target_id).first()
+    target_url = target.base_url if target else "Unknown"
+    target_name = target.name if target else "Unknown"
+
+    if scan.status == "running":
+        return HTMLResponse(
+            content=report.generate_progress_report(
+                scan_id=scan.id,
+                target_url=target_url,
+                target_name=target_name,
+                scan_mode=scan.scan_mode or "deep",
+                started_at=scan.started_at,
+            ),
+            status_code=200
+        )
+
+    if scan.status == "failed":
+        failed_event = (
+            db.query(AuditEvent)
+            .filter(AuditEvent.scan_id == scan_id, AuditEvent.event_type == "scan_failed")
+            .order_by(AuditEvent.id.desc())
+            .first()
+        )
+        err_msg = failed_event.details if failed_event else "Scan execution encountered an unhandled error."
+        return HTMLResponse(
+            content=report.generate_failed_report(
+                scan_id=scan.id,
+                target_url=target_url,
+                target_name=target_name,
+                scan_mode=scan.scan_mode or "deep",
+                error_message=err_msg,
+            ),
+            status_code=200
+        )
 
     findings_data = [
         {

@@ -16,7 +16,7 @@ import socket
 from urllib.parse import urlparse
 from typing import List, Dict, Optional
 from risk import ScoredFinding
-from scope import ScopeGuard
+from scope import ScopeGuard, OutOfScopeError
 
 
 def inspect_tls_certificate(base_url: str, scope_guard: Optional[ScopeGuard] = None) -> List[ScoredFinding]:
@@ -46,7 +46,10 @@ def inspect_tls_certificate(base_url: str, scope_guard: Optional[ScopeGuard] = N
         ctx.check_hostname = True
         ctx.verify_mode = ssl.CERT_REQUIRED
 
-        with socket.create_connection((hostname, port), timeout=5.0) as sock:
+        guard = scope_guard or ScopeGuard(mode="external", allowed_hosts={hostname} if hostname else None)
+        pinned_ip = guard.resolve_and_pin_ip(hostname, port)
+
+        with socket.create_connection((pinned_ip, port), timeout=5.0) as sock:
             with ctx.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
                 cipher = ssock.cipher()
@@ -70,6 +73,17 @@ def inspect_tls_certificate(base_url: str, scope_guard: Optional[ScopeGuard] = N
                     payload="",
                     category="verified_control"
                 ))
+    except OutOfScopeError as e:
+        findings.append(ScoredFinding(
+            vuln_type="SSRF / Scope Protection Block",
+            severity="Critical",
+            status="confirmed",
+            location=f"https://{hostname}:{port}",
+            evidence=f"TLS inspection aborted by ScopeGuard: {e}",
+            remediation_advice="Do not scan private, reserved, or unauthorized network addresses.",
+            payload="",
+            category="confirmed_vulnerability"
+        ))
     except ssl.SSLCertVerificationError as e:
         findings.append(ScoredFinding(
             vuln_type="Invalid TLS Certificate",

@@ -224,3 +224,39 @@ def generate_compare_report(
         all_scans = all_scans or [],
     )
     return html
+
+
+def generate_progress_report(
+    scan_id: int,
+    target_url: str,
+    target_name: str,
+    scan_mode: str,
+    started_at: Optional[Any] = None,
+) -> str:
+    """Render the live scan progress and auto-polling view."""
+    template = _jinja_env.get_template("progress.html")
+    return template.render(
+        scan_id=scan_id,
+        target_url=target_url,
+        target_name=target_name,
+        scan_mode=scan_mode,
+        started_at=started_at,
+    )
+
+
+def generate_failed_report(
+    scan_id: int,
+    target_url: str,
+    target_name: str,
+    scan_mode: str,
+    error_message: Optional[str] = None,
+) -> str:
+    """Render the clean scan failure view."""
+    template = _jinja_env.get_template("failed.html")
+    return template.render(
+        scan_id=scan_id,
+        target_url=target_url,
+        target_name=target_name,
+        scan_mode=scan_mode,
+        error_message=error_message,
+    )

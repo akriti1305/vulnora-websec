@@ -159,6 +159,7 @@ def form_start_scan(
             "target_url": target_url.strip(),
             "target_name": target_name.strip(),
             "scan_mode": scan_mode.strip(),
+            "background": True,
         }, db=db)
         new_scan_id = res["scan_id"]
         return RedirectResponse(url=f"/api/scans/{new_scan_id}/report", status_code=303)

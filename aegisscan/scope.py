@@ -23,7 +23,12 @@ import socket
 import ipaddress
 from urllib.parse import urlparse, urljoin
 from typing import Set, Optional, List, Dict, Any
+import typing
 import httpx
+import httpcore
+from httpcore._backends.sync import SyncStream
+from httpcore._exceptions import map_exceptions, ConnectTimeout, ConnectError
+
 
 
 # ---------------------------------------------------------------------------
@@ -147,17 +152,54 @@ def resolve_and_validate_hostname(
 
 
 # ---------------------------------------------------------------------------
-# Scope-Aware HTTP Transport for SSRF Mitigation
+# Scope-Aware HTTP Transport for SSRF Mitigation & DNS Rebinding Protection
 # ---------------------------------------------------------------------------
+class PinnedIPNetworkBackend(httpcore.SyncBackend):
+    """
+    Hardened SyncBackend that binds socket creation directly to the validated IP address
+    approved by ScopeGuard, preventing Time-of-Check to Time-of-Use (TOCTOU) DNS rebinding
+    attacks while fully preserving TLS certificate validation, SNI, and Host headers.
+    """
+    def __init__(self, scope_guard: "ScopeGuard"):
+        super().__init__()
+        self.scope_guard = scope_guard
+
+    def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: Optional[float] = None,
+        local_address: Optional[str] = None,
+        socket_options: Optional[typing.Iterable[Any]] = None,
+    ) -> httpcore.NetworkStream:
+        # Resolve and validate IP address under ScopeGuard policy
+        validated_ip = self.scope_guard.resolve_and_pin_ip(host, port)
+
+        address = (validated_ip, port)
+        source_address = None if local_address is None else (local_address, 0)
+        exc_map = {socket.timeout: ConnectTimeout, OSError: ConnectError}
+        with map_exceptions(exc_map):
+            sock = socket.create_connection(address, timeout, source_address=source_address)
+            for opt in (socket_options or []):
+                sock.setsockopt(*opt)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        return SyncStream(sock)
+
+
 class SSRFProtectTransport(httpx.HTTPTransport):
     """
     HTTPTransport that validates the destination host and resolved IP addresses
-    prior to socket connection establishment.
+    prior to socket connection establishment and enforces socket-level IP pinning.
     """
 
     def __init__(self, scope_guard: "ScopeGuard", **kwargs):
+        # Force trust_env=False unless explicitly overridden to prevent proxy poisoning
+        if "trust_env" not in kwargs:
+            kwargs["trust_env"] = False
         super().__init__(**kwargs)
         self.scope_guard = scope_guard
+        # Replace the network backend in the connection pool with our IP-pinned backend
+        self._pool._network_backend = PinnedIPNetworkBackend(scope_guard=self.scope_guard)
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         url_str = str(request.url)
@@ -313,6 +355,46 @@ class ScopeGuard:
                 env_allowed = _get_default_local_hosts()
                 if hostname not in env_allowed:
                     raise OutOfScopeError(f"Local lab mode is restricted to local addresses. Host '{hostname}' is not permitted.")
+
+    def resolve_and_pin_ip(self, host: str, port: int) -> str:
+        """
+        Resolves hostname and validates that ALL returned IP addresses comply with the
+        configured scope and SSRF policy. Returns the approved IP address to which
+        the socket connection must be pinned.
+
+        Raises OutOfScopeError if the host is outside scope, DNS fails, or any resolved IP
+        is prohibited.
+        """
+        cleaned_host = host.strip().lower()
+        if cleaned_host.startswith("[") and cleaned_host.endswith("]"):
+            cleaned_host = cleaned_host[1:-1]
+        if cleaned_host.endswith("."):
+            cleaned_host = cleaned_host.rstrip(".")
+
+        if cleaned_host not in self.allowed_hosts:
+            raise OutOfScopeError(
+                f"Host '{cleaned_host}' is not in approved scope ({', '.join(sorted(self.allowed_hosts))})"
+            )
+
+        if self.mode == "external":
+            resolved_ips = resolve_and_validate_hostname(cleaned_host, is_external=True)
+            return resolved_ips[0]
+        else:
+            resolved_ips = resolve_and_validate_hostname(cleaned_host, is_external=False, allow_private=True)
+            for ip_str in resolved_ips:
+                try:
+                    ip = ipaddress.ip_address(ip_str)
+                    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+                        ip = ip.ipv4_mapped
+                    if not ip.is_loopback:
+                        raise OutOfScopeError(
+                            f"Local lab mode is restricted to local loopback addresses. "
+                            f"Host '{cleaned_host}' resolved to non-loopback address: '{ip_str}'"
+                        )
+                except ValueError:
+                    raise OutOfScopeError(f"Malformed IP address in local lab resolution: '{ip_str}'")
+            return resolved_ips[0]
+
 
     def _check_redirect_event_hook(self, response: httpx.Response) -> None:
         """Inspect redirect Location header before client follows it."""

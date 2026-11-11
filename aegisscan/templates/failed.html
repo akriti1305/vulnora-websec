@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Failed &mdash; Scan #{{ scan_id }} &bull; AegisScan 2.0</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #111827;
+      --surface2: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 3rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .icon-fail {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: var(--red-bg);
+      border: 2px solid var(--red);
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .error-card {
+      background: var(--red-bg);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1.8rem;
+      text-align: left;
+    }
+    .error-title {
+      color: var(--red);
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .error-desc {
+      color: #fca5a5;
+      font-family: 'Consolas', monospace;
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+    .meta-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.4rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      font-size: 0.9rem;
+    }
+    .meta-label { color: var(--muted); }
+    .meta-val { color: var(--text); font-family: 'Consolas', monospace; }
+    .btn-return {
+      display: inline-block;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      color: #0b0f19;
+      text-decoration: none;
+      font-weight: 700;
+      padding: 0.75rem 1.6rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: opacity 0.2s;
+    }
+    .btn-return:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon-fail">&#10006;</div>
+    <h1>Security Assessment Failed</h1>
+    <p class="subtitle">The scan pipeline encountered an unhandled error during execution.</p>
+
+    <div class="error-card">
+      <div class="error-title">Failure Reason</div>
+      <div class="error-desc">{{ error_message or "An unexpected exception halted the scan pipeline." }}</div>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-row">
+        <span class="meta-label">Scan ID:</span>
+        <span class="meta-val">#{{ scan_id }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Target URL:</span>
+        <span class="meta-val">{{ target_url }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Target Name:</span>
+        <span class="meta-val">{{ target_name }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Scan Mode:</span>
+        <span class="meta-val">{{ scan_mode }}</span>
+      </div>
+    </div>
+
+    <a href="/" class="btn-return">&larr; Return to Dashboard</a>
+  </div>
+</body>
+</html>

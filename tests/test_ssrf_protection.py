@@ -167,6 +167,45 @@ class TestSSRFProtection(unittest.TestCase):
         self.assertTrue(guard.is_allowed("http://127.0.0.1:5001/"))
         self.assertTrue(guard.is_allowed("http://localhost:5001/assistant"))
 
+    def test_dns_rebinding_ip_pinning_backend(self):
+        """Verifies that PinnedIPNetworkBackend connects directly to the pinned IP."""
+        from scope import PinnedIPNetworkBackend
+        guard = ScopeGuard(allowed_hosts={"example.com"}, mode="external")
+        with patch.object(guard, "resolve_and_pin_ip", return_value="93.184.216.34"):
+            backend = PinnedIPNetworkBackend(guard)
+            with patch("socket.create_connection") as mock_create_conn:
+                mock_sock = MagicMock()
+                mock_create_conn.return_value = mock_sock
+
+                stream = backend.connect_tcp(
+                    host="example.com",
+                    port=443,
+                    timeout=5.0,
+                    local_address=None,
+                    socket_options=None,
+                )
+                # Verify socket was opened to PINNED IP (93.184.216.34), not the hostname
+                mock_create_conn.assert_called_once_with(
+                    ("93.184.216.34", 443),
+                    5.0,
+                    source_address=None
+                )
+
+    def test_local_lab_rejects_lan_ip(self):
+        """Verifies that local lab mode strictly permits loopback only and rejects internal LAN IPs."""
+        guard = ScopeGuard(mode="local_lab")
+        with patch("socket.getaddrinfo") as mock_dns:
+            mock_dns.return_value = [(2, 1, 0, "", ("192.168.1.100", 80))]
+            with self.assertRaises(OutOfScopeError):
+                guard.resolve_and_pin_ip("internal-router.local", port=80)
+
+    def test_inspect_tls_ssrf_blocking(self):
+        """Verifies that inspect_tls_certificate intercepts and blocks private/loopback IP connections."""
+        from detectors.external_passive import inspect_tls_certificate
+        guard = ScopeGuard(allowed_hosts={"127.0.0.1"}, mode="external")
+        findings = inspect_tls_certificate("https://127.0.0.1:443", scope_guard=guard)
+        self.assertTrue(any(f.vuln_type == "SSRF / Scope Protection Block" for f in findings))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="3">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanning Target &mdash; Scan #{{ scan_id }} &bull; AegisScan 2.0</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #111827;
+      --surface2: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --red: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 3rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .radar-box {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radar-pulse {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: pulse 1.8s infinite ease-out;
+    }
+    .radar-pulse-2 {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: pulse 1.8s infinite ease-out 0.6s;
+    }
+    .radar-core {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b0f19;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .info-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--muted); font-weight: 500; }
+    .info-value { color: var(--text); font-family: 'Consolas', monospace; }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .progress-bar-active {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
+      background-size: 200% 100%;
+      animation: sweep 2s linear infinite;
+    }
+    @keyframes sweep {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover {
+      background: rgba(248, 113, 113, 0.15);
+    }
+    .status-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="radar-box">
+      <div class="radar-pulse"></div>
+      <div class="radar-pulse-2"></div>
+      <div class="radar-core">&#9658;</div>
+    </div>
+    <h1>Security Assessment In Progress</h1>
+    <p class="subtitle">Executing hardened crawling, vulnerability detection, and AI validation.</p>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar-active"></div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-row">
+        <span class="info-label">Scan ID:</span>
+        <span class="info-value">#{{ scan_id }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Target URL:</span>
+        <span class="info-value">{{ target_url }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Target Name:</span>
+        <span class="info-value">{{ target_name }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Scan Mode:</span>
+        <span class="info-value" style="color: var(--accent); text-transform: uppercase;">{{ scan_mode }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Started At:</span>
+        <span class="info-value">{{ started_at or 'Just now' }}</span>
+      </div>
+    </div>
+
+    <form method="POST" action="/api/scans/{{ scan_id }}/cancel" style="display:inline;">
+      <button type="submit" class="btn-cancel">Cancel Scan</button>
+    </form>
+    <div class="status-text">Auto-refreshing status every 2 seconds...</div>
+  </div>
+
+  <script>
+    const scanId = {{ scan_id }};
+    function pollStatus() {
+      fetch('/api/scans/' + scanId)
+        .then(response => response.json())
+        .then(data => {
+          if (data && (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled')) {
+            window.location.reload();
+          } else {
+            setTimeout(pollStatus, 2000);
+          }
+        })
+        .catch(err => {
+          setTimeout(pollStatus, 3000);
+        });
+    }
+    setTimeout(pollStatus, 2000);
+  </script>
+</body>
+</html>
