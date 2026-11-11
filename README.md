@@ -230,3 +230,12 @@ AegisScan partitions all scan outputs into 6 distinct categories:
 2. **Ephemeral SQLite Multi-Threading**: SQLite database connections cannot be transferred across operating system threads. All synchronous scan execution pipelines run within bounded worker threads using dedicated session instances.
 3. **DNS Time-of-Check to Time-of-Use**: To minimize DNS rebinding risks on external targets, resolved IP addresses are pre-validated and sockets are strictly bound to validated network destinations.
 4. **Key Management**: Ed25519 signing keys are persisted under `aegisscan/secrets/`. Production enterprise deployments should integrate Hardware Security Modules (HSMs) or cloud Key Management Services (AWS KMS, Azure Key Vault, Google Cloud KMS).
+
+---
+
+## 10. Audit & Implementation Reports
+
+- [AEGISSCAN_FINAL_AUDIT.md](AEGISSCAN_FINAL_AUDIT.md) — Comprehensive pre-implementation codebase audit.
+- [AEGISSCAN_DAY1_IMPLEMENTATION_REPORT.md](AEGISSCAN_DAY1_IMPLEMENTATION_REPORT.md) — P0 anti-SSRF IP pinning, background thread engine, and progress polling.
+- [AEGISSCAN_DAY2_IMPLEMENTATION_REPORT.md](AEGISSCAN_DAY2_IMPLEMENTATION_REPORT.md) — Simple URL-based external scanning, dual-tier scope authorization, and AI benchmark coupling.
+- [AEGISSCAN_FINAL_RELEASE_REPORT.md](AEGISSCAN_FINAL_RELEASE_REPORT.md) — Final release readiness, 124-test verification, and academic evaluation walkthrough.

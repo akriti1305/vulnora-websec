@@ -14,26 +14,40 @@ Key concepts:
   - Base      : the parent class all our models (tables) will inherit from
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # -----------------------------------------------------------------------
 # Database file location
 # -----------------------------------------------------------------------
-# "sqlite:///aegisscan.db" means: create (or open) a file called
-# "aegisscan.db" in the current working directory.
-# The three slashes "///" mean it's a relative path.
-DATABASE_URL = "sqlite:///aegisscan.db"
+# Resolves canonically to D:\PRJ4\aegisscan.db or local fallback so that
+# working directory differences between uvicorn, scripts, and tests do not split database state.
+import os as _os
+_this_dir = _os.path.dirname(_os.path.abspath(__file__))
+_root_db = _os.path.abspath(_os.path.join(_this_dir, "..", "aegisscan.db"))
+_local_db = _os.path.abspath(_os.path.join(_this_dir, "aegisscan.db"))
+_chosen_db = _root_db if _os.path.exists(_root_db) else _local_db
+DATABASE_URL = _os.environ.get("AEGISSCAN_DATABASE_URL", f"sqlite:///{_chosen_db}")
 
 # -----------------------------------------------------------------------
 # Engine — the connection to the database
 # -----------------------------------------------------------------------
 # check_same_thread=False is needed for SQLite when used with FastAPI,
-# because FastAPI handles requests in threads.
+# because FastAPI handles requests in threads. timeout=30 prevents locking issues.
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False, "timeout": 30.0}
 )
+
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """Enable Write-Ahead Logging (WAL) and set busy timeout for concurrent threads."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=30000")
+    cursor.close()
 
 # -----------------------------------------------------------------------
 # SessionLocal — a session factory
