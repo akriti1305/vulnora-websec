@@ -636,156 +636,176 @@
       <!-- EXTERNAL TARGET FORM -->
       <div id="external-target-section" style="display: none;">
         
-        <!-- Target Selector Dropdown -->
-        <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <label style="margin:0;">Select Registered Target</label>
-            <button type="button" class="btn-sm btn-secondary" onclick="toggleRegisterForm()" id="btn-toggle-reg">+ Register New</button>
-          </div>
-          <select id="external_target_select" onchange="onTargetSelected(this.value)">
-            <option value="">-- Choose a registered target --</option>
-            {% for t in targets %}
-              {% if t.target_type == 'external' %}
-              <option value="{{ t.target_id }}" data-url="{{ t.base_url }}" data-name="{{ t.name }}" data-verified="{{ t.is_verified }}" data-status="{{ t.authorization_status }}" data-token="{{ t.active_challenge.challenge_token if t.active_challenge else '' }}" data-hostname="{{ t.hostname }}">
-                {{ t.name }} ({{ t.hostname }}) &mdash; [{{ t.authorization_status | upper }}]
-              </option>
-              {% endif %}
-            {% endfor %}
-          </select>
-        </div>
+        <!-- Primary Form: Direct Authorized External Scanning -->
+        <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
+          <input type="hidden" name="target_type" value="external">
 
-        <!-- Inline Target Registration Form -->
-        <div id="register-target-panel" class="verification-box" style="display: none; border-color: rgba(56, 189, 248, 0.4);">
-          <div style="font-weight: 700; color: #f8fafc; margin-bottom: 0.8rem; font-size: 0.95rem;">
-            🌐 Register External Target Domain
-          </div>
           <div class="form-group">
-            <label for="reg_target_url">Target Base URL (HTTPS only)</label>
-            <input type="url" id="reg_target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app">
-            <div class="hint">External scans require HTTPS on standard port 443.</div>
+            <label for="ext_target_url">Target Base URL (HTTPS only)</label>
+            <input type="url" id="ext_target_url" name="target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app" required>
+            <div class="hint">External assessment requires HTTPS on standard port 443. Private IP addresses and loopback addresses are strictly blocked by ScopeGuard.</div>
           </div>
-          <div class="form-group">
-            <label for="reg_target_name">Site Name / Label</label>
-            <input type="text" id="reg_target_name" placeholder="e.g. My Portfolio">
-          </div>
-          <div class="form-group">
-            <label for="reg_operator">Authorized Operator Name</label>
-            <input type="text" id="reg_operator" placeholder="e.g. Aakriti">
-          </div>
-          <button type="button" class="btn btn-secondary" onclick="submitTargetRegistration()" id="btn-submit-reg">
-            Register Target &amp; Generate Token &rarr;
-          </button>
-        </div>
 
-        <!-- Verification & Status Card -->
-        <div id="target-status-card" style="display: none;">
-          <div class="verification-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-              <span style="font-size: 0.84rem; color: var(--muted); font-weight: 700;">DOMAIN AUTHORIZATION STATUS</span>
-              <span id="target-status-badge" class="status-pill sp-unregistered">UNREGISTERED</span>
+          <div class="form-group">
+            <label for="ext_target_name">Site Name / Label</label>
+            <input type="text" id="ext_target_name" name="target_name" placeholder="e.g. My Portfolio" required>
+          </div>
+
+          <div class="form-group">
+            <label>Scan Mode</label>
+            <div class="mode-selector">
+              <label class="mode-option" onclick="onModeChanged('external_basic')">
+                <div style="display:flex;align-items:center;">
+                  <input type="radio" name="scan_mode" id="radio_ext_basic" value="external_basic" checked>
+                  <span class="mode-title">External Basic</span>
+                </div>
+                <div class="mode-desc">Non-invasive passive inspection: TLS/SSL, security headers, cookie flags, robots.txt, sitemap, HTML crawl & form inventory. Zero active exploit probes. (Self-attested legal declaration).</div>
+              </label>
+
+              <label class="mode-option" onclick="onModeChanged('external_deep')">
+                <div style="display:flex;align-items:center;">
+                  <input type="radio" name="scan_mode" id="radio_ext_deep" value="external_deep">
+                  <span class="mode-title">Authorized Deep</span>
+                </div>
+                <div class="mode-desc">Active vulnerability testing within approved paths and strict request budget. Strictly requires technical domain ownership verification (.well-known token).</div>
+              </label>
+            </div>
+          </div>
+
+          <div class="verification-box" style="margin-bottom: 1rem; font-size: 0.82rem; color: var(--muted);">
+            <div style="color: #f8fafc; font-weight: 700; margin-bottom: 0.3rem;">Safety Bounds & Enforcement:</div>
+            <div>&bull; Max Request Budget: <strong>50 requests</strong> &bull; Rate Limit: <strong>2.0 req/sec</strong></div>
+            <div>&bull; Safe GET/HEAD discovery only &bull; Active injection probes reported honestly as <em>Not Tested</em></div>
+            <div>&bull; Cryptographic Ed25519 Scan Passport & SHA-256 Hash Chain verification</div>
+          </div>
+
+          <div class="auth-checkbox-wrap">
+            <input type="checkbox" id="ext_auth_ack" name="auth_ack" value="1" required checked>
+            <label for="ext_auth_ack" class="auth-checkbox-text">
+              <strong>Legal Authorization Declaration:</strong> I certify that I am the owner or have explicit written authorization from the owner to assess this domain. I acknowledge that External Basic is restricted to non-destructive passive checks, and External Deep requires technical domain control.
+            </label>
+          </div>
+
+          <div style="margin-top: 1rem; margin-bottom: 1.5rem;">
+            <button type="submit" class="btn btn-primary" id="ext-launch-btn">Start Authorized External Scan &rarr;</button>
+          </div>
+        </form>
+
+        <!-- Technical Domain Control & Deep Verification Drawer -->
+        <details id="domain-verification-drawer" style="border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.18); padding: 0.8rem 1rem;">
+          <summary style="cursor: pointer; font-weight: 700; color: var(--accent); user-select: none;">
+            🛡️ Domain Ownership Verification (.well-known Token for Authorized Deep)
+          </summary>
+          <div style="margin-top: 1rem;">
+            <!-- Target Selector Dropdown -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <label style="margin:0;">Select Registered Target</label>
+                <button type="button" class="btn-sm btn-secondary" onclick="toggleRegisterForm()" id="btn-toggle-reg">+ Register New</button>
+              </div>
+              <select id="external_target_select" onchange="onTargetSelected(this.value)">
+                <option value="">-- Choose a registered target to auto-fill or verify --</option>
+                {% for t in targets %}
+                  {% if t.target_type == 'external' %}
+                  <option value="{{ t.target_id }}" data-url="{{ t.base_url }}" data-name="{{ t.name }}" data-verified="{{ t.is_verified }}" data-status="{{ t.authorization_status }}" data-token="{{ t.active_challenge.challenge_token if t.active_challenge else '' }}" data-hostname="{{ t.hostname }}">
+                    {{ t.name }} ({{ t.hostname }}) &mdash; [{{ t.authorization_status | upper }}]
+                  </option>
+                  {% endif %}
+                {% endfor %}
+              </select>
             </div>
 
-            <!-- Pending Verification Block -->
-            <div id="pending-verification-block" style="display: none;">
-              <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.9rem;">
-                <div style="color: var(--yellow); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem;">
-                  ⚠️ Domain Ownership Verification Required
-                </div>
-                <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
-                  External target verification required. Add the verification token to your website before scanning.
-                </div>
+            <!-- Inline Target Registration Form -->
+            <div id="register-target-panel" class="verification-box" style="display: none; border-color: rgba(56, 189, 248, 0.4);">
+              <div style="font-weight: 700; color: #f8fafc; margin-bottom: 0.8rem; font-size: 0.95rem;">
+                🌐 Register External Target Domain
               </div>
-
-              <div style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--muted);">
-                Expected verification file URL:
+              <div class="form-group">
+                <label for="reg_target_url">Target Base URL (HTTPS only)</label>
+                <input type="url" id="reg_target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app">
+                <div class="hint">External scans require HTTPS on standard port 443.</div>
               </div>
-              <code id="display-verification-url" style="display:block; padding:0.4rem 0.6rem; background:#0a0d12; border:1px solid var(--border); border-radius:4px; font-size:0.78rem; word-break:break-all; margin-bottom:0.7rem;"></code>
-
-              <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">
-                Verification Token:
+              <div class="form-group">
+                <label for="reg_target_name">Site Name / Label</label>
+                <input type="text" id="reg_target_name" placeholder="e.g. My Portfolio">
               </div>
-              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.9rem;">
-                <input type="text" id="display-token" readonly style="font-family: monospace; font-size: 0.8rem; background: #0a0d12;">
-                <button type="button" class="btn-sm btn-secondary" onclick="copyToken()">Copy</button>
+              <div class="form-group">
+                <label for="reg_operator">Authorized Operator Name</label>
+                <input type="text" id="reg_operator" placeholder="e.g. Aakriti">
               </div>
-
-              <!-- Vercel Guide Accordion -->
-              <details style="font-size: 0.8rem; color: var(--muted); background: rgba(0,0,0,0.2); padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid var(--border);">
-                <summary style="cursor: pointer; font-weight: 700; color: var(--accent);">Instructions for Vercel / Next.js Portfolio</summary>
-                <div style="margin-top: 0.6rem; line-height: 1.6; color: #cbd5e1;">
-                  1. In your project repository, navigate to the <code>public/</code> directory.<br>
-                  2. Create a folder named <code>.well-known</code>.<br>
-                  3. Create a file named <code>aegisscan-verification.txt</code>.<br>
-                  4. Paste the token above into the file (single line, no quotes).<br>
-                  5. Deploy to Vercel (<code>git push</code>).<br>
-                  6. Once live, click <strong>Verify Ownership Now</strong> below.
-                </div>
-              </details>
-
-              <button type="button" class="btn btn-secondary" onclick="verifyTargetOwnership()" id="btn-verify-ownership">
-                🔍 Verify Ownership Now
+              <button type="button" class="btn btn-secondary" onclick="submitTargetRegistration()" id="btn-submit-reg">
+                Register Target &amp; Generate Token &rarr;
               </button>
-              <div id="verify-result-msg" style="margin-top: 0.6rem; font-size: 0.82rem;"></div>
             </div>
 
-            <!-- Verified Domain Block -->
-            <div id="verified-domain-block" style="display: none;">
-              <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 1rem;">
-                <div style="color: var(--green); font-size: 0.86rem; font-weight: 700;">
-                  ✓ Domain Control Verified (HTTP Challenge)
+            <!-- Verification & Status Card -->
+            <div id="target-status-card" style="display: none;">
+              <div class="verification-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                  <span style="font-size: 0.84rem; color: var(--muted); font-weight: 700;">DOMAIN AUTHORIZATION STATUS</span>
+                  <span id="target-status-badge" class="status-pill sp-unregistered">UNREGISTERED</span>
                 </div>
-                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem;">
-                  Target canonical hostname is verified and bound to this scanner.
+
+                <!-- Pending Verification Block -->
+                <div id="pending-verification-block" style="display: none;">
+                  <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.9rem;">
+                    <div style="color: var(--yellow); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem;">
+                      ⚠️ Technical Domain Ownership Verification Required for Deep Mode
+                    </div>
+                    <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+                      External Deep active scanning requires proof of domain control. Add the verification token below before launching Authorized Deep scans.
+                    </div>
+                  </div>
+
+                  <div style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--muted);">
+                    Expected verification file URL:
+                  </div>
+                  <code id="display-verification-url" style="display:block; padding:0.4rem 0.6rem; background:#0a0d12; border:1px solid var(--border); border-radius:4px; font-size:0.78rem; word-break:break-all; margin-bottom:0.7rem;"></code>
+
+                  <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">
+                    Verification Token:
+                  </div>
+                  <div style="display: flex; gap: 0.5rem; margin-bottom: 0.9rem;">
+                    <input type="text" id="display-token" readonly style="font-family: monospace; font-size: 0.8rem; background: #0a0d12;">
+                    <button type="button" class="btn-sm btn-secondary" onclick="copyToken()">Copy</button>
+                  </div>
+
+                  <!-- Vercel Guide Accordion -->
+                  <details style="font-size: 0.8rem; color: var(--muted); background: rgba(0,0,0,0.2); padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid var(--border);">
+                    <summary style="cursor: pointer; font-weight: 700; color: var(--accent);">Instructions for Vercel / Next.js Portfolio</summary>
+                    <div style="margin-top: 0.6rem; line-height: 1.6; color: #cbd5e1;">
+                      1. In your project repository, navigate to the <code>public/</code> directory.<br>
+                      2. Create a folder named <code>.well-known</code>.<br>
+                      3. Create a file named <code>aegisscan-verification.txt</code>.<br>
+                      4. Paste the token above into the file (single line, no quotes).<br>
+                      5. Deploy to Vercel (<code>git push</code>).<br>
+                      6. Once live, click <strong>Verify Ownership Now</strong> below.
+                    </div>
+                  </details>
+
+                  <button type="button" class="btn btn-secondary" onclick="verifyTargetOwnership()" id="btn-verify-ownership">
+                    🔍 Verify Ownership Now
+                  </button>
+                  <div id="verify-result-msg" style="margin-top: 0.6rem; font-size: 0.82rem;"></div>
                 </div>
-              </div>
 
-              <!-- External Scan Form -->
-              <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
-                <input type="hidden" name="target_type" value="external">
-                <input type="hidden" id="ext_form_target_url" name="target_url" value="">
-                <input type="hidden" id="ext_form_target_name" name="target_name" value="">
-
-                <div class="form-group">
-                  <label>Approved External Scan Mode</label>
-                  <div class="mode-selector">
-                    <label class="mode-option">
-                      <div style="display:flex;align-items:center;">
-                        <input type="radio" name="scan_mode" value="external_basic" checked>
-                        <span class="mode-title">External Basic</span>
-                      </div>
-                      <div class="mode-desc">Safe GET/HEAD discovery, headers, cookies, TLS cert, robots.txt, sitemap (Non-destructive)</div>
-                    </label>
-
-                    <label class="mode-option">
-                      <div style="display:flex;align-items:center;">
-                        <input type="radio" name="scan_mode" value="external_deep">
-                        <span class="mode-title">Authorized Deep</span>
-                      </div>
-                      <div class="mode-desc">Bounded active testing within approved paths and strict request budget</div>
-                    </label>
+                <!-- Verified Domain Block -->
+                <div id="verified-domain-block" style="display: none;">
+                  <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.5rem;">
+                    <div style="color: var(--green); font-size: 0.86rem; font-weight: 700;">
+                      ✓ Domain Control Verified (HTTP Challenge)
+                    </div>
+                    <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem;">
+                      Target canonical hostname is verified and approved for Authorized Deep testing.
+                    </div>
                   </div>
                 </div>
 
-                <div class="verification-box" style="margin-bottom: 1rem; font-size: 0.82rem; color: var(--muted);">
-                  <div style="color: #f8fafc; font-weight: 700; margin-bottom: 0.3rem;">Approved Policy Boundaries:</div>
-                  <div>&bull; Allowed paths: <code>/</code> (same-origin only)</div>
-                  <div>&bull; Excluded paths: <code>/logout, /delete, /cancel, /payment</code></div>
-                  <div>&bull; Request budget: 50 requests max &bull; Rate limit: 2 req/sec</div>
-                </div>
-
-                <div class="auth-checkbox-wrap">
-                  <input type="checkbox" id="ext_auth_ack" required checked>
-                  <label for="ext_auth_ack" class="auth-checkbox-text">
-                    <strong>Legal Authorization Declaration:</strong> I certify that I am the verified owner or have explicit written authorization from the owner to assess this domain.
-                  </label>
-                </div>
-
-                <button type="submit" class="btn btn-primary" id="ext-launch-btn">Start Authorized External Scan &rarr;</button>
-              </form>
+              </div>
             </div>
 
           </div>
-        </div>
+        </details>
 
       </div>
 
@@ -1058,6 +1078,13 @@
       }
     }
 
+    function onModeChanged(mode) {
+      if (mode === 'external_deep') {
+        const drawer = document.getElementById('domain-verification-drawer');
+        if (drawer) drawer.open = true;
+      }
+    }
+
     function onTargetSelected(targetId) {
       const card = document.getElementById('target-status-card');
       if (!targetId) {
@@ -1073,6 +1100,14 @@
       const status = opt.getAttribute('data-status') || 'pending_verification';
       const token = opt.getAttribute('data-token') || '';
       const hostname = opt.getAttribute('data-hostname') || '';
+
+      // Auto-populate direct scanning form inputs
+      if (url && document.getElementById('ext_target_url')) {
+        document.getElementById('ext_target_url').value = url;
+      }
+      if (name && document.getElementById('ext_target_name')) {
+        document.getElementById('ext_target_name').value = name;
+      }
 
       card.style.display = 'block';
 
@@ -1095,9 +1130,6 @@
       } else {
         pendingBlock.style.display = 'none';
         verifiedBlock.style.display = 'block';
-
-        document.getElementById('ext_form_target_url').value = url;
-        document.getElementById('ext_form_target_name').value = name;
       }
     }
 

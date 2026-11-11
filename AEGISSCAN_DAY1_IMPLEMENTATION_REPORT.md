@@ -243,3 +243,4 @@ D:\PRJ4\aegisscan\venv\Scripts\python.exe -m unittest discover -s tests -p "test
 3. **Packaging & Preparation for Final Evaluation**:
    - Ensure README and DEMO_GUIDE commands match the updated runtime flow.
    - Verify private keys, logs, and database files remain excluded from git tracking.
+

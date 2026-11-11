@@ -39,19 +39,26 @@
 
 ---
 
-### [Minute 1:15 – 2:30] Demonstrating Phase 14 External Website Protection
+### [Minute 1:15 – 2:30] Demonstrating External Website Protection
 **Action**:
 1. Click the **External Authorized Website** tab on the dashboard.
-2. In the target URL field, show an unverified domain (e.g. `https://aakriti-portfolio-beryl.vercel.app`).
-3. Click **Launch Security Scan** without verifying ownership.
-4. Show the immediate, clear safety refusal modal:
-   *"Authorization required: External target ownership is not verified. Add the verification token to `/.well-known/aegisscan-verification.txt` before scanning."*
+2. **Demo A (External Basic with Self-Attested Authorization)**:
+   - Enter an authorized website URL (e.g., `https://aakriti-portfolio-beryl.vercel.app`).
+   - Select **External Basic** mode.
+   - Check the **Legal Authorization Declaration** checkbox.
+   - Click **Start Authorized External Scan**.
+   - Show how the background scan executes safe passive checks: TLS certificate inspection, security headers (CSP, HSTS, X-Frame-Options), cookie flags (HttpOnly, Secure, SameSite), robots.txt, sitemap.xml, HTML crawl, form discovery, and technology fingerprinting within strict limits (max 50 requests, 2.0 req/sec).
+   - Point out that all active attack categories (SQLi, XSS, IDOR) are honestly marked as **`Not Tested`**, and an **Ed25519 Scan Passport** is generated.
+3. **Demo B (Authorized Deep Protection Enforcement)**:
+   - Select **Authorized Deep** mode on an unverified target.
+   - Show that AegisScan strictly blocks active deep testing with HTTP 403:
+     *"Technically verified domain control required: External target ownership is not verified. External Deep mode requires placing the verification token at https://<host>/.well-known/aegisscan-verification.txt."*
+   - Expand the **Domain Ownership Verification Drawer** to show the cryptographic token, Vercel instructions, and HTTP challenge verification mechanism.
 
 **Talking Points**:
-- *"Notice our **Zero-Trust External Authorization Architecture**: an operator cannot scan arbitrary third-party websites without proving domain control."*
-- *"We implement a cryptographically unpredictable challenge token published at `https://TARGET/.well-known/aegisscan-verification.txt` over HTTPS."*
-- *"Even after ownership verification, scanning requires an **explicit legal scope declaration** recording authorized paths, excluded paths, scan rate limits, and operator acknowledgment."*
-- *"Underneath, our **SSRFProtectTransport** strictly blocks loopback addresses, private RFC 1918 networks, link-local IPs, IPv4-mapped IPv6 evasions, cloud metadata services (`169.254.169.254`), and out-of-scope redirect escapes."*
+- *"Notice our **Two-Tier External Authorization Architecture**: an operator can perform safe, non-destructive passive assessment with self-attested legal authorization, but active deep testing strictly requires technical domain ownership verification."*
+- *"A checkbox is a legal declaration, not technical proof of ownership. Therefore, External Basic only permits bounded passive reconnaissance."*
+- *"Underneath, our **SSRFProtectTransport** and socket IP pinning strictly block loopback addresses, private RFC 1918 networks, link-local IPs, IPv4-mapped IPv6 evasions, cloud metadata services (`169.254.169.254`), and out-of-scope redirect escapes."*
 
 ---
 
@@ -98,16 +105,32 @@
 
 ---
 
-### [Minute 5:45 – 6:30] Automated Test Suite & Conclusion
+### [Minute 5:45 – 6:15] Dual-State AI Benchmark & Differential Compare
 **Action**:
-Show the terminal running the 109 automated unit and regression tests:
+1. Open the Compare page at `http://127.0.0.1:8000/compare`.
+2. Select Scan A (Baseline Vulnerable) and Scan B (Secure Mode).
+3. Show the 5-state differential breakdown:
+   - `resolved_after_retest`: Confirmed flaws that were resolved (SQL Injection on `/login`, Indirect Prompt Injection on `/assistant/query`).
+   - `still_confirmed`: Persistent flaws remaining across scans.
+   - `not_retested`: Checks that were omitted in a lighter mode.
+
+**Talking Points**:
+- *"AegisScan doesn't just produce static reports; it features a mathematical **Differential Comparison Engine**."*
+- *"We can toggle AegisLab from Vulnerable mode to Secure mode dynamically via `POST /assistant/reset` with `{"secure_mode": true}` without restarting servers."*
+- *"When re-scanned, the comparison engine verifies that the SQL injection and indirect prompt injection vulnerabilities are genuinely resolved and moves them to `resolved_after_retest`."*
+
+---
+
+### [Minute 6:15 – 7:00] Automated Test Suite & Conclusion
+**Action**:
+Show the terminal running the 124 automated unit and regression tests:
 ```powershell
 & "D:\PRJ4\aegisscan\venv\Scripts\python.exe" -m unittest discover -s tests -p "test_*.py" -b
 ```
-*Output: `Ran 109 tests in ~24s ... OK`*
+*Output: `Ran 124 tests in ~40s ... OK`*
 
 **Talking Points**:
-- *"AegisScan 2.0 is validated by **109 automated unit and integration tests** covering anti-SSRF protections, subdomain isolation, challenge token validation, crawler budgets, detector accuracy, Ed25519 signatures, and hash-chain integrity."*
+- *"AegisScan 2.0 is validated by a rigorous **124-test automated regression suite** covering anti-SSRF protections, simple URL external scanning, subdomain isolation, challenge token validation, crawler budgets, detector accuracy, Ed25519 signatures, and hash-chain integrity."*
 - *"In summary: AegisScan 2.0 provides an explainable, end-to-end security audit for both modern web apps and AI agents, backed by mathematical cryptographic trust and hardened network safety boundaries."*
 - *"Thank you, and we welcome any questions!"*
 

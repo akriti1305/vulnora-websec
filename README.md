@@ -9,14 +9,14 @@
 
 **AegisScan 2.0** is an explainable web and AI-agent vulnerability scanner with cryptographic trust verification and hardened multi-tier scope enforcement.
 
-Originally designed for localhost security benchmarks, Phase 14 upgrades AegisScan into a production-grade external web application assessment scanner that supports:
-1. **Local Lab Benchmark**: Full-depth traditional and AI-agent vulnerability assessment on `http://127.0.0.1:5001` (AegisLab).
-2. **External Website Assessments**: Scope-bound, policy-governed scanning of real external web applications under **explicit domain ownership verification** and **documented legal authorization grants**.
-3. **Hardened Anti-SSRF ScopeGuard**: A single, central scope-aware transport (`SSRFProtectTransport`) enforcing zero-trust egress: HTTPS-only external targets, pre-flight DNS address validation, protection against loopback, private RFC 1918 networks, link-local, multicast, cloud metadata services (`169.254.169.254`), IPv4-mapped IPv6, and strict redirect escape verification.
+Phase 14 & Day 2 upgrade AegisScan into a production-grade external web application assessment scanner that supports:
+1. **Local Lab Benchmark**: Full-depth traditional and AI-agent vulnerability assessment on `http://127.0.0.1:5001` (AegisLab) with dynamic dual-state (Vulnerable vs. Secure) before/after comparison testing.
+2. **External Website Assessments**: Scope-bound, policy-governed scanning of real external web applications with **self-attested legal authorization** for External Basic and **technical domain ownership verification (.well-known token)** for External Deep.
+3. **Hardened Anti-SSRF ScopeGuard**: A single, central scope-aware transport (`SSRFProtectTransport`) and socket IP pinning enforcing zero-trust egress: HTTPS-only external targets, pre-flight DNS validation, protection against loopback, private RFC 1918 networks, link-local, multicast, cloud metadata services (`169.254.169.254`), IPv4-mapped IPv6, and strict redirect escape verification.
 4. **Three Strict Operational Modes**:
-   - `Local Lab`: Localhost research benchmark. All active fuzzing, AI injection, and tool analysis enabled.
-   - `External Basic`: Verified external targets. Safe GET/HEAD discovery, TLS analysis, robots.txt, security headers, cookie flags, and technology inventory. Active injection tests are honestly classified as `not_tested`.
-   - `External Authorized Deep`: Verified external targets with separate explicit legal scope. Bounded, rate-limited active tests with path exclusions, strict request budgets, and instant cancellation.
+   - `Local Lab`: Localhost research benchmark. Full active fuzzing, AI injection, and tool analysis enabled.
+   - `External Basic`: Authorized external targets with self-attested legal declaration. Safe GET/HEAD discovery, TLS cert analysis, robots.txt, sitemap.xml, security headers, cookie flags, form discovery, and technology fingerprinting (Max 50 requests, 2.0 req/sec). Active injection tests are honestly classified as `not_tested`.
+   - `External Authorized Deep`: Verified external targets with technical domain control (`.well-known/aegisscan-verification.txt`) and explicit legal scope. Bounded, rate-limited active tests with path exclusions, strict request budgets, and instant cancellation.
 5. **Cryptographic Provenance**: Every scan generates an **Ed25519 digital signature** over canonical finding digests and appends to an immutable **SHA-256 hash-chain ledger** ($H_n = \text{SHA256}(R_n \parallel H_{n-1})$).
 
 ---
@@ -195,14 +195,14 @@ Open two PowerShell windows:
 
 ## 7. Running the Automated Test Suite
 
-AegisScan 2.0 includes a 109-test automated regression suite covering anti-SSRF protections, external authorization workflows, crawler budgets, detector accuracy, Ed25519 passport verification, and SHA-256 hash-chain integrity:
+AegisScan 2.0 includes a comprehensive 124-test automated regression suite covering anti-SSRF protections, DNS rebinding socket pinning, external authorization workflows, simple URL-based External Basic scanning, ScopeGuard IP validation, crawler budgets, detector accuracy, background scan execution, concurrency limits, Ed25519 passport verification, SHA-256 hash-chain integrity, and AegisLab dynamic dual-state AI benchmarking:
 
 ```powershell
 & "D:\PRJ4\aegisscan\venv\Scripts\python.exe" -m unittest discover -s tests -p "test_*.py" -b
 ```
 *Expected Result:*
 ```
-Ran 109 tests in ~24s ... OK
+Ran 124 tests in ~40s ... OK
 ```
 
 ---

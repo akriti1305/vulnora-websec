@@ -345,22 +345,27 @@ def create_authorization_grant(
     excluded_paths: Optional[List[str]] = None,
     acknowledgment: str = "I confirm ownership/authorization to assess this target.",
     duration_days: int = AUTHORIZATION_EXPIRY_DAYS,
+    self_attested: bool = False,
 ) -> AuthorizationGrant:
     """
     Establish an explicit legal authorization grant with scope boundaries.
-    Target MUST be verified prior to granting authorization.
+    Target MUST be verified prior to granting authorization unless self_attested=True (External Basic only).
     """
     target = db.query(Target).filter(Target.id == target_id).first()
     if not target:
         raise ValueError(f"Target ID {target_id} not found.")
 
-    if not target.is_verified and target.target_type == "external":
-        raise ValueError(f"Target '{target.base_url}' must be verified before authorization can be granted.")
-
-    hostname = urlparse(target.base_url).hostname or target.base_url
     mode_clean = scan_mode.strip().lower()
     if mode_clean not in ("external_basic", "external_deep", "local_lab"):
         mode_clean = "external_basic"
+
+    if mode_clean in ("external_deep", "deep") and not target.is_verified and target.target_type == "external":
+        raise ValueError(f"Target '{target.base_url}' must be verified via technical domain control before deep authorization can be granted.")
+
+    if not target.is_verified and target.target_type == "external" and not self_attested:
+        raise ValueError(f"Target '{target.base_url}' must be verified before authorization can be granted.")
+
+    hostname = urlparse(target.base_url).hostname or target.base_url
 
     paths_allowed = allowed_paths or ["/"]
     paths_excluded = excluded_paths or ["/logout", "/signout", "/delete", "/admin"]
@@ -472,7 +477,11 @@ def get_target_status_summary(db: Session, target_id: int) -> Dict[str, Any]:
         .first()
     )
 
-    if not target.is_verified:
+    if active_grant:
+        status = "authorized" if target.is_verified else "authorized_basic"
+        label = f"Authorized ({active_grant.scan_mode.upper()})" if target.is_verified else f"Self-Attested ({active_grant.scan_mode.upper()})"
+        can_scan = True
+    elif not target.is_verified:
         challenge = (
             db.query(VerificationChallenge)
             .filter(
@@ -485,14 +494,10 @@ def get_target_status_summary(db: Session, target_id: int) -> Dict[str, Any]:
         status = "pending_verification" if challenge else "unverified"
         label = "Pending Domain Verification" if challenge else "Unverified External Target"
         can_scan = False
-    elif not active_grant:
+    else:
         status = "verified_unauthorized"
         label = "Domain Verified (Needs Scope Authorization)"
         can_scan = False
-    else:
-        status = "authorized"
-        label = f"Authorized ({active_grant.scan_mode.upper()})"
-        can_scan = True
 
     return {
         "target_id": target.id,

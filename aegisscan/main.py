@@ -147,6 +147,8 @@ def form_start_scan(
     target_url: str = Form(...),
     target_name: str = Form("Unnamed Target"),
     scan_mode: str = Form("deep"),
+    auth_ack: Optional[str] = Form(None),
+    operator: Optional[str] = Form("Operator"),
     db: Session = Depends(get_db)
 ):
     """
@@ -159,6 +161,8 @@ def form_start_scan(
             "target_url": target_url.strip(),
             "target_name": target_name.strip(),
             "scan_mode": scan_mode.strip(),
+            "auth_declared": bool(auth_ack),
+            "operator": (operator or "Operator").strip(),
             "background": True,
         }, db=db)
         new_scan_id = res["scan_id"]

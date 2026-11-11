@@ -24,6 +24,7 @@ Full scan pipeline (POST /api/scans):
 import os
 import threading
 import logging
+import ipaddress
 from urllib.parse import urlparse
 import json
 from datetime import datetime
@@ -56,7 +57,7 @@ from detectors.external_passive import (
 
 from discovery import crawler
 from detectors import sqli_detector, xss_detector, idor_detector
-from scope import ScopeGuard
+from scope import ScopeGuard, validate_ip_address_not_internal, OutOfScopeError
 from detectors import header_detector, cookie_detector
 from detectors import ai_discovery, prompt_injection_detector, tool_integrity_monitor
 from detectors import context_taint_tracker, agent_permission_analyzer
@@ -108,12 +109,19 @@ logger = logging.getLogger("aegisscan.execution")
 def validate_target_scope(
     target_url: str,
     db: Optional[Session] = None,
-    scan_mode: str = "deep"
+    scan_mode: str = "deep",
+    auth_declared: bool = False,
+    operator: str = "Operator",
+    target_name: Optional[str] = None,
 ) -> dict:
     """
     Scope Guard: Validates that the target URL resolves to an authorized host.
-    Supports localhost/127.0.0.1 testbeds and verified, authorized external websites.
-    Raises HTTPException(400 or 403) on scope violations.
+    Supports localhost/127.0.0.1 testbeds and authorized external websites.
+    - External Basic: Allows scanning with explicit self-attested authorization declaration
+      without mandatory .well-known domain verification token.
+    - External Deep: Strictly requires technical domain control (.well-known token verification)
+      and explicit external_deep authorization. Never silently downgraded.
+    Raises HTTPException(400 or 403) on scope or authorization violations.
     """
     try:
         info = normalize_target_url(target_url)
@@ -135,6 +143,19 @@ def validate_target_scope(
             "grant": None,
         }
 
+    # For external targets, validate IP literals against SSRF / private networks
+    try:
+        ipaddress.ip_address(hostname)
+        is_ip_literal = True
+    except ValueError:
+        is_ip_literal = False
+
+    if is_ip_literal:
+        try:
+            validate_ip_address_not_internal(hostname)
+        except OutOfScopeError as e:
+            raise HTTPException(status_code=400, detail=f"ScopeGuard anti-SSRF blocked: {e}")
+
     # External targets require DB verification
     if db is None:
         raise HTTPException(
@@ -146,63 +167,132 @@ def validate_target_scope(
         )
 
     canonical_base = info["canonical_base"]
-    target = db.query(Target).filter(Target.base_url == canonical_base).first()
-    if not target:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Scope violation: External target '{hostname}' is not registered. "
-                f"Register the target and complete domain ownership verification first."
-            )
-        )
-
-    if not target.is_verified:
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                f"Authorization required: External target '{hostname}' ownership is not verified. "
-                f"Add the verification token to https://{hostname}/.well-known/aegisscan-verification.txt and verify domain ownership."
-            )
-        )
-
-    now = datetime.utcnow()
-    grant = (
-        db.query(AuthorizationGrant)
-        .filter(
-            AuthorizationGrant.target_id == target.id,
-            AuthorizationGrant.status == "active",
-            AuthorizationGrant.expires_at > now,
-        )
-        .order_by(AuthorizationGrant.id.desc())
-        .first()
-    )
-    if not grant:
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                f"Authorization expired or missing: External target '{hostname}' does not have an active authorization grant. "
-                f"Complete an explicit authorization declaration before scanning."
-            )
-        )
-
-    # Check deep scan authorization
     clean_mode = scan_mode.strip().lower()
-    if clean_mode in ("deep", "external_deep") and grant.scan_mode != "external_deep":
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                f"Authorization scope restriction: Target '{hostname}' is approved for '{grant.scan_mode}' only. "
-                f"External deep active scanning requires explicit separate authorization declaration."
-            )
-        )
 
-    return {
-        "target_type": "external",
-        "hostname": hostname,
-        "canonical_base": canonical_base,
-        "target": target,
-        "grant": grant,
-    }
+    # External Basic: Self-attested authorization mode
+    if clean_mode in ("basic", "external_basic"):
+        target = db.query(Target).filter(Target.base_url == canonical_base).first()
+        now = datetime.utcnow()
+        grant = None
+        if target:
+            grant = (
+                db.query(AuthorizationGrant)
+                .filter(
+                    AuthorizationGrant.target_id == target.id,
+                    AuthorizationGrant.status == "active",
+                    AuthorizationGrant.expires_at > now,
+                )
+                .order_by(AuthorizationGrant.id.desc())
+                .first()
+            )
+
+        if not auth_declared and not grant:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Authorization declaration required: External target '{hostname}' requires an explicit "
+                    f"authorization declaration certifying ownership or permission before scanning."
+                )
+            )
+
+        if not target:
+            target = Target(
+                name=target_name or hostname,
+                base_url=canonical_base,
+                target_type="external",
+                is_verified=False,
+                verification_method="self_attested",
+                created_at=now,
+            )
+            db.add(target)
+            db.commit()
+            db.refresh(target)
+
+        if not grant:
+            grant = create_authorization_grant(
+                db=db,
+                target_id=target.id,
+                authorized_by=operator or "Operator",
+                scan_mode="external_basic",
+                allowed_paths=["/"],
+                excluded_paths=["/logout", "/signout", "/delete", "/cancel", "/payment", "/admin"],
+                acknowledgment="Self-attested legal authorization declared by operator via local UI checkbox.",
+                self_attested=True,
+            )
+            db.add(AuditEvent(
+                event_type="authorization_declared",
+                target_id=target.id,
+                operator=operator or "Operator",
+                details=f"Self-attested authorization declared for '{hostname}'. Mode: external_basic. Bounded to max 50 requests, 2.0 rps."
+            ))
+            db.commit()
+
+        return {
+            "target_type": "external",
+            "hostname": hostname,
+            "canonical_base": canonical_base,
+            "target": target,
+            "grant": grant,
+        }
+
+    # External Deep: Strictly requires technical domain control (.well-known token)
+    else:
+        target = db.query(Target).filter(Target.base_url == canonical_base).first()
+        if not target:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Scope violation: External target '{hostname}' is not registered. "
+                    f"Register the target and complete domain ownership verification first."
+                )
+            )
+
+        if not target.is_verified:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Technically verified domain control required: External target '{hostname}' ownership is not verified. "
+                    f"External Deep mode requires placing the verification token at https://{hostname}/.well-known/aegisscan-verification.txt and completing domain ownership verification."
+                )
+            )
+
+        now = datetime.utcnow()
+        grant = (
+            db.query(AuthorizationGrant)
+            .filter(
+                AuthorizationGrant.target_id == target.id,
+                AuthorizationGrant.status == "active",
+                AuthorizationGrant.expires_at > now,
+            )
+            .order_by(AuthorizationGrant.id.desc())
+            .first()
+        )
+        if not grant:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Authorization expired or missing: External target '{hostname}' does not have an active authorization grant. "
+                    f"Complete an explicit authorization declaration before scanning."
+                )
+            )
+
+        # Check deep scan authorization
+        if grant.scan_mode != "external_deep":
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Authorization scope restriction: Target '{hostname}' is approved for '{grant.scan_mode}' only. "
+                    f"External deep active scanning requires explicit separate authorization declaration and verified domain control."
+                )
+            )
+
+        return {
+            "target_type": "external",
+            "hostname": hostname,
+            "canonical_base": canonical_base,
+            "target": target,
+            "grant": grant,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -876,12 +966,21 @@ def start_scan(payload: dict, db: Session = Depends(get_db)):
     target_name    = payload.get("target_name", "Unnamed Target")
     requested_mode = str(payload.get("scan_mode", "deep")).strip().lower()
     run_in_background = bool(payload.get("background") or payload.get("async"))
+    auth_declared  = bool(payload.get("auth_declared") or payload.get("auth_ack") or payload.get("authorized"))
+    operator_name  = str(payload.get("operator") or payload.get("authorized_by") or "Operator").strip()
 
     if not raw_target_url:
         raise HTTPException(status_code=400, detail="target_url is required")
 
     # Scope and authorization validation
-    scope_info = validate_target_scope(raw_target_url, db=db, scan_mode=requested_mode)
+    scope_info = validate_target_scope(
+        raw_target_url,
+        db=db,
+        scan_mode=requested_mode,
+        auth_declared=auth_declared,
+        operator=operator_name,
+        target_name=target_name,
+    )
     target_type = scope_info["target_type"]
     canonical_base = scope_info["canonical_base"]
     hostname = scope_info["hostname"]

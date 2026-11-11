@@ -59,7 +59,7 @@ app.config["SESSION_COOKIE_SECURE"]   = False   # ← vulnerable: sent over HTTP
 # ---------------------------------------------------------------------------
 # Phase 7 — AegisLab 2.0 AI Assistant & Security Lab Blueprint
 # ---------------------------------------------------------------------------
-from ai_assistant import ai_blueprint
+from ai_assistant import ai_blueprint, is_secure
 app.register_blueprint(ai_blueprint)
 
 
@@ -153,7 +153,7 @@ def login():
 
         db = get_db()
 
-        if SECURE_MODE:
+        if SECURE_MODE or is_secure(request):
             # ---- SECURE: parameterised query (NOT injectable) ---------------
             # This is what a properly written app looks like.
             # The ? placeholders are filled by SQLite safely -- the driver
