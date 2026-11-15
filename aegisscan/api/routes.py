@@ -830,7 +830,7 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
 
             # Step 3: robots.txt and sitemap.xml inspection
             print("[AegisScan] External Step 3/6 -- Robots.txt and Sitemap Inspection...")
-            robots_findings = inspect_robots_and_sitemap(canonical_base, scope_guard=guard)
+            robots_findings = inspect_robots_and_sitemap(canonical_base, scope_guard=guard, scan_policy=policy)
 
             # Step 4: Security Headers (Passive observation on crawled pages)
             print("[AegisScan] External Step 4/6 -- Security Headers Analysis...")

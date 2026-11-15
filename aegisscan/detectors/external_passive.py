@@ -119,10 +119,12 @@ def inspect_tls_certificate(base_url: str, scope_guard: Optional[ScopeGuard] = N
 
 def inspect_robots_and_sitemap(
     base_url: str,
-    scope_guard: Optional[ScopeGuard] = None
+    scope_guard: Optional[ScopeGuard] = None,
+    scan_policy: Optional[Any] = None,
 ) -> List[ScoredFinding]:
     """
     Safely inspect robots.txt and sitemap.xml for information disclosure or indexing policies.
+    Respects scan_policy request budget and increments request accounting.
     """
     findings: List[ScoredFinding] = []
     guard = scope_guard or ScopeGuard(is_external=True, allowed_hostname=urlparse(base_url).hostname)
@@ -133,41 +135,47 @@ def inspect_robots_and_sitemap(
     with guard.client(timeout=5) as client:
         # Check robots.txt
         robots_url = f"{origin}/robots.txt"
-        try:
-            resp = client.get(robots_url)
-            if resp.status_code == 200 and resp.text:
-                lines = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith("#")]
-                disallow_rules = [l for l in lines if l.lower().startswith("disallow:")]
-                findings.append(ScoredFinding(
-                    vuln_type="Robots.txt Policy Discovered",
-                    severity="Info",
-                    status="info",
-                    location=robots_url,
-                    evidence=f"Discovered robots.txt ({len(lines)} directives, {len(disallow_rules)} disallow rules).",
-                    remediation_advice="Ensure robots.txt does not inadvertently disclose sensitive or secret administrative URLs.",
-                    payload="",
-                    category="informational"
-                ))
-        except Exception:
-            pass
+        if not scan_policy or scan_policy.can_make_request():
+            if scan_policy:
+                scan_policy.record_request()
+            try:
+                resp = client.get(robots_url)
+                if resp.status_code == 200 and resp.text:
+                    lines = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith("#")]
+                    disallow_rules = [l for l in lines if l.lower().startswith("disallow:")]
+                    findings.append(ScoredFinding(
+                        vuln_type="Robots.txt Policy Discovered",
+                        severity="Info",
+                        status="info",
+                        location=robots_url,
+                        evidence=f"Discovered robots.txt ({len(lines)} directives, {len(disallow_rules)} disallow rules).",
+                        remediation_advice="Ensure robots.txt does not inadvertently disclose sensitive or secret administrative URLs.",
+                        payload="",
+                        category="informational"
+                    ))
+            except Exception:
+                pass
 
         # Check sitemap.xml
         sitemap_url = f"{origin}/sitemap.xml"
-        try:
-            resp = client.get(sitemap_url)
-            if resp.status_code == 200:
-                findings.append(ScoredFinding(
-                    vuln_type="XML Sitemap Discovered",
-                    severity="Info",
-                    status="info",
-                    location=sitemap_url,
-                    evidence="Discovered public sitemap.xml aiding discovery of published application endpoints.",
-                    remediation_advice="Ensure sitemap only includes intentionally public routes.",
-                    payload="",
-                    category="informational"
-                ))
-        except Exception:
-            pass
+        if not scan_policy or scan_policy.can_make_request():
+            if scan_policy:
+                scan_policy.record_request()
+            try:
+                resp = client.get(sitemap_url)
+                if resp.status_code == 200:
+                    findings.append(ScoredFinding(
+                        vuln_type="XML Sitemap Discovered",
+                        severity="Info",
+                        status="info",
+                        location=sitemap_url,
+                        evidence="Discovered public sitemap.xml aiding discovery of published application endpoints.",
+                        remediation_advice="Ensure sitemap only includes intentionally public routes.",
+                        payload="",
+                        category="informational"
+                    ))
+            except Exception:
+                pass
 
     return findings
 

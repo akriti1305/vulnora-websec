@@ -261,6 +261,27 @@ class TestNAT64AndDiagnostics(unittest.TestCase):
                 self.assertEqual(active_vulns, 0)
                 self.assertEqual(len(confirmed), 0)
 
+    def test_robots_and_sitemap_request_tracking(self):
+        """Validates that inspect_robots_and_sitemap tracks probe requests against scan_policy."""
+        from policy import ScanPolicy
+        from detectors.external_passive import inspect_robots_and_sitemap
+        policy = ScanPolicy(
+            target_url="https://example.com",
+            target_type="external",
+            scan_mode="external_basic",
+            allowed_hostname="example.com",
+            request_budget=5,
+        )
+        guard = ScopeGuard(allowed_hosts={"example.com"}, mode="external")
+        with patch.object(guard, "client") as mock_client:
+            mock_session = MagicMock()
+            mock_resp = MagicMock(status_code=404, text="")
+            mock_session.get.return_value = mock_resp
+            mock_client.return_value.__enter__.return_value = mock_session
+
+            inspect_robots_and_sitemap("https://example.com", scope_guard=guard, scan_policy=policy)
+            self.assertEqual(policy.requests_made, 2, "Probing robots.txt and sitemap.xml must record 2 requests in policy")
+
     def test_full_pipeline_external_basic_with_diagnostics(self):
         """
         Validates end-to-end execution of an External Basic scan where TLS inspection is blocked:
