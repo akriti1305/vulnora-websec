@@ -178,6 +178,8 @@ def generate_home_page(
     error_message: Optional[str] = None,
     stats: Optional[Dict[str, Any]] = None,
     targets: Optional[List[dict]] = None,
+    default_scan_a: Optional[int] = None,
+    default_scan_b: Optional[int] = None,
 ) -> str:
     """
     Render the Home dashboard page.
@@ -188,14 +190,18 @@ def generate_home_page(
         error_message: optional error string to display in an alert banner
         stats        : optional high-level KPI metrics dictionary
         targets      : list of registered target summary dicts
+        default_scan_a: default scan ID to select for baseline comparison
+        default_scan_b: default scan ID to select for re-scan comparison
     """
     template = _jinja_env.get_template("index.html")
     html = template.render(
-        scans         = scans,
-        allowed_hosts = allowed_hosts,
-        error_message = error_message,
-        stats         = stats or {},
-        targets       = targets or [],
+        scans          = scans,
+        allowed_hosts  = allowed_hosts,
+        error_message  = error_message,
+        stats          = stats or {},
+        targets        = targets or [],
+        default_scan_a = default_scan_a,
+        default_scan_b = default_scan_b,
     )
     return html
 

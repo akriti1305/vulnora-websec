@@ -520,11 +520,12 @@
   <!-- Scope Banner -->
   <div class="scope-banner">
     <div class="scope-text">
-      <strong>ScopeGuard Enforcement:</strong> Scanner is locked to verified localhost testbeds. Outbound network transmission is strictly prohibited.
+      <strong>ScopeGuard Enforcement:</strong> Local AegisLab testbed auditing and authorized External Basic passive scanning supported. External Deep scanning requires domain ownership verification. ScopeGuard safety policies, anti-SSRF IP pinning, and redirect boundaries strictly enforced across all modes.
     </div>
     <div class="scope-badges">
-      <span class="host-badge">127.0.0.1</span>
-      <span class="host-badge">localhost</span>
+      <span class="host-badge">Local Lab</span>
+      <span class="host-badge">External Basic</span>
+      <span class="host-badge">External Deep</span>
       <span class="host-badge" style="color:var(--green)">ScopeGuard Active</span>
     </div>
   </div>
@@ -825,7 +826,7 @@
             <label for="scan_a">Baseline Scan (Scan A):</label>
             <select name="a" id="scan_a" required>
               {% for s in scans %}
-              <option value="{{ s.id }}">Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              <option value="{{ s.id }}" {% if default_scan_a and s.id == default_scan_a %}selected{% elif not default_scan_a and loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
               {% endfor %}
             </select>
           </div>
@@ -834,7 +835,7 @@
             <label for="scan_b">Re-Scan (Scan B):</label>
             <select name="b" id="scan_b" required>
               {% for s in scans %}
-              <option value="{{ s.id }}" {% if loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              <option value="{{ s.id }}" {% if default_scan_b and s.id == default_scan_b %}selected{% elif not default_scan_b and loop.index == 1 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
               {% endfor %}
             </select>
           </div>

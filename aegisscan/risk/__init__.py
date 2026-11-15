@@ -66,9 +66,20 @@ def classify_finding_category(vuln_type: str, status: str) -> str:
         return "not_reproducible"
     if v in ("Tool Integrity Verified", "AI Agent Approval Gate Verified") or s in ("verified", "verified_control"):
         return "verified_control"
-    if v in ("AI Assistant Discovered", "AI Security Manifest Detected", "AI Tools Baselined", "Tool Baseline Unavailable"):
-        return "informational"
-    if s in ("info", "detected", "informational"):
+    if (
+        v in (
+            "AI Assistant Discovered",
+            "AI Security Manifest Detected",
+            "AI Tools Baselined",
+            "Tool Baseline Unavailable",
+            "Network / ScopeGuard Inspection Blocked",
+            "Network / TLS Connection Blocked",
+            "Network / TLS Handshake Incomplete",
+            "Crawl / Endpoint Discovery Incomplete",
+            "TLS Inspection Notice",
+        )
+        or s in ("info", "detected", "informational")
+    ):
         return "informational"
     if s == "potential":
         return "potential_vulnerability"

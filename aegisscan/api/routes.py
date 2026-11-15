@@ -71,6 +71,7 @@ from crypto import (
 )
 import validation
 import risk
+from risk import ScoredFinding
 import report
 import evaluation as evaluator
 
@@ -495,8 +496,19 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
     canonical_base = target.base_url
     scan_mode = scan.scan_mode or "deep"
     policy = ACTIVE_POLICIES.get(scan_id)
-    if not policy and scan.scan_policy_json:
-        policy = ScanPolicy.from_dict(json.loads(scan.scan_policy_json))
+    if not policy:
+        if scan.scan_policy_json:
+            policy = ScanPolicy.from_dict(json.loads(scan.scan_policy_json))
+        else:
+            p_host = urlparse(canonical_base).hostname or "127.0.0.1"
+            policy = ScanPolicy(
+                target_url=canonical_base,
+                target_type=scan.target_type or ("local" if p_host in ("127.0.0.1", "localhost") else "external"),
+                scan_mode=scan_mode,
+                allowed_hostname=p_host,
+            )
+            scan.scan_policy_json = json.dumps(policy.to_dict())
+            db.commit()
         ACTIVE_POLICIES[scan_id] = policy
 
     if scan.target_type == "local":
@@ -799,6 +811,19 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
             disc = crawler.crawl(canonical_base, scan_policy=policy, scope_guard=guard)
             print(f"[AegisScan]   Discovered {len(disc.visited_urls)} page(s), {len(disc.all_forms)} form(s).")
 
+            crawl_diagnostics: List[ScoredFinding] = []
+            if len(disc.visited_urls) == 0:
+                crawl_diagnostics.append(ScoredFinding(
+                    vuln_type="Crawl / Endpoint Discovery Incomplete",
+                    severity="Info",
+                    status="info",
+                    location=canonical_base,
+                    evidence="Web crawler did not successfully fetch any pages from the target base URL. Downstream header, cookie, and form inspections were not executed.",
+                    remediation_advice="Verify target network reachability, DNS configuration, and ensure the root URL is serving valid HTTP/HTTPS.",
+                    payload="",
+                    category="informational"
+                ))
+
             # Step 2: TLS Certificate and Transport Security
             print("[AegisScan] External Step 2/6 -- TLS Certificate & Transport Inspection...")
             tls_findings = inspect_tls_certificate(canonical_base, scope_guard=guard)
@@ -809,17 +834,17 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
 
             # Step 4: Security Headers (Passive observation on crawled pages)
             print("[AegisScan] External Step 4/6 -- Security Headers Analysis...")
-            hdr_raw    = header_detector.detect(disc)
+            hdr_raw    = header_detector.detect(disc) if disc.visited_urls else []
             hdr_scored = risk.score_header_findings(hdr_raw)
 
             # Step 5: Cookie Flags (Passive inspection of cookies observed during crawl)
             print("[AegisScan] External Step 5/6 -- Cookie Flags Analysis...")
-            ck_raw    = cookie_detector.detect(disc)
+            ck_raw    = cookie_detector.detect(disc) if disc.visited_urls else []
             ck_scored = risk.score_cookie_findings(ck_raw)
 
             # Step 6: Safe Form Inventory & Technology Stack Fingerprinting
             print("[AegisScan] External Step 6/6 -- Form Inventory & Technology Fingerprinting...")
-            inv_findings = inventory_forms_and_technology(disc, scope_guard=guard)
+            inv_findings = inventory_forms_and_technology(disc, scope_guard=guard) if disc.visited_urls else []
 
             # Step 7: Honest 'Not Tested' or 'Not Applicable' classification for active probes
             reason_msg = (
@@ -831,7 +856,7 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
             not_tested_stubs = generate_not_tested_stubs(reason=reason_msg)
 
             # Combine all scored findings
-            all_scored = tls_findings + robots_findings + hdr_scored + ck_scored + inv_findings + not_tested_stubs
+            all_scored = crawl_diagnostics + tls_findings + robots_findings + hdr_scored + ck_scored + inv_findings + not_tested_stubs
             all_dicts = [_scored_to_dict(sf) for sf in all_scored]
 
             # Save findings to DB
@@ -898,6 +923,7 @@ def _execute_scan_pipeline(scan_id: int, db: Session) -> dict:
                 "not_reproducible_count": len(not_reproducible),
                 "not_tested_count": len(not_tested),
                 "breakdown"     : {
+                    "crawl_diagnostics"  : len(crawl_diagnostics),
                     "headers"            : len(hdr_scored),
                     "cookies"            : len(ck_scored),
                     "tls"                : len(tls_findings),

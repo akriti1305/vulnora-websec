@@ -84,6 +84,33 @@ def _get_scans_summary_list(db: Session):
     return scans_data
 
 
+def _find_default_comparison_pair(scans_data: List[Dict[str, Any]]) -> Tuple[Optional[int], Optional[int]]:
+    """
+    Select default comparison pair dynamically without hardcoding IDs:
+    Baseline A: Older scan on a multi-scan target (e.g. vulnerable baseline)
+    Re-Scan B: Newer scan on that same target (e.g. fixed / secure re-scan)
+    Fallback: The two most recent completed scans overall (older as A, newer as B).
+    """
+    completed = [s for s in scans_data if s.get("status") == "completed"]
+    if len(completed) < 2:
+        return None, None
+
+    from collections import defaultdict
+    by_target = defaultdict(list)
+    for s in completed:
+        by_target[s.get("target_name")].append(s)
+
+    # Prefer target with >= 2 completed scans (e.g. AegisLab before/after)
+    for target_name, t_scans in by_target.items():
+        if len(t_scans) >= 2:
+            # t_scans is in reverse chronological order (since scans_data is ordered desc)
+            newer_scan = t_scans[0]
+            older_scan = t_scans[1]
+            return older_scan["id"], newer_scan["id"]
+
+    return completed[1]["id"], completed[0]["id"]
+
+
 # ---------------------------------------------------------------------------
 # UI Page 1: Home Dashboard (GET /)
 # ---------------------------------------------------------------------------
@@ -129,12 +156,16 @@ def home_page(error: Optional[str] = None, db: Session = Depends(get_db)):
         if s:
             targets_data.append(s)
 
+    default_a, default_b = _find_default_comparison_pair(scans_data)
+
     html = report.generate_home_page(
         scans=scans_data,
         allowed_hosts=allowed,
         error_message=error,
         stats=stats,
         targets=targets_data,
+        default_scan_a=default_a,
+        default_scan_b=default_b,
     )
     return HTMLResponse(content=html, status_code=200)
 
@@ -188,6 +219,13 @@ def compare_page(
       - Shows differential comparison (fixed, persisting, new) when a & b are selected
     """
     scans_data = _get_scans_summary_list(db)
+    if a is None or b is None:
+        def_a, def_b = _find_default_comparison_pair(scans_data)
+        if a is None:
+            a = def_a
+        if b is None:
+            b = def_b
+
     cmp_data = None
     if a is not None and b is not None:
         try:

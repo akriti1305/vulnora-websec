@@ -50,6 +50,9 @@ BLOCKED_EXACT_IPS: Set[str] = {
     "fd00:ec2::254",     # AWS IPv6 IMDS
 }
 
+# RFC 6052 NAT64 Well-Known Prefix (WKP)
+NAT64_WELL_KNOWN_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+
 
 class OutOfScopeError(Exception):
     """Raised when a URL, IP, or destination is outside permitted scope or violates SSRF policy."""
@@ -71,6 +74,10 @@ def validate_ip_address_not_internal(ip_str: str) -> None:
     """
     Validate that an IP string does not represent a private, loopback,
     link-local, multicast, reserved, or cloud metadata network.
+
+    For IPv6 addresses using the RFC 6052 NAT64 Well-Known Prefix (64:ff9b::/96),
+    the embedded 32-bit IPv4 address is extracted and recursively evaluated
+    against SSRF and private address policies.
 
     Raises OutOfScopeError if the IP is prohibited.
     """
@@ -104,6 +111,18 @@ def validate_ip_address_not_internal(ip_str: str) -> None:
 
     if ip.is_unspecified:
         raise OutOfScopeError(f"Target IP '{cleaned}' is an unspecified address.")
+
+    # Handle RFC 6052 NAT64 Well-Known Prefix (64:ff9b::/96)
+    # Python ipaddress marks 64:ff9b::/96 as is_reserved=True.
+    # We inspect the embedded 32-bit IPv4 address to confirm it is a valid public IP.
+    if isinstance(ip, ipaddress.IPv6Address) and ip in NAT64_WELL_KNOWN_PREFIX:
+        embedded_ipv4 = ipaddress.IPv4Address(ip.packed[-4:])
+        try:
+            validate_ip_address_not_internal(str(embedded_ipv4))
+        except OutOfScopeError as err:
+            raise OutOfScopeError(f"Target IP '{cleaned}' embeds prohibited IPv4 '{embedded_ipv4}': {err}") from err
+        # The embedded IPv4 is globally routable and non-internal -- NAT64 address is permitted.
+        return
 
     if ip.is_reserved:
         raise OutOfScopeError(f"Target IP '{cleaned}' is an IETF reserved address.")
@@ -147,6 +166,21 @@ def resolve_and_validate_hostname(
             resolved_ips.append(ip_str)
             if is_external and not allow_private:
                 validate_ip_address_not_internal(ip_str)
+
+    # In external mode, prioritize direct native IPv4, followed by native public IPv6,
+    # followed by validated NAT64 IPv6.
+    if is_external and resolved_ips:
+        def _ip_preference_key(ip_str: str) -> int:
+            try:
+                addr = ipaddress.ip_address(ip_str)
+                if addr.version == 4:
+                    return 0  # Native direct IPv4 preferred for standard socket connections
+                if addr.version == 6 and addr not in NAT64_WELL_KNOWN_PREFIX:
+                    return 1  # Native public IPv6
+                return 2      # Validated NAT64 translated IPv6 (RFC 6052)
+            except Exception:
+                return 3
+        resolved_ips.sort(key=_ip_preference_key)
 
     return resolved_ips
 

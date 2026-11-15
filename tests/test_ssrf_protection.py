@@ -200,11 +200,15 @@ class TestSSRFProtection(unittest.TestCase):
                 guard.resolve_and_pin_ip("internal-router.local", port=80)
 
     def test_inspect_tls_ssrf_blocking(self):
-        """Verifies that inspect_tls_certificate intercepts and blocks private/loopback IP connections."""
+        """Verifies that inspect_tls_certificate intercepts and blocks private/loopback IP connections as an informational diagnostic."""
         from detectors.external_passive import inspect_tls_certificate
         guard = ScopeGuard(allowed_hosts={"127.0.0.1"}, mode="external")
         findings = inspect_tls_certificate("https://127.0.0.1:443", scope_guard=guard)
-        self.assertTrue(any(f.vuln_type == "SSRF / Scope Protection Block" for f in findings))
+        self.assertTrue(any(f.vuln_type == "Network / ScopeGuard Inspection Blocked" for f in findings))
+        # Ensure it is classified as informational and not confirmed critical
+        diagnostic = [f for f in findings if f.vuln_type == "Network / ScopeGuard Inspection Blocked"][0]
+        self.assertEqual(diagnostic.severity, "Info")
+        self.assertEqual(diagnostic.category, "informational")
 
 
 if __name__ == "__main__":

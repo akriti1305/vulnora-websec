@@ -75,14 +75,21 @@ def inspect_tls_certificate(base_url: str, scope_guard: Optional[ScopeGuard] = N
                 ))
     except OutOfScopeError as e:
         findings.append(ScoredFinding(
-            vuln_type="SSRF / Scope Protection Block",
-            severity="Critical",
-            status="confirmed",
+            vuln_type="Network / ScopeGuard Inspection Blocked",
+            severity="Info",
+            status="info",
             location=f"https://{hostname}:{port}",
-            evidence=f"TLS inspection aborted by ScopeGuard: {e}",
-            remediation_advice="Do not scan private, reserved, or unauthorized network addresses.",
+            evidence=(
+                f"TLS transport inspection aborted by ScopeGuard: {e}. "
+                "The target address was refused by scanner SSRF/scope boundaries. "
+                "Downstream TLS handshake was not completed."
+            ),
+            remediation_advice=(
+                "Verify domain DNS configuration and ensure the target resolves to an authorized public IP. "
+                "This is a scanner-side safety enforcement diagnostic, not a target vulnerability."
+            ),
             payload="",
-            category="confirmed_vulnerability"
+            category="informational"
         ))
     except ssl.SSLCertVerificationError as e:
         findings.append(ScoredFinding(
