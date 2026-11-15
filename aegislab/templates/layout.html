@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AegisCloud Enterprise Portal{% endblock %} — AegisLab</title>
+    <title>{% block title %}AegisShop &mdash; Modern E-Commerce Store &amp; AI Shopping Assistant{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -103,6 +103,7 @@
             justify-content: center;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
             color: white;
+            font-size: 1.25rem;
             flex-shrink: 0;
         }
 
@@ -112,8 +113,8 @@
         }
 
         .brand-name {
-            font-size: 1.05rem;
-            font-weight: 700;
+            font-size: 1.15rem;
+            font-weight: 800;
             letter-spacing: -0.02em;
             color: var(--white);
             line-height: 1.2;
@@ -331,7 +332,7 @@
         }
 
         .header-search-input {
-            width: 220px;
+            width: 240px;
             padding: 7px 12px 7px 34px;
             background: var(--slate-50);
             border: 1px solid var(--slate-200);
@@ -345,7 +346,7 @@
             outline: none;
             border-color: var(--primary);
             background: var(--white);
-            width: 280px;
+            width: 300px;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
@@ -549,11 +550,6 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
         }
 
-        textarea.form-control {
-            resize: vertical;
-            min-height: 90px;
-        }
-
         /* Badges */
         .badge {
             display: inline-flex;
@@ -660,18 +656,6 @@
             color: #9f1239;
         }
 
-        .alert-warning {
-            background: var(--amber-50);
-            border-color: rgba(245, 158, 11, 0.3);
-            color: #92400e;
-        }
-
-        .alert-info {
-            background: var(--sky-50);
-            border-color: rgba(2, 132, 199, 0.3);
-            color: #075985;
-        }
-
         /* Code snippets */
         .code-pill {
             font-family: 'JetBrains Mono', monospace;
@@ -695,7 +679,6 @@
             justify-content: space-between;
         }
 
-        /* Responsive Breakpoints */
         @media (max-width: 992px) {
             .app-sidebar {
                 width: 72px;
@@ -733,19 +716,16 @@
     <aside class="app-sidebar">
         <a href="/" class="sidebar-brand">
             <div class="brand-logo-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    <path d="m9 12 2 2 4-4"/>
-                </svg>
+                🛍️
             </div>
             <div class="brand-info">
-                <span class="brand-name">AegisCloud</span>
-                <span class="brand-tier">Customer Portal</span>
+                <span class="brand-name">AegisShop</span>
+                <span class="brand-tier">E-Commerce &amp; AI Copilot</span>
             </div>
         </a>
 
         <div class="sidebar-section">
-            <div class="sidebar-heading">Core Platform</div>
+            <div class="sidebar-heading">Storefront &amp; Catalog</div>
             <ul class="sidebar-nav">
                 <li>
                     <a href="/" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
@@ -755,25 +735,27 @@
                             <rect width="7" height="9" x="14" y="12" rx="1"/>
                             <rect width="7" height="5" x="3" y="16" rx="1"/>
                         </svg>
-                        <span>Dashboard</span>
+                        <span>Shop Catalog</span>
                     </a>
                 </li>
                 <li>
-                    <a href="/search?q=hello" class="sidebar-link {% if active_page == 'search' %}active{% endif %}">
+                    <a href="/search?q=gadget" class="sidebar-link {% if active_page == 'search' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <circle cx="11" cy="11" r="8"/>
                             <path d="m21 21-4.3-4.3"/>
                         </svg>
-                        <span>Explore & Search</span>
+                        <span>Search Products</span>
                     </a>
                 </li>
                 <li>
-                    <a href="/user/profile?id=1" class="sidebar-link {% if active_page == 'profile' %}active{% endif %}">
+                    <a href="/decoy/product?id=1" class="sidebar-link {% if active_page == 'decoy_product' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="12" cy="8" r="5"/>
-                            <path d="M20 21a8 8 0 1 0-16 0"/>
+                            <path d="m7.5 4.27 9 5.15"/>
+                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                            <path d="m3.3 7 8.7 5 8.7-5"/>
+                            <path d="M12 22V12"/>
                         </svg>
-                        <span>My Profile</span>
+                        <span>Featured Item</span>
                     </a>
                 </li>
                 <li>
@@ -786,16 +768,25 @@
                             <path d="M15 13v2"/>
                             <path d="M9 13v2"/>
                         </svg>
-                        <span>AI Assistant</span>
-                        <span class="badge-nav badge-nav-indigo">Agent</span>
+                        <span>AI Shopping Copilot</span>
+                        <span class="badge-nav badge-nav-indigo">AI</span>
                     </a>
                 </li>
             </ul>
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-heading">Account & Access</div>
+            <div class="sidebar-heading">Customer Account</div>
             <ul class="sidebar-nav">
+                <li>
+                    <a href="/user/profile?id=1" class="sidebar-link {% if active_page == 'profile' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="8" r="5"/>
+                            <path d="M20 21a8 8 0 1 0-16 0"/>
+                        </svg>
+                        <span>Account &amp; Orders</span>
+                    </a>
+                </li>
                 <li>
                     <a href="/login" class="sidebar-link {% if active_page == 'login' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -803,39 +794,15 @@
                             <polyline points="10 17 15 12 10 7"/>
                             <line x1="15" x2="3" y1="12" y2="12"/>
                         </svg>
-                        <span>Access Gateway</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/assistant/audit-log" class="sidebar-link">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" x2="8" y1="13" y2="13"/>
-                            <line x1="16" x2="8" y1="17" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                        <span>Audit Activity</span>
+                        <span>Sign In</span>
                     </a>
                 </li>
             </ul>
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-heading">Integrations & Decoys</div>
+            <div class="sidebar-heading">Partner Integrations</div>
             <ul class="sidebar-nav">
-                <li>
-                    <a href="/decoy/product?id=1" class="sidebar-link {% if active_page == 'decoy_product' %}active{% endif %}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="m7.5 4.27 9 5.15"/>
-                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-                            <path d="m3.3 7 8.7 5 8.7-5"/>
-                            <path d="M12 22V12"/>
-                        </svg>
-                        <span>Catalogue Store</span>
-                        <span class="badge-nav badge-nav-emerald">Decoy</span>
-                    </a>
-                </li>
                 <li>
                     <a href="/decoy/login" class="sidebar-link {% if active_page == 'decoy_login' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -862,15 +829,15 @@
                 <div class="user-avatar-sm">{{ session.username[0]|upper }}</div>
                 <div class="user-meta">
                     <span class="user-meta-name">{{ session.username }}</span>
-                    <span class="user-meta-role">Authorized Member</span>
+                    <span class="user-meta-role">Customer Member</span>
                 </div>
             </a>
             {% else %}
             <a href="/login" class="user-profile-badge">
                 <div class="user-avatar-sm" style="background: var(--slate-600);">G</div>
                 <div class="user-meta">
-                    <span class="user-meta-name">Guest Session</span>
-                    <span class="user-meta-role">Sign in to workspace</span>
+                    <span class="user-meta-name">Guest Shopper</span>
+                    <span class="user-meta-role">Sign in to account</span>
                 </div>
             </a>
             {% endif %}
@@ -884,12 +851,12 @@
             <div class="top-left">
                 <div class="page-breadcrumb">
                     {% block breadcrumb %}
-                    <span>Portal Workspace</span>
+                    <span>AegisShop Storefront</span>
                     {% endblock %}
                 </div>
                 <div class="env-pill">
                     <span class="pulse-dot"></span>
-                    <span>AegisLab • Local Security Training Environment</span>
+                    <span>AegisLab &bull; Demo Target on 127.0.0.1:5001</span>
                 </div>
             </div>
 
@@ -899,7 +866,7 @@
                         <circle cx="11" cy="11" r="8"/>
                         <path d="m21 21-4.3-4.3"/>
                     </svg>
-                    <input type="text" name="q" class="header-search-input" placeholder="Search workspace..." autocomplete="off">
+                    <input type="text" name="q" class="header-search-input" placeholder="Search products in AegisShop..." autocomplete="off">
                 </form>
 
                 <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn-topbar btn-topbar-ghost">
@@ -907,12 +874,12 @@
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    <span>API Spec</span>
+                    <span>AI Manifest</span>
                 </a>
 
                 {% if session.username %}
                 <a href="/logout" class="btn-topbar btn-topbar-ghost" style="color: var(--rose-600);">
-                    <span>Logout</span>
+                    <span>Sign Out</span>
                 </a>
                 {% else %}
                 <a href="/login" class="btn-topbar btn-topbar-primary">
@@ -930,12 +897,12 @@
         <!-- Footer -->
         <footer class="app-footer">
             <div>
-                &copy; 2026 AegisCloud Systems Inc. Enterprise Portal v2.4.0 &bull; Local Training Target
+                &copy; 2026 AegisShop &mdash; Modern E-Commerce Store &amp; AI Security Benchmark Target
             </div>
             <div style="display: flex; gap: 16px;">
-                <a href="/assistant/documents" style="color: var(--slate-500); text-decoration: none;">Knowledge Docs</a>
-                <a href="/assistant/tools" style="color: var(--slate-500); text-decoration: none;">Tool Manifest</a>
-                <a href="/assistant/audit-log" style="color: var(--slate-500); text-decoration: none;">Audit Trail</a>
+                <a href="/assistant" style="color: var(--slate-500); text-decoration: none;">AI Shopping Assistant</a>
+                <a href="/user/profile?id=1" style="color: var(--slate-500); text-decoration: none;">Order History</a>
+                <a href="/login" style="color: var(--slate-500); text-decoration: none;">Customer Login</a>
             </div>
         </footer>
     </div>

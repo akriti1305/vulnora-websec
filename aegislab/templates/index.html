@@ -1,336 +1,301 @@
 {% extends "layout.html" %}
 {% set active_page = "dashboard" %}
 
-{% block title %}Dashboard — AegisCloud Enterprise{% endblock %}
+{% block title %}AegisShop — Modern E-Commerce Store &amp; AI Shopping Assistant{% endblock %}
 
 {% block breadcrumb %}
-<span>Enterprise Customer Workspace</span>
+<span>AegisShop Catalog &bull; Featured Products</span>
 {% endblock %}
 
 {% block content %}
-<!-- Welcome Header -->
-<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px;">
-    <div>
-        <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
-            Welcome back{% if logged_in_user %}, <span style="color: var(--primary);">{{ logged_in_user }}</span>{% else %}, Guest User{% endif %}
+<!-- Storefront Hero Banner -->
+<div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); border-radius: var(--radius-xl); padding: 36px 40px; color: white; margin-bottom: 32px; box-shadow: var(--shadow-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
+    <div style="max-width: 620px;">
+        <span class="badge" style="background: rgba(255, 255, 255, 0.15); color: #c7d2fe; border: 1px solid rgba(255, 255, 255, 0.25); margin-bottom: 12px; font-size: 0.76rem;">
+            ⚡ Spring Collection 2026 &bull; Same-Day Dispatch
+        </span>
+        <h1 style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 10px;">
+            Smart Gadgets &amp; Hardware for Modern Builders
         </h1>
-        <p style="color: var(--slate-500); font-size: 0.92rem; margin-top: 4px;">
-            AegisCloud Enterprise operations dashboard &bull; Manage cloud resources, knowledge search, and AI assistant workflows.
+        <p style="color: #c7d2fe; font-size: 0.96rem; line-height: 1.6; margin-bottom: 20px;">
+            Explore premium components, diagnostic tools, and modular gadgets. Supported by our intelligent AI shopping copilot.
         </p>
+
+        <!-- Product Search Bar -->
+        <form action="/search" method="GET" style="display: flex; gap: 10px; max-width: 520px;">
+            <div style="position: relative; flex: 1;">
+                <input type="text" name="q" value="gadget" placeholder="Search products, widgets, components..." class="form-control" style="background: white; color: var(--navy-900); padding-left: 38px; height: 44px; border-radius: var(--radius-md);">
+                <svg style="position: absolute; left: 12px; top: 13px; width: 18px; height: 18px; color: var(--slate-400);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+            </div>
+            <button type="submit" class="btn btn-secondary" style="background: #ffffff; color: #312e81; font-weight: 700; height: 44px; padding: 0 20px; border-radius: var(--radius-md); box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                Search
+            </button>
+        </form>
     </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        {% if logged_in_user %}
-        <div class="badge badge-emerald" style="padding: 6px 12px; font-size: 0.8rem;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Logged in as {{ logged_in_user }}
+
+    <!-- AI Copilot Quick Callout -->
+    <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: var(--radius-lg); padding: 24px; max-width: 320px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span style="font-size: 1.4rem;">🤖</span>
+            <div style="font-weight: 700; font-size: 1.05rem; color: #ffffff;">AI Shopping Assistant</div>
         </div>
-        <a href="/logout" class="btn btn-outline btn-sm">Sign Out</a>
-        {% else %}
-        <a href="/login" class="btn btn-primary btn-sm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
-            Member Login
+        <p style="font-size: 0.84rem; color: #e0e7ff; line-height: 1.5; margin-bottom: 14px;">
+            Need help choosing specs, calculating bulk pricing, or tracking orders? Ask AegisShop Copilot!
+        </p>
+        <a href="/assistant" class="btn" style="background: #ffffff; color: #4338ca; width: 100%; font-weight: 700; font-size: 0.84rem; border-radius: var(--radius-sm);">
+            Launch AI Assistant &rarr;
         </a>
-        {% endif %}
     </div>
 </div>
 
-<!-- KPI Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px;">
-    
-    <div class="card" style="margin-bottom: 0;">
-        <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">API & Services</span>
-                <span class="badge badge-emerald">Operational</span>
-            </div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">4 Active</div>
-            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Gateway &bull; Search &bull; Profiles &bull; AI</div>
-        </div>
-    </div>
-
-    <div class="card" style="margin-bottom: 0;">
-        <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">Knowledge Base</span>
-                <span class="badge badge-indigo">Synchronized</span>
-            </div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">4 Documents</div>
-            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Context store ingested and indexed</div>
-        </div>
-    </div>
-
-    <div class="card" style="margin-bottom: 0;">
-        <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">AI Copilot Tools</span>
-                <span class="badge badge-indigo">Active Agent</span>
-            </div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">3 Tools Ready</div>
-            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Calculate, Search, and Send Email</div>
-        </div>
-    </div>
-
-    <div class="card" style="margin-bottom: 0;">
-        <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;">Access Security</span>
-                <span class="badge badge-amber">Training Mode</span>
-            </div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900);">RBAC Enabled</div>
-            <div style="font-size: 0.78rem; color: var(--slate-500); margin-top: 4px;">Direct object reference testbed</div>
-        </div>
-    </div>
-
-</div>
-
-<!-- Primary Interactive Section (2 Columns) -->
-<div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; margin-bottom: 28px;">
-
-    <!-- Left Column: Search & Recent Activity -->
-    <div style="display: flex; flex-direction: column; gap: 24px;">
-
-        <!-- Enterprise Content Search Card -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <span>Enterprise Content Search</span>
-                    </div>
-                    <div class="card-subtitle">Query organizational knowledge, policies, technical manuals, and team records</div>
-                </div>
-                <span class="badge badge-indigo">GET Endpoint</span>
-            </div>
-            <div class="card-body">
-                <!-- Inline search form preserved for scanner discovery -->
-                <form action="/search" method="GET" style="display: flex; gap: 10px;">
-                    <div style="position: relative; flex: 1;">
-                        <input type="text" name="q" class="form-control" value="hello" placeholder="Search across documents, policies, or users..." style="padding-left: 36px;">
-                        <svg style="position: absolute; left: 12px; top: 12px; width: 16px; height: 16px; color: var(--slate-400);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                        </svg>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <span>Search</span>
-                    </button>
-                </form>
-                <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.78rem; color: var(--slate-500);">
-                    <span style="font-weight: 600;">Popular searches:</span>
-                    <a href="/search?q=security" style="color: var(--primary); text-decoration: none;">security</a> &bull;
-                    <a href="/search?q=quarterly+briefing" style="color: var(--primary); text-decoration: none;">quarterly briefing</a> &bull;
-                    <a href="/search?q=compliance" style="color: var(--primary); text-decoration: none;">compliance</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Activity Feed -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                        <span>Recent Organization Activity</span>
-                    </div>
-                    <div class="card-subtitle">Real-time audit telemetry and system interaction records</div>
-                </div>
-                <a href="/assistant/audit-log" class="btn btn-outline btn-sm">View Full Log</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Activity Event</th>
-                            <th>Service</th>
-                            <th>Timestamp</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div style="font-weight: 600; color: var(--navy-900);">Knowledge Document Ingested</div>
-                                <div style="font-size: 0.74rem; color: var(--slate-500);">doc-02 Q3 Financial Review by External Consultant</div>
-                            </td>
-                            <td><span class="code-pill">/assistant/upload</span></td>
-                            <td style="color: var(--slate-500); font-size: 0.78rem;">Just now</td>
-                            <td><span class="badge badge-emerald">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight: 600; color: var(--navy-900);">Authentication Attempt</div>
-                                <div style="font-size: 0.74rem; color: var(--slate-500);">User identity session initialization</div>
-                            </td>
-                            <td><span class="code-pill">/login</span></td>
-                            <td style="color: var(--slate-500); font-size: 0.78rem;">4 mins ago</td>
-                            <td><span class="badge badge-indigo">Session Active</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight: 600; color: var(--navy-900);">Catalog Item Lookup</div>
-                                <div style="font-size: 0.74rem; color: var(--slate-500);">Product query for SKU #1 (Widget Alpha)</div>
-                            </td>
-                            <td><span class="code-pill">/decoy/product</span></td>
-                            <td style="color: var(--slate-500); font-size: 0.78rem;">12 mins ago</td>
-                            <td><span class="badge badge-slate">Public</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight: 600; color: var(--navy-900);">AI Agent Tool Registered</div>
-                                <div style="font-size: 0.74rem; color: var(--slate-500);">send_email high-impact tool policy configured</div>
-                            </td>
-                            <td><span class="code-pill">/assistant/tools</span></td>
-                            <td style="color: var(--slate-500); font-size: 0.78rem;">28 mins ago</td>
-                            <td><span class="badge badge-amber">Gate Required</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Right Column: Profile Directory & AI Copilot Preview -->
-    <div style="display: flex; flex-direction: column; gap: 24px;">
-
-        <!-- Team Member Directory & Profile View -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-                        <span>Team Directory & Account View</span>
-                    </div>
-                    <div class="card-subtitle">Inspect organizational roles and account privileges</div>
-                </div>
-            </div>
-            <div class="card-body">
-                <!-- Form preserved for crawler discovery of /user/profile -->
-                <form action="/user/profile" method="GET" style="display: flex; gap: 10px; align-items: center; margin-bottom: 16px;">
-                    <div style="flex: 1;">
-                        <label class="form-label">User ID Identifier:</label>
-                        <input type="number" name="id" class="form-control" value="1" min="1" max="100">
-                    </div>
-                    <div style="padding-top: 24px;">
-                        <button type="submit" class="btn btn-secondary">
-                            <span>Open Profile</span>
-                        </button>
-                    </div>
-                </form>
-
-                <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 12px 14px;">
-                    <div style="font-size: 0.78rem; font-weight: 700; color: var(--slate-600); margin-bottom: 8px;">Quick Member Lookup:</div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
-                            <span><strong>ID 1:</strong> alice (Administrator)</span>
-                            <a href="/user/profile?id=1" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
-                            <span><strong>ID 2:</strong> bob (Operations User)</span>
-                            <a href="/user/profile?id=2" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
-                            <span><strong>ID 3:</strong> charlie (Engineering)</span>
-                            <a href="/user/profile?id=3" style="color: var(--primary); text-decoration: none; font-weight: 600;">View &rarr;</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- AI Assistant Copilot Workspace Preview -->
-        <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--primary);">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-                        <span>AegisCopilot Workspace</span>
-                    </div>
-                    <div class="card-subtitle">Autonomous agent with deterministic tool policies</div>
-                </div>
-                <span class="badge badge-indigo">AegisScan 2.0</span>
-            </div>
-            <div class="card-body">
-                <p style="font-size: 0.86rem; color: var(--slate-600); margin-bottom: 16px; line-height: 1.5;">
-                    Simulated enterprise copilot providing automated mathematical calculation, document retrieval, and transactional workflow execution.
-                </p>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <a href="/assistant" class="btn btn-primary" style="justify-content: space-between;">
-                        <span>Launch Assistant Studio</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                    </a>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <a href="/assistant/documents" class="btn btn-outline btn-sm">Document Store</a>
-                        <a href="/assistant/tools" class="btn btn-outline btn-sm">Tool Registry</a>
-                    </div>
-                    <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn btn-secondary btn-sm" style="text-align: center;">
-                        AI Security Manifest (.json)
-                    </a>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-</div>
-
-<!-- Enterprise Partner Integrations & Decoy Services -->
-<div style="margin-bottom: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+<!-- Featured Products Section -->
+<div style="margin-bottom: 36px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
         <div>
-            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--navy-900);">Partner Integrations & Catalogue Services</h2>
-            <p style="font-size: 0.82rem; color: var(--slate-500);">Decoy and auxiliary customer endpoints linked for testing</p>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
+                Featured Products &amp; Components
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--slate-500);">Hand-picked top sellers with instant delivery</p>
+        </div>
+        <form action="/decoy/product" method="GET" style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 600; color: var(--slate-600);">Product SKU:</label>
+            <input type="number" name="id" value="1" min="1" max="5" class="form-control" style="width: 70px; padding: 6px 10px; font-size: 0.84rem;">
+            <button type="submit" class="btn btn-secondary btn-sm">Lookup SKU</button>
+        </form>
+    </div>
+
+    <!-- Product Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        
+        <!-- Product 1: Widget Alpha -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <div style="height: 140px; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                ⚙️
+            </div>
+            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">SKU #1 &bull; Best Seller</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Widget Alpha</h3>
+                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
+                    A robust and reliable widget. High endurance mechanical build for continuous workloads.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$9.99</div>
+                    <a href="/decoy/product?id=1" class="btn btn-outline btn-sm">View Item</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 2: Gadget Beta -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <div style="height: 140px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                📟
+            </div>
+            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--emerald-600); text-transform: uppercase;">SKU #2 &bull; New Arrival</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Gadget Beta</h3>
+                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
+                    Compact gadget for everyday use. Pocket-sized wireless controller with rechargeable cell.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$14.99</div>
+                    <a href="/decoy/product?id=2" class="btn btn-outline btn-sm">View Item</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 3: Doohickey Gamma -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <div style="height: 140px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                🔬
+            </div>
+            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--amber-600); text-transform: uppercase;">SKU #3 &bull; Precision</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Doohickey Gamma</h3>
+                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
+                    Precision-engineered doohickey with sub-millimeter calibration and titanium casing.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$24.99</div>
+                    <a href="/decoy/product?id=3" class="btn btn-outline btn-sm">View Item</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 4: Thingamajig Delta -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <div style="height: 140px; background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                📦
+            </div>
+            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--amber-600); text-transform: uppercase;">SKU #4 &bull; Value Pack</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Thingamajig Delta</h3>
+                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
+                    Versatile thingamajig, 2-pack. Multi-purpose adapter bundle with lifetime warranty.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$19.99</div>
+                    <a href="/decoy/product?id=4" class="btn btn-outline btn-sm">View Item</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 5: Contraption Epsilon -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+            <div style="height: 140px; background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                💎
+            </div>
+            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--rose-600); text-transform: uppercase;">SKU #5 &bull; Flagship</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Contraption Epsilon</h3>
+                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
+                    Patent-pending contraption. High-performance computing module with passive heat sink.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$49.99</div>
+                    <a href="/decoy/product?id=5" class="btn btn-outline btn-sm">View Item</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Secondary Interactive Sections: Customer Orders & Member Login -->
+<div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-bottom: 32px;">
+
+    <!-- Left: Customer Orders & Account Portal -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div>
+                <div class="card-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                    <span>Customer Account &amp; Order Lookup</span>
+                </div>
+                <div class="card-subtitle">View profile details, shipping address, and past purchase history</div>
+            </div>
+            <span class="badge badge-indigo">Orders</span>
+        </div>
+        <div class="card-body">
+            <!-- Form for crawler to find /user/profile -->
+            <form action="/user/profile" method="GET" style="display: flex; gap: 10px; align-items: center; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <label class="form-label">Customer ID:</label>
+                    <input type="number" name="id" class="form-control" value="1" min="1" max="10">
+                </div>
+                <div style="padding-top: 24px;">
+                    <button type="submit" class="btn btn-secondary">
+                        View Account
+                    </button>
+                </div>
+            </form>
+
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 12px 14px;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--slate-600); margin-bottom: 8px;">Demo Customer Accounts:</div>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>Customer #1:</strong> alice (Administrator &bull; VIP Member)</span>
+                        <a href="/user/profile?id=1" style="color: var(--primary); font-weight: 600; text-decoration: none;">View &rarr;</a>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>Customer #2:</strong> bob (Standard Customer &bull; 2 Orders)</span>
+                        <a href="/user/profile?id=2" style="color: var(--primary); font-weight: 600; text-decoration: none;">View &rarr;</a>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>Customer #3:</strong> charlie (Standard Customer &bull; 1 Order)</span>
+                        <a href="/user/profile?id=3" style="color: var(--primary); font-weight: 600; text-decoration: none;">View &rarr;</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-
-        <!-- Decoy 1: Echo Search (Safe look-alike) -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-body">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Echo Search Diagnostics</h3>
-                    <span class="badge badge-emerald">Escaped Input</span>
+    <!-- Right: Customer Sign-In Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div>
+                <div class="card-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+                    <span>Member Sign-In</span>
                 </div>
-                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
-                    Reflects queries safely with strict HTML entity sanitization.
+                <div class="card-subtitle">Log in to track shipments and access member discounts</div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if logged_in_user %}
+            <div style="text-align: center; padding: 16px 0;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
+                    Signed in as {{ logged_in_user }}
+                </div>
+                <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 16px;">
+                    Your customer session is active.
+                </p>
+                <a href="/logout" class="btn btn-outline btn-sm">Sign Out</a>
+            </div>
+            {% else %}
+            <!-- Fast login form -->
+            <form action="/login" method="POST">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Username:</label>
+                    <input type="text" name="username" class="form-control" placeholder="e.g. alice" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label">Password:</label>
+                    <input type="password" name="password" class="form-control" placeholder="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Sign In
+                </button>
+            </form>
+            <div style="margin-top: 12px; font-size: 0.78rem; color: var(--slate-500); text-align: center;">
+                Demo Credentials: <span class="code-pill">alice</span> / <span class="code-pill">password123</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Auxiliary Services & Diagnostic Endpoints -->
+<div style="margin-bottom: 24px;">
+    <div style="font-size: 1.1rem; font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
+        Partner Services &amp; Storefront Diagnostics
+    </div>
+    <div style="font-size: 0.82rem; color: var(--slate-500); margin-bottom: 16px;">
+        Secondary endpoints and partner integration gateways
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+        
+        <!-- Decoy 1: Echo search -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-body" style="padding: 16px 20px;">
+                <div style="font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
+                    Echo Search Diagnostic
+                </div>
+                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 12px;">
+                    Safe look-alike search endpoint with strict HTML entity encoding.
                 </p>
                 <form action="/decoy/echo" method="GET" style="display: flex; gap: 8px;">
-                    <input type="text" name="q" class="form-control" value="hello" placeholder="Diagnostic query..." style="font-size: 0.82rem;">
-                    <button type="submit" class="btn btn-secondary btn-sm">Run</button>
+                    <input type="text" name="q" value="smart gear" class="form-control" style="font-size: 0.82rem; padding: 6px 10px;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Echo</button>
                 </form>
             </div>
         </div>
 
-        <!-- Decoy 2: Decoy Login (Always Welcome) -->
+        <!-- Decoy 2: Partner SSO -->
         <div class="card" style="margin-bottom: 0;">
-            <div class="card-body">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Partner SSO Gateway</h3>
-                    <span class="badge badge-emerald">Decoy SSO</span>
+            <div class="card-body" style="padding: 16px 20px;">
+                <div style="font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
+                    Partner SSO Gateway
                 </div>
-                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
-                    Simulated federated authentication portal for external collaborators.
+                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 12px;">
+                    Simulated affiliate partner authentication portal.
                 </p>
                 <a href="/decoy/login" class="btn btn-secondary btn-sm" style="width: 100%;">
-                    Open Partner SSO
+                    Open Partner SSO Gateway
                 </a>
-            </div>
-        </div>
-
-        <!-- Decoy 3: Public product catalogue -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-body">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                    <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900);">Public Product Storefront</h3>
-                    <span class="badge badge-emerald">Public Items</span>
-                </div>
-                <p style="font-size: 0.82rem; color: var(--slate-600); margin-bottom: 14px;">
-                    Browse public catalog items. Safe multi-ID parameter endpoint.
-                </p>
-                <form action="/decoy/product" method="GET" style="display: flex; gap: 8px;">
-                    <input type="number" name="id" class="form-control" value="1" min="1" max="5" style="font-size: 0.82rem;">
-                    <button type="submit" class="btn btn-secondary btn-sm">View Item</button>
-                </form>
             </div>
         </div>
 

@@ -140,3 +140,4 @@ OK
 AegisScan 2.0 demonstrates two balanced, fully validated capabilities:
 1. **Authorized External Website Security Assessment:** Safe, non-invasive passive scanning with hardened multi-layer ScopeGuard protection, anti-SSRF IP pinning, RFC 6052 NAT64 compatibility, honest diagnostic reporting, and cryptographic Ed25519/SHA-256 provenance.
 2. **Controlled AI-Agent Security Testing:** Controlled local testbed benchmarking with dual-state AegisLab, automated canary injection detection, tool integrity monitoring, context taint tracking, and excessive agency permission analysis.
+

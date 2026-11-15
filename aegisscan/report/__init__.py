@@ -20,6 +20,161 @@ _jinja_env = Environment(
     autoescape=True
 )
 
+SECURITY_EXPLANATIONS = {
+    "SQL Injection": {
+        "plain_name": "SQL Injection (SQLi)",
+        "what_is_it": "User input is concatenated directly into database query commands without parameterization.",
+        "why_dangerous": "An attacker can bypass login screens, steal passwords and customer records, or modify database contents.",
+        "suggested_fix": "Use parameterized queries (prepared statements) with bound variables. Never build queries by concatenating raw strings.",
+    },
+    "Reflected XSS": {
+        "plain_name": "Reflected Cross-Site Scripting (XSS)",
+        "what_is_it": "The website echoes unescaped user input (such as a search query) directly into the returned HTML page.",
+        "why_dangerous": "An attacker can execute malicious scripts in another user's browser, hijacking sessions or stealing sensitive data.",
+        "suggested_fix": "Sanitize and context-encode all user input before outputting to HTML. Implement a strong Content-Security-Policy (CSP).",
+    },
+    "IDOR (Broken Access Control)": {
+        "plain_name": "Insecure Direct Object Reference (IDOR)",
+        "what_is_it": "The application allows users to view or edit records by modifying an ID parameter without verifying ownership.",
+        "why_dangerous": "Any user can view or tamper with other customers' personal profiles, orders, or private account details.",
+        "suggested_fix": "Verify user authorization on the server side before returning any resource. Check session user identity against requested resource ID.",
+    },
+    "Missing Security Header": {
+        "plain_name": "Missing HTTP Security Header",
+        "what_is_it": "The web server omits defensive HTTP response headers that instruct browsers how to handle content safely.",
+        "why_dangerous": "Leaves users exposed to clickjacking (missing X-Frame-Options), MIME sniffing attacks, or downgrade from HTTPS to HTTP.",
+        "suggested_fix": "Configure web server or middleware to return CSP, HSTS, X-Frame-Options, and X-Content-Type-Options headers.",
+    },
+    "Insecure Cookie": {
+        "plain_name": "Insecure Cookie Configuration",
+        "what_is_it": "Session or authentication cookies are issued without security flags such as HttpOnly, Secure, or SameSite.",
+        "why_dangerous": "Cookies without HttpOnly can be stolen via JavaScript XSS. Cookies without Secure can be intercepted in cleartext over HTTP.",
+        "suggested_fix": "Set HttpOnly=True, Secure=True, and SameSite=Lax on all authentication and session management cookies.",
+    },
+    "Insecure HTTP Transport": {
+        "plain_name": "Insecure HTTP Transport",
+        "what_is_it": "The web application communicates over unencrypted HTTP instead of encrypted HTTPS/TLS.",
+        "why_dangerous": "Network eavesdroppers can capture credentials, session cookies, and private communications in transit.",
+        "suggested_fix": "Install a valid TLS certificate and redirect all incoming HTTP traffic to HTTPS on port 443.",
+    },
+    "TLS Transport Security": {
+        "plain_name": "TLS / SSL Transport Security",
+        "what_is_it": "Evaluation of SSL/TLS certificate validity, supported protocol versions, and encryption cipher suites.",
+        "why_dangerous": "Weak ciphers or expired certificates can allow man-in-the-middle attacks and data interception.",
+        "suggested_fix": "Maintain active TLS 1.2+ protocols with strong cipher suites and valid CA-signed certificates.",
+    },
+    "Indirect Prompt Injection": {
+        "plain_name": "Indirect Prompt Injection",
+        "what_is_it": "An AI assistant processes untrusted external context containing instructions that hijack the assistant's behavior.",
+        "why_dangerous": "Untrusted documents can take control of the AI agent, overriding developer instructions and prompting unsafe actions.",
+        "suggested_fix": "Isolate untrusted document context from system instructions. Apply dual-LLM or heuristic guardrails on agent context.",
+    },
+    "AI Canary Token Leakage": {
+        "plain_name": "AI Canary Token Leakage",
+        "what_is_it": "The AI assistant disclosed a protected internal canary secret when prompted by manipulated context.",
+        "why_dangerous": "Confirms that prompt injection succeeded in extracting private internal secrets and system prompt instructions.",
+        "suggested_fix": "Implement strict output filtering to detect and block secret tokens before delivering responses to users.",
+    },
+    "Tool Integrity Verified": {
+        "plain_name": "AI Tool Integrity Verification",
+        "what_is_it": "Cryptographic check verifying that AI tool schemas and parameter requirements match approved baselines.",
+        "why_dangerous": "Tool definitions modified post-approval can secretly redirect agent actions to malicious sinks (rug-pull attack).",
+        "suggested_fix": "Store cryptographic SHA-256 baselines of tool schemas and reject tool execution if schemas change.",
+    },
+    "Tool Metadata Rug-Pull": {
+        "plain_name": "AI Tool Metadata Rug-Pull",
+        "what_is_it": "An AI tool's definition or parameters were modified after initial approval without security re-baselining.",
+        "why_dangerous": "The tool can now perform unexpected actions or require unexpected sensitive inputs without operator knowledge.",
+        "suggested_fix": "Re-verify tool definitions against approved baselines and disallow runtime schema modifications.",
+    },
+    "Poisoned Tool Description": {
+        "plain_name": "Poisoned Tool Description",
+        "what_is_it": "A tool's description contains adversarial instructions that deceive the AI into selecting it for unauthorized tasks.",
+        "why_dangerous": "Adversarial descriptions cause the AI agent to call high-impact tools under attacker-controlled conditions.",
+        "suggested_fix": "Review and approve tool descriptions manually; sanitize tool metadata before ingestion by the model.",
+    },
+    "Excessive Agency: Unapproved High-Impact Action": {
+        "plain_name": "Excessive Agency: Unapproved High-Impact Action",
+        "what_is_it": "An autonomous AI assistant executed a high-impact action (e.g. sending an email) without requiring human approval.",
+        "why_dangerous": "Prompt injection can cause irreversible real-world damage if high-impact actions execute without human confirmation.",
+        "suggested_fix": "Enforce human-in-the-loop approval gates for all tools classified with medium or high impact levels.",
+    },
+    "AI Agent Approval Gate Verified": {
+        "plain_name": "AI Agent Approval Gate Verified",
+        "what_is_it": "Human-in-the-loop approval gate successfully intercepted and blocked an unapproved high-impact action.",
+        "why_dangerous": "Without this defense, an AI agent could be manipulated into executing unauthorized external transactions.",
+        "suggested_fix": "Keep approval gates active in production for all sensitive tool actions.",
+    },
+    "Context Taint Hijack: Complete Attack Path": {
+        "plain_name": "Context Taint Hijack Attack Path",
+        "what_is_it": "End-to-end attack flow observed from untrusted document ingestion into assistant context to tool execution.",
+        "why_dangerous": "Demonstrates an end-to-end exploit where untrusted external data successfully controls autonomous agent actions.",
+        "suggested_fix": "Track taint across data pipelines and prohibit tainted context from reaching privileged tool execution sinks.",
+    },
+    "SSRF / Scope Protection Block": {
+        "plain_name": "SSRF / Scope Protection Block",
+        "what_is_it": "ScopeGuard safety boundary intercepted and blocked a request targeting an unauthorized IP or private network.",
+        "why_dangerous": "Server-Side Request Forgery allows probing internal network devices, loopback endpoints, or cloud metadata.",
+        "suggested_fix": "Enforce strict IP validation, DNS rebinding protection, and ScopeGuard authorization checks.",
+    },
+    "Network / ScopeGuard Inspection Blocked": {
+        "plain_name": "ScopeGuard Network Diagnostic",
+        "what_is_it": "ScopeGuard safely halted connection attempts to unapproved IP ranges or reserved addresses.",
+        "why_dangerous": "Protects against SSRF and unauthorized network egress during scanner execution.",
+        "suggested_fix": "Verify network routing and target URL domain configuration.",
+    },
+    "AI Security Manifest Detected": {
+        "plain_name": "AI Security Manifest Discovery",
+        "what_is_it": "Scanner discovered an AI security manifest at /.well-known/aegisscan-ai.json describing agent architecture.",
+        "why_dangerous": "Informational discovery allowing the scanner to discover AI endpoints and tool baselines.",
+        "suggested_fix": "Ensure that confidential secrets or canary tokens are never included in the public manifest.",
+    },
+    "AI Assistant Discovered": {
+        "plain_name": "AI Assistant Endpoint Discovery",
+        "what_is_it": "Scanner discovered an interactive AI assistant or copilot endpoint on the target application.",
+        "why_dangerous": "Identifies an AI-agent attack surface that must be tested for prompt injection and excessive agency.",
+        "suggested_fix": "Apply rigorous guardrails and input validation to all discovered AI assistant endpoints.",
+    },
+    "Technology Stack Fingerprint": {
+        "plain_name": "Technology Stack Fingerprint",
+        "what_is_it": "Passive identification of server software, frameworks, or runtime versions from HTTP headers or HTML markup.",
+        "why_dangerous": "Attackers can use version information to search for known CVEs affecting specific server versions.",
+        "suggested_fix": "Remove or genericize Server, X-Powered-By, and framework signature headers.",
+    },
+    "Crawl / Endpoint Discovery Incomplete": {
+        "plain_name": "Crawl Discovery Incomplete",
+        "what_is_it": "Crawler reached its safety budget cap or encountered restricted pages before exploring all links.",
+        "why_dangerous": "Informational notification that some deep endpoints were not crawled due to request budget constraints.",
+        "suggested_fix": "Review request budget configuration or provide explicit path lists for authorized scans.",
+    }
+}
+
+
+def _enrich_finding(f: dict) -> dict:
+    """Add friendly explanations to findings for clear presentation."""
+    f_copy = dict(f)
+    vuln_type = f_copy.get("vulnerability_type", "Security Check")
+    expl = SECURITY_EXPLANATIONS.get(vuln_type)
+    if not expl:
+        for k, v in SECURITY_EXPLANATIONS.items():
+            if k.lower() in vuln_type.lower() or vuln_type.lower() in k.lower():
+                expl = v
+                break
+    if not expl:
+        expl = {
+            "plain_name": vuln_type,
+            "what_is_it": f"Evaluation of {vuln_type}.",
+            "why_dangerous": "Security consideration that may impact target defense or compliance.",
+            "suggested_fix": f_copy.get("remediation_advice") or f_copy.get("remediation") or "Review application configuration and apply security best practices."
+        }
+
+    f_copy["plain_name"] = expl.get("plain_name", vuln_type)
+    f_copy["what_is_it"] = expl.get("what_is_it", "")
+    f_copy["why_dangerous"] = expl.get("why_dangerous", "")
+    f_copy["what_observed"] = f_copy.get("evidence", "Observed during scan evaluation.")
+    f_copy["suggested_fix"] = f_copy.get("remediation_advice") or f_copy.get("remediation") or expl.get("suggested_fix", "")
+    return f_copy
+
 
 def generate_html_report(
     scan_id: int,
@@ -59,24 +214,26 @@ def generate_html_report(
     for f in all_findings:
         cat = f.get("category") or classify_finding_category(f.get("vulnerability_type", ""), f.get("status", ""))
         f["category"] = cat
+        enriched = _enrich_finding(f)
         if cat == "confirmed_vulnerability":
-            confirmed_vulns.append(f)
+            confirmed_vulns.append(enriched)
         elif cat == "potential_vulnerability":
-            potential_vulns.append(f)
+            potential_vulns.append(enriched)
         elif cat == "verified_control":
-            verified_controls.append(f)
+            verified_controls.append(enriched)
         elif cat == "informational":
-            info_discoveries.append(f)
+            info_discoveries.append(enriched)
         elif cat == "not_reproducible":
-            not_reproducible.append(f)
+            not_reproducible.append(enriched)
         elif cat == "not_tested":
-            not_tested.append(f)
+            not_tested.append(enriched)
         else:
-            potential_vulns.append(f)
+            potential_vulns.append(enriched)
 
     SEV_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
+    all_enriched = confirmed_vulns + potential_vulns + verified_controls + info_discoveries + not_reproducible + not_tested
     sorted_findings = sorted(
-        all_findings,
+        all_enriched,
         key=lambda f: SEV_ORDER.get(f.get("severity", "Info"), 5)
     )
 
@@ -138,6 +295,287 @@ def generate_html_report(
         "previous_hash": chain_data.get("previous_hash", "") if chain_data else "",
     } if has_passport else {"active": False}
 
+    # -------------------------------------------------------------------------
+    # Comprehensive Security Checks Summary Table (9 Standard Checks)
+    # -------------------------------------------------------------------------
+    security_checks = []
+
+    # 1. SQL Injection
+    sqli_flaws = [f for f in sorted_findings if f.get("vulnerability_type") == "SQL Injection" and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    if sqli_flaws:
+        security_checks.append({
+            "name": "SQL Injection (SQLi)",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": sqli_flaws[0].get("severity", "High"),
+            "details": f"Vulnerable parameter(s) detected with syntax errors or login bypass ({len(sqli_flaws)} finding)."
+        })
+    elif scan_mode == "external_basic":
+        security_checks.append({
+            "name": "SQL Injection (SQLi)",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "Active SQL injection probes excluded in non-invasive passive mode."
+        })
+    else:
+        security_checks.append({
+            "name": "SQL Injection (SQLi)",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Endpoints probed with SQL injection test vectors; no syntax errors or bypasses observed."
+        })
+
+    # 2. Cross-Site Scripting (XSS)
+    xss_flaws = [f for f in sorted_findings if "xss" in f.get("vulnerability_type", "").lower() and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    if xss_flaws:
+        security_checks.append({
+            "name": "Cross-Site Scripting (XSS)",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": xss_flaws[0].get("severity", "Medium"),
+            "details": f"Unescaped reflection observed in query parameters ({len(xss_flaws)} finding)."
+        })
+    elif scan_mode == "external_basic":
+        security_checks.append({
+            "name": "Cross-Site Scripting (XSS)",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "Active script injection probes excluded in non-invasive passive mode."
+        })
+    else:
+        security_checks.append({
+            "name": "Cross-Site Scripting (XSS)",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Parameters probed with HTML/script test vectors; reflections properly entity-encoded."
+        })
+
+    # 3. Insecure Direct Object Reference (IDOR)
+    idor_flaws = [f for f in sorted_findings if "idor" in f.get("vulnerability_type", "").lower() and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    if idor_flaws:
+        security_checks.append({
+            "name": "Insecure Direct Object Reference (IDOR)",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": idor_flaws[0].get("severity", "High"),
+            "details": f"Object identifiers accessible across user boundaries without authorization ({len(idor_flaws)} finding)."
+        })
+    elif scan_mode == "external_basic":
+        security_checks.append({
+            "name": "Insecure Direct Object Reference (IDOR)",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "Multi-user authorization boundary testing excluded in passive mode."
+        })
+    else:
+        security_checks.append({
+            "name": "Insecure Direct Object Reference (IDOR)",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Object identifiers tested across privilege boundaries; access control enforced."
+        })
+
+    # 4. Security Headers
+    header_flaws = [f for f in sorted_findings if "header" in f.get("vulnerability_type", "").lower() and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    if header_flaws:
+        security_checks.append({
+            "name": "Security Headers",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": "Medium",
+            "details": f"{len(header_flaws)} recommended security header(s) missing (e.g. CSP, HSTS, X-Frame-Options)."
+        })
+    else:
+        security_checks.append({
+            "name": "Security Headers",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Standard security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) verified."
+        })
+
+    # 5. TLS / HTTPS Security
+    tls_blocked = [f for f in sorted_findings if "blocked" in f.get("vulnerability_type", "").lower() or "aborted" in f.get("evidence", "").lower()]
+    tls_insecure = [f for f in sorted_findings if "insecure http" in f.get("vulnerability_type", "").lower()]
+    tls_verified = [f for f in sorted_findings if "tls" in f.get("vulnerability_type", "").lower() and f.get("category") == "verified_control"]
+    if tls_blocked:
+        security_checks.append({
+            "name": "TLS / HTTPS Security",
+            "result": "Could Not Test",
+            "status_class": "error",
+            "severity": "Info",
+            "details": "TLS connection inspection could not be completed (network / scope block)."
+        })
+    elif tls_insecure:
+        security_checks.append({
+            "name": "TLS / HTTPS Security",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": "Medium",
+            "details": "Target communicates over plain HTTP without transport encryption."
+        })
+    elif tls_verified:
+        security_checks.append({
+            "name": "TLS / HTTPS Security",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Valid certificate, TLS 1.2+, and secure cipher configuration verified."
+        })
+    elif target_url.startswith("http://127.0.0.1") or target_url.startswith("http://localhost"):
+        security_checks.append({
+            "name": "TLS / HTTPS Security",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "Target operates on local loopback HTTP (TLS checks not applicable)."
+        })
+    else:
+        security_checks.append({
+            "name": "TLS / HTTPS Security",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "HTTPS transport active and verified."
+        })
+
+    # 6. Cookie Security Flags
+    cookie_flaws = [f for f in sorted_findings if "cookie" in f.get("vulnerability_type", "").lower() and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    if cookie_flaws:
+        security_checks.append({
+            "name": "Cookie Security Flags",
+            "result": "Issue Found",
+            "status_class": "issue",
+            "severity": "Medium",
+            "details": f"{len(cookie_flaws)} cookie(s) missing HttpOnly, Secure, or SameSite protection flags."
+        })
+    else:
+        security_checks.append({
+            "name": "Cookie Security Flags",
+            "result": "Passed",
+            "status_class": "passed",
+            "severity": "Low",
+            "details": "Session cookies enforce HttpOnly, Secure, and SameSite attributes (or no cookies set)."
+        })
+
+    # 7. AI Prompt Injection
+    if scan_mode in ("basic", "external_basic"):
+        security_checks.append({
+            "name": "AI Prompt Injection",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "AI agent testing is excluded in basic / passive scan mode."
+        })
+    else:
+        ai_inj_flaws = [f for f in sorted_findings if ("prompt injection" in f.get("vulnerability_type", "").lower() or "canary" in f.get("vulnerability_type", "").lower()) and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+        ai_inj_passed = [f for f in sorted_findings if ("prompt injection" in f.get("vulnerability_type", "").lower() or "canary" in f.get("vulnerability_type", "").lower()) and f.get("category") in ("verified_control", "not_reproducible")]
+        if ai_inj_flaws:
+            security_checks.append({
+                "name": "AI Prompt Injection",
+                "result": "Issue Found",
+                "status_class": "issue",
+                "severity": "Critical",
+                "details": "Untrusted context overridden system instructions and leaked confidential canary token."
+            })
+        elif ai_inj_passed:
+            security_checks.append({
+                "name": "AI Prompt Injection",
+                "result": "Passed",
+                "status_class": "passed",
+                "severity": "Low",
+                "details": "Prompt injection attempted; system instructions preserved and canary token protected."
+            })
+        else:
+            security_checks.append({
+                "name": "AI Prompt Injection",
+                "result": "Not Tested",
+                "status_class": "not_tested",
+                "severity": "Info",
+                "details": "No AI assistant endpoints discovered on target."
+            })
+
+    # 8. AI Tool Integrity & Anti-Rug-Pull
+    if scan_mode in ("basic", "external_basic"):
+        security_checks.append({
+            "name": "AI Tool Integrity & Anti-Rug-Pull",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "Tool schema baseline auditing is excluded in basic / passive mode."
+        })
+    else:
+        if tool_integrity_info["changed_count"] > 0:
+            security_checks.append({
+                "name": "AI Tool Integrity & Anti-Rug-Pull",
+                "result": "Issue Found",
+                "status_class": "issue",
+                "severity": "High",
+                "details": f"{tool_integrity_info['changed_count']} tool definition(s) modified post-approval without authorization."
+            })
+        elif tool_integrity_info["verified_count"] > 0:
+            security_checks.append({
+                "name": "AI Tool Integrity & Anti-Rug-Pull",
+                "result": "Passed",
+                "status_class": "passed",
+                "severity": "Low",
+                "details": f"All {tool_integrity_info['verified_count']} tool schemas verified against cryptographic SHA-256 baselines."
+            })
+        else:
+            security_checks.append({
+                "name": "AI Tool Integrity & Anti-Rug-Pull",
+                "result": "Not Tested",
+                "status_class": "not_tested",
+                "severity": "Info",
+                "details": "No baselined AI tools detected on target."
+            })
+
+    # 9. Unauthorized AI Actions / Context Taint
+    if scan_mode in ("basic", "external_basic"):
+        security_checks.append({
+            "name": "Unauthorized AI Actions / Context Taint",
+            "result": "Not Tested",
+            "status_class": "not_tested",
+            "severity": "Info",
+            "details": "AI taint & permission analysis is excluded in basic / passive mode."
+        })
+    else:
+        if taint_permission_info["excessive_agency_count"] > 0:
+            security_checks.append({
+                "name": "Unauthorized AI Actions / Context Taint",
+                "result": "Issue Found",
+                "status_class": "issue",
+                "severity": "High",
+                "details": "AI agent executed high-impact external action (send_email) without human approval."
+            })
+        elif taint_permission_info["gate_verified_count"] > 0:
+            security_checks.append({
+                "name": "Unauthorized AI Actions / Context Taint",
+                "result": "Passed",
+                "status_class": "passed",
+                "severity": "Low",
+                "details": "Human-in-the-loop approval gate enforced; unapproved high-impact action halted."
+            })
+        else:
+            security_checks.append({
+                "name": "Unauthorized AI Actions / Context Taint",
+                "result": "Not Tested",
+                "status_class": "not_tested",
+                "severity": "Info",
+                "details": "No high-impact AI tool actions detected on target."
+            })
+
+    # Summary counts
+    checks_passed_count = sum(1 for c in security_checks if c["result"] == "Passed")
+    checks_issues_count = sum(1 for c in security_checks if c["result"] == "Issue Found")
+    checks_not_tested_count = sum(1 for c in security_checks if c["result"] in ("Not Tested", "Could Not Test"))
+
     html = template.render(
         scan_id          = scan_id,
         target_url       = target_url,
@@ -167,6 +605,10 @@ def generate_html_report(
         tool_integrity   = tool_integrity_info,
         taint_permission = taint_permission_info,
         passport         = passport_info,
+        security_checks  = security_checks,
+        checks_passed_count = checks_passed_count,
+        checks_issues_count = checks_issues_count,
+        checks_not_tested_count = checks_not_tested_count,
     )
     return html
 

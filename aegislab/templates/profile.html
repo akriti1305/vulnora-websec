@@ -1,137 +1,164 @@
 {% extends "layout.html" %}
 {% set active_page = "profile" %}
 
-{% block title %}Account Management — AegisCloud Enterprise{% endblock %}
+{% block title %}Customer Account &amp; Orders — AegisShop{% endblock %}
 
 {% block breadcrumb %}
-<span>Account Directory &bull; Profile Management</span>
+<span>Customer Account &bull; Orders &amp; Preferences</span>
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 900px; margin: 0 auto;">
+<div style="max-width: 920px; margin: 0 auto;">
 
     <!-- Top Account Switcher Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
             <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
-                Account Management & Profile
+                Customer Account &amp; Order History
             </h1>
             <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 2px;">
-                View organizational credentials, contact information, and role-based permissions
+                Manage customer preferences, shipping address, and view order receipts
             </p>
         </div>
 
         <!-- Form for crawler and scanner discovery of /user/profile -->
         <form action="/user/profile" method="GET" style="display: flex; gap: 8px; align-items: center; background: var(--white); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--slate-200); box-shadow: var(--shadow-xs);">
-            <label for="user-id" style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">User ID:</label>
+            <label for="user-id" style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">Customer ID:</label>
             <input type="number" id="user-id" name="id" value="{{ requested_id }}" min="1" max="999" class="form-control" style="width: 75px; padding: 5px 8px; font-size: 0.84rem;">
-            <button type="submit" class="btn btn-secondary btn-sm">Switch User</button>
+            <button type="submit" class="btn btn-secondary btn-sm">Lookup Account</button>
         </form>
     </div>
 
-    <!-- Quick User Switcher Pills -->
-    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; font-size: 0.82rem; color: var(--slate-500);">
-        <span style="font-weight: 600;">Direct profile links:</span>
-        <a href="/user/profile?id=1" class="btn btn-outline btn-sm {% if requested_id|string == '1' %}btn-secondary{% endif %}">alice (Admin - ID: 1)</a>
-        <a href="/user/profile?id=2" class="btn btn-outline btn-sm {% if requested_id|string == '2' %}btn-secondary{% endif %}">bob (User - ID: 2)</a>
-        <a href="/user/profile?id=3" class="btn btn-outline btn-sm {% if requested_id|string == '3' %}btn-secondary{% endif %}">charlie (User - ID: 3)</a>
+    <!-- Quick Customer Switcher Pills -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; font-size: 0.82rem; color: var(--slate-500); flex-wrap: wrap;">
+        <span style="font-weight: 600;">Customer accounts (IDOR demo):</span>
+        <a href="/user/profile?id=1" class="btn btn-outline btn-sm {% if requested_id|string == '1' %}btn-secondary{% endif %}">alice (Customer #1 - Admin/VIP)</a>
+        <a href="/user/profile?id=2" class="btn btn-outline btn-sm {% if requested_id|string == '2' %}btn-secondary{% endif %}">bob (Customer #2 - Standard)</a>
+        <a href="/user/profile?id=3" class="btn btn-outline btn-sm {% if requested_id|string == '3' %}btn-secondary{% endif %}">charlie (Customer #3 - Standard)</a>
     </div>
 
     {% if user %}
     <!-- Profile Card -->
     <div class="card" style="box-shadow: var(--shadow-md);">
         <!-- Header Banner with Avatar -->
-        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 32px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; color: white; display: flex; align-items: center; gap: 20px;">
-            <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.25); border: 3px solid rgba(255,255,255,0.2);">
+        <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 30px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; color: white; display: flex; align-items: center; gap: 20px;">
+            <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.25); border: 3px solid rgba(255,255,255,0.2);">
                 {{ user['username'][0]|upper }}
             </div>
             <div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <h2 style="font-size: 1.4rem; font-weight: 700; color: white; margin: 0;">{{ user['username'] }}</h2>
                     {% if user['role'] == 'admin' %}
-                    <span class="badge badge-rose" style="border-radius: 20px; padding: 3px 10px;">Administrator</span>
+                    <span class="badge badge-rose" style="border-radius: 20px; padding: 3px 10px;">Store Administrator</span>
                     {% else %}
-                    <span class="badge badge-indigo" style="border-radius: 20px; padding: 3px 10px;">Member</span>
+                    <span class="badge badge-indigo" style="border-radius: 20px; padding: 3px 10px;">Registered Shopper</span>
                     {% endif %}
                 </div>
-                <div style="color: var(--slate-400); font-size: 0.86rem; margin-top: 4px;">{{ user['email'] }}</div>
+                <div style="color: #c7d2fe; font-size: 0.86rem; margin-top: 4px;">{{ user['email'] }}</div>
             </div>
         </div>
 
         <!-- Details Grid -->
-        <div class="card-body" style="padding: 32px;">
-            <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.04em;">
-                Personal Information & Credentials
+        <div class="card-body" style="padding: 28px;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--navy-900); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.04em;">
+                Customer Credentials &amp; Membership
             </h3>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 28px;">
-                <div style="background: var(--slate-50); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
-                    <div style="font-size: 0.76rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">User ID</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 4px;" id="profile-user-id">{{ user['id'] }}</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div style="background: var(--slate-50); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+                    <div style="font-size: 0.74rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Customer ID</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 2px;" id="profile-user-id">{{ user['id'] }}</div>
                 </div>
 
-                <div style="background: var(--slate-50); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
-                    <div style="font-size: 0.76rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Username</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 4px;" id="profile-username">{{ user['username'] }}</div>
+                <div style="background: var(--slate-50); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+                    <div style="font-size: 0.74rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Username</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 2px;" id="profile-username">{{ user['username'] }}</div>
                 </div>
 
-                <div style="background: var(--slate-50); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
-                    <div style="font-size: 0.76rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Email Address</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 4px;" id="profile-email">{{ user['email'] }}</div>
+                <div style="background: var(--slate-50); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+                    <div style="font-size: 0.74rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Email</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 2px;" id="profile-email">{{ user['email'] }}</div>
                 </div>
 
-                <div style="background: var(--slate-50); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
-                    <div style="font-size: 0.76rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Assigned Role</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 4px;" id="profile-role">{{ user['role'] }}</div>
+                <div style="background: var(--slate-50); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--slate-200);">
+                    <div style="font-size: 0.74rem; color: var(--slate-500); font-weight: 600; text-transform: uppercase;">Customer Role</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-top: 2px;" id="profile-role">{{ user['role'] }}</div>
                 </div>
             </div>
 
-            <!-- Security & Access Settings Simulation -->
-            <h3 style="font-size: 0.96rem; font-weight: 700; color: var(--navy-900); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.04em;">
-                Account Preferences & Access Control
+            <!-- Realistic Order History Section -->
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--navy-900); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em;">
+                Recent Customer Orders &amp; Receipts
             </h3>
-            <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); overflow: hidden;">
-                <div style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--slate-100);">
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--navy-900);">Multi-Factor Authentication (MFA)</div>
-                        <div style="font-size: 0.78rem; color: var(--slate-500);">Hardware token or authenticator app confirmation</div>
-                    </div>
-                    <span class="badge badge-emerald">Enabled</span>
-                </div>
-                <div style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--navy-900);">Authorization Boundary Policy</div>
-                        <div style="font-size: 0.78rem; color: var(--slate-500);">Direct object access verification status</div>
-                    </div>
-                    <span class="badge badge-amber">Unrestricted Direct Lookup</span>
-                </div>
-                <div style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--navy-900);">Session Token Security</div>
-                        <div style="font-size: 0.78rem; color: var(--slate-500);">Cookie attributes for browser transport</div>
-                    </div>
-                    <span class="badge badge-rose">Missing HttpOnly/Secure Flags</span>
-                </div>
+            <div style="border: 1px solid var(--slate-200); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 24px;">
+                <table class="table" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Purchased Items</th>
+                            <th>Total</th>
+                            <th>Delivery Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if user['username'] == 'alice' %}
+                        <tr>
+                            <td><strong>#ORD-1001</strong></td>
+                            <td>Widget Alpha (x2), Doohickey Gamma (x1)</td>
+                            <td><strong>$44.97</strong></td>
+                            <td><span class="badge badge-emerald">Delivered</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#ORD-0984</strong></td>
+                            <td>Contraption Epsilon (x1)</td>
+                            <td><strong>$49.99</strong></td>
+                            <td><span class="badge badge-emerald">Delivered</span></td>
+                        </tr>
+                        {% elif user['username'] == 'bob' %}
+                        <tr>
+                            <td><strong>#ORD-1002</strong></td>
+                            <td>Gadget Beta (x1)</td>
+                            <td><strong>$14.99</strong></td>
+                            <td><span class="badge badge-indigo">In Transit</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#ORD-0955</strong></td>
+                            <td>Widget Alpha (x1)</td>
+                            <td><strong>$9.99</strong></td>
+                            <td><span class="badge badge-emerald">Delivered</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td><strong>#ORD-1003</strong></td>
+                            <td>Thingamajig Delta (2-pack)</td>
+                            <td><strong>$19.99</strong></td>
+                            <td><span class="badge badge-amber">Processing</span></td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Security & Access Observation -->
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 12px 16px; font-size: 0.82rem; color: var(--navy-800);">
+                <strong>Security Observation (IDOR):</strong> This route fetches customer profiles based on the URL parameter <code>?id=...</code> without checking the requesting user's session. Switching the ID parameter gives access to another user's private orders and receipts.
             </div>
 
         </div>
 
         <div class="card-footer">
-            <span style="color: var(--slate-500);">AegisLab Training Environment &bull; Profile Record #{{ user['id'] }}</span>
-            <a href="/" class="btn btn-outline btn-sm">&larr; Return to Dashboard</a>
+            <span style="color: var(--slate-500);">AegisShop Customer Account Record #{{ user['id'] }}</span>
+            <a href="/" class="btn btn-outline btn-sm">&larr; Back to Shop</a>
         </div>
     </div>
     {% else %}
     <div class="card" style="text-align: center; padding: 48px 24px;">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--rose-50); color: var(--rose-600); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--navy-900);">Account Not Found</h2>
-        <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 6px; max-width: 400px; margin-left: auto; margin-right: auto;">
-            No user record was found matching ID identifier <strong>#{{ requested_id }}</strong>. Please check the ID or switch to an existing member.
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--navy-900);">Customer Account Not Found</h2>
+        <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 6px;">
+            No customer account found matching identifier <strong>#{{ requested_id }}</strong>. Try customer #1, #2, or #3.
         </p>
         <div style="margin-top: 20px;">
-            <a href="/user/profile?id=1" class="btn btn-primary btn-sm">Load Default Profile (ID: 1)</a>
+            <a href="/user/profile?id=1" class="btn btn-primary btn-sm">Load Customer #1 (alice)</a>
         </div>
     </div>
     {% endif %}

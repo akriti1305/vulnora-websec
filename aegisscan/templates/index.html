@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AegisScan 2.0 &mdash; Unified Cyber Security Dashboard &amp; Evaluation Platform</title>
+  <title>AegisScan &mdash; Web &amp; AI Security Platform</title>
   <style>
     :root {
       --bg:           #0a0d12;
@@ -52,13 +52,13 @@
     }
     .logo-wrap { display: flex; align-items: center; gap: 0.9rem; }
     .shield-icon {
-      font-size: 2rem;
+      font-size: 2.2rem;
       background: linear-gradient(135deg, #38bdf8, #818cf8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .logo-title {
-      font-size: 1.65rem;
+      font-size: 1.75rem;
       font-weight: 800;
       letter-spacing: -0.02em;
       background: linear-gradient(135deg, #f8fafc, #94a3b8);
@@ -76,7 +76,7 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    .nav-links { display: flex; align-items: center; gap: 1.2rem; }
+    .nav-links { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
     .nav-links a {
       color: var(--muted);
       text-decoration: none;
@@ -86,34 +86,37 @@
     }
     .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
-    /* Scope Banner */
-    .scope-banner {
-      background: linear-gradient(90deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+    /* Hero Subtitle Banner */
+    .hero-banner {
+      background: linear-gradient(90deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8));
       border: 1px solid var(--border);
       border-left: 4px solid var(--accent);
       border-radius: 8px;
-      padding: 0.85rem 1.25rem;
+      padding: 1rem 1.4rem;
       margin-bottom: 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
-      font-size: 0.86rem;
     }
-    .scope-text strong { color: #f8fafc; }
-    .scope-badges { display: flex; gap: 0.5rem; }
+    .hero-desc {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+    .hero-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .host-badge {
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--accent);
-      padding: 0.2rem 0.55rem;
+      padding: 0.25rem 0.65rem;
       border-radius: 4px;
-      font-family: monospace;
       font-size: 0.8rem;
+      font-weight: 600;
     }
 
-    /* KPI Cards Grid */
+    /* KPI Grid */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -124,10 +127,8 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 1.2rem 1.4rem;
+      padding: 1.1rem 1.3rem;
       transition: transform 0.15s, border-color 0.15s;
-      position: relative;
-      overflow: hidden;
     }
     .kpi-card:hover {
       border-color: rgba(56, 189, 248, 0.4);
@@ -141,15 +142,15 @@
       letter-spacing: 0.05em;
     }
     .kpi-value {
-      font-size: 2.2rem;
+      font-size: 2rem;
       font-weight: 800;
-      margin-top: 0.35rem;
+      margin-top: 0.3rem;
       line-height: 1.1;
     }
     .kpi-sub {
       font-size: 0.78rem;
       color: var(--muted);
-      margin-top: 0.4rem;
+      margin-top: 0.35rem;
     }
 
     /* Main Grid */
@@ -189,7 +190,7 @@
     .form-group { margin-bottom: 1.15rem; }
     label {
       display: block;
-      font-size: 0.83rem;
+      font-size: 0.84rem;
       font-weight: 600;
       color: #cbd5e1;
       margin-bottom: 0.4rem;
@@ -311,8 +312,8 @@
     }
     .net-tab {
       flex: 1;
-      padding: 0.55rem 0.8rem;
-      font-size: 0.82rem;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.86rem;
       font-weight: 700;
       text-align: center;
       cursor: pointer;
@@ -340,7 +341,6 @@
     .sp-verified { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.4); }
     .sp-pending { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(251, 191, 36, 0.4); }
     .sp-unregistered { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
-    .sp-expired, .sp-revoked { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.4); }
 
     /* Verification Box */
     .verification-box {
@@ -409,19 +409,7 @@
     .badge-basic { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.4); }
     .status-completed { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.4); }
     .status-running   { background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.4); }
-
-    /* Category counts pills */
-    .cat-pill {
-      display: inline-block;
-      padding: 1px 7px;
-      border-radius: 4px;
-      font-size: 0.74rem;
-      font-weight: 700;
-      margin-right: 4px;
-    }
-    .cp-vuln    { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.35); }
-    .cp-control { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.35); }
-    .cp-info    { background: rgba(56, 189, 248, 0.12); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .status-failed    { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.4); }
 
     .action-btn {
       display: inline-block;
@@ -431,25 +419,11 @@
       padding: 0.35rem 0.8rem;
       border-radius: 5px;
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       transition: background 0.15s;
     }
     .action-btn:hover { background: rgba(56, 189, 248, 0.22); }
-
-    .passport-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      background: rgba(52, 211, 153, 0.1);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-      color: var(--green);
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
-      text-decoration: none;
-    }
 
     /* Modal / Progress banner */
     #progress-overlay {
@@ -504,9 +478,9 @@
       <div>
         <div style="display:flex;align-items:center;gap:0.6rem;">
           <span class="logo-title">AegisScan</span>
-          <span class="version-tag">v2.0 Provenance</span>
+          <span class="version-tag">2.0</span>
         </div>
-        <div style="font-size:0.8rem;color:var(--muted);">Unified Web &amp; AI-Agent Security Scanner &amp; Evaluation Platform</div>
+        <div style="font-size:0.82rem;color:var(--muted);">Scan websites and test AI security in a controlled environment.</div>
       </div>
     </div>
     <div class="nav-links">
@@ -514,19 +488,19 @@
       <a href="/compare">Scan Comparison</a>
       <a href="/api/scans/history/verify" target="_blank">Audit Hash-Chain</a>
       <a href="/docs" target="_blank">API Docs</a>
+      <a href="#advanced-security">Advanced Security Details</a>
     </div>
   </div>
 
-  <!-- Scope Banner -->
-  <div class="scope-banner">
-    <div class="scope-text">
-      <strong>ScopeGuard Enforcement:</strong> Local AegisLab testbed auditing and authorized External Basic passive scanning supported. External Deep scanning requires domain ownership verification. ScopeGuard safety policies, anti-SSRF IP pinning, and redirect boundaries strictly enforced across all modes.
+  <!-- Hero Description & Mode Summary -->
+  <div class="hero-banner">
+    <div class="hero-desc">
+      Scan websites and test AI security in a controlled environment.
     </div>
-    <div class="scope-badges">
-      <span class="host-badge">Local Lab</span>
-      <span class="host-badge">External Basic</span>
-      <span class="host-badge">External Deep</span>
-      <span class="host-badge" style="color:var(--green)">ScopeGuard Active</span>
+    <div class="hero-badges">
+      <span class="host-badge">Local Test Website</span>
+      <span class="host-badge">External Website (Passive)</span>
+      <span class="host-badge" style="color:var(--green)">✓ ScopeGuard Active</span>
     </div>
   </div>
 
@@ -537,12 +511,12 @@
   </div>
   {% endif %}
 
-  <!-- Platform KPI Grid -->
+  <!-- KPI Summary Cards -->
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Total Completed Scans</div>
       <div class="kpi-value" style="color:#f8fafc;">{{ stats.total_scans | default(scans|length) }}</div>
-      <div class="kpi-sub">Differential audit baseline</div>
+      <div class="kpi-sub">Continuous audit ledger</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Active Vulnerabilities</div>
@@ -550,67 +524,62 @@
       <div class="kpi-sub">Confirmed &amp; potential flaws</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Verified Security Controls</div>
+      <div class="kpi-label">Verified Controls</div>
       <div class="kpi-value" style="color:var(--green);">{{ stats.total_controls | default(0) }}</div>
-      <div class="kpi-sub">Tool integrity &amp; approval gates</div>
+      <div class="kpi-sub">Tool integrity &amp; defenses</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Signed Passports</div>
-      <div class="kpi-value" style="color:var(--accent);">{{ stats.total_passports | default(0) }}</div>
-      <div class="kpi-sub">Ed25519 tamper-evident</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Hash-Chain Status</div>
-      <div class="kpi-value" style="font-size:1.35rem;margin-top:0.6rem;color:{% if stats.chain_status == 'VERIFIED' %}var(--green){% else %}var(--yellow){% endif %};">
+      <div class="kpi-label">Cryptographic Ledger</div>
+      <div class="kpi-value" style="font-size:1.4rem;margin-top:0.6rem;color:{% if stats.chain_status == 'VERIFIED' %}var(--green){% else %}var(--yellow){% endif %};">
         ✓ {{ stats.chain_status | default('VERIFIED') }}
       </div>
-      <div class="kpi-sub">Continuous SHA-256 chain</div>
+      <div class="kpi-sub">{{ stats.total_passports | default(scans|length) }} signed passports</div>
     </div>
   </div>
 
-  <!-- Main Dashboard Actions Grid -->
+  <!-- Main Section: Start Scan & Fast Compare -->
   <div class="dashboard-grid">
 
-    <!-- Card 1: Start New Scan -->
+    <!-- Launch Scan Card -->
     <div class="card">
-      <div class="card-title">🚀 Launch Security Scan</div>
-      <div class="card-subtitle">Execute crawler, Layer 1 vulnerability detectors, and AI-agent verification</div>
+      <div class="card-title">🚀 Scan Website</div>
+      <div class="card-subtitle">Choose a local demo target or an authorized external website to inspect.</div>
       
       <!-- Network Switcher -->
       <div class="network-switcher">
         <div class="net-tab active" id="tab-local" onclick="switchNetwork('local')">
-          🏠 Local Lab Benchmark
+          🏠 Local Test Website (AegisShop)
         </div>
         <div class="net-tab" id="tab-external" onclick="switchNetwork('external')">
-          🌐 External Authorized Website
+          🌐 External Website (Passive)
         </div>
       </div>
 
-      <!-- LOCAL LAB FORM -->
+      <!-- LOCAL TESTBED FORM -->
       <div id="local-lab-section">
         <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
           <input type="hidden" name="target_type" value="local">
           
           <div class="form-group">
-            <label for="target_url">Target Base URL</label>
+            <label for="target_url">Target URL</label>
             <input type="url" id="target_url" name="target_url" value="http://127.0.0.1:5001" required placeholder="http://127.0.0.1:5001">
-            <div class="hint">Permitted authorized hosts: {{ allowed_hosts | join(', ') }}</div>
+            <div class="hint">Local demo testbed at <code>http://127.0.0.1:5001</code> (AegisShop demo store).</div>
           </div>
 
           <div class="form-group">
-            <label for="target_name">Target Name / Description</label>
-            <input type="text" id="target_name" name="target_name" value="AegisLab Testbed" required placeholder="e.g. AegisLab AI Benchmark">
+            <label for="target_name">Website Name</label>
+            <input type="text" id="target_name" name="target_name" value="AegisShop Demo Store" required placeholder="e.g. AegisShop Demo Store">
           </div>
 
           <div class="form-group">
-            <label>Scan Audit Mode</label>
+            <label>Scan Type / Mode</label>
             <div class="mode-selector">
               <label class="mode-option">
                 <div style="display:flex;align-items:center;">
                   <input type="radio" name="scan_mode" value="deep" checked>
                   <span class="mode-title">Deep Authorized</span>
                 </div>
-                <div class="mode-desc">Full OWASP L1 + AI discovery, prompt injection, tool integrity, taint flows</div>
+                <div class="mode-desc">Web vulnerabilities (SQLi, XSS, IDOR, headers) + AI prompt injection &amp; tool integrity.</div>
               </label>
 
               <label class="mode-option">
@@ -618,7 +587,7 @@
                   <input type="radio" name="scan_mode" value="basic">
                   <span class="mode-title">Basic Web Only</span>
                 </div>
-                <div class="mode-desc">Traditional Layer 1 checks only (SQLi, XSS, IDOR, headers, cookies)</div>
+                <div class="mode-desc">Standard web security checks only (SQLi, XSS, IDOR, headers, cookies).</div>
               </label>
             </div>
           </div>
@@ -626,41 +595,39 @@
           <div class="auth-checkbox-wrap">
             <input type="checkbox" id="auth_ack" required checked>
             <label for="auth_ack" class="auth-checkbox-text">
-              <strong>Explicit Authorization:</strong> I certify that I have explicit authorization to assess this local target within ScopeGuard rules.
+              <strong>Authorization:</strong> I certify that I have explicit authorization to assess this local target within ScopeGuard rules.
             </label>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="launch-btn">Start Security Scan &rarr;</button>
+          <button type="submit" class="btn btn-primary" id="launch-btn">Start Scan &rarr;</button>
         </form>
       </div>
 
       <!-- EXTERNAL TARGET FORM -->
       <div id="external-target-section" style="display: none;">
-        
-        <!-- Primary Form: Direct Authorized External Scanning -->
         <form method="POST" action="/scan/start" onsubmit="showScanProgress()">
           <input type="hidden" name="target_type" value="external">
 
           <div class="form-group">
-            <label for="ext_target_url">Target Base URL (HTTPS only)</label>
+            <label for="ext_target_url">Target URL (HTTPS only)</label>
             <input type="url" id="ext_target_url" name="target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app" required>
-            <div class="hint">External assessment requires HTTPS on standard port 443. Private IP addresses and loopback addresses are strictly blocked by ScopeGuard.</div>
+            <div class="hint">External assessment requires HTTPS on port 443. Loopback and private IP ranges are blocked by ScopeGuard.</div>
           </div>
 
           <div class="form-group">
-            <label for="ext_target_name">Site Name / Label</label>
+            <label for="ext_target_name">Website Name</label>
             <input type="text" id="ext_target_name" name="target_name" placeholder="e.g. My Portfolio" required>
           </div>
 
           <div class="form-group">
-            <label>Scan Mode</label>
+            <label>Scan Type / Mode</label>
             <div class="mode-selector">
               <label class="mode-option" onclick="onModeChanged('external_basic')">
                 <div style="display:flex;align-items:center;">
                   <input type="radio" name="scan_mode" id="radio_ext_basic" value="external_basic" checked>
                   <span class="mode-title">External Basic</span>
                 </div>
-                <div class="mode-desc">Non-invasive passive inspection: TLS/SSL, security headers, cookie flags, robots.txt, sitemap, HTML crawl & form inventory. Zero active exploit probes. (Self-attested legal declaration).</div>
+                <div class="mode-desc">Non-invasive passive inspection: TLS/SSL, security headers, cookie flags, sitemap, HTML crawl &amp; form inventory. Zero active exploit probes.</div>
               </label>
 
               <label class="mode-option" onclick="onModeChanged('external_deep')">
@@ -668,22 +635,15 @@
                   <input type="radio" name="scan_mode" id="radio_ext_deep" value="external_deep">
                   <span class="mode-title">Authorized Deep</span>
                 </div>
-                <div class="mode-desc">Active vulnerability testing within approved paths and strict request budget. Strictly requires technical domain ownership verification (.well-known token).</div>
+                <div class="mode-desc">Active vulnerability testing within approved paths. Requires technical domain ownership verification (.well-known token).</div>
               </label>
             </div>
-          </div>
-
-          <div class="verification-box" style="margin-bottom: 1rem; font-size: 0.82rem; color: var(--muted);">
-            <div style="color: #f8fafc; font-weight: 700; margin-bottom: 0.3rem;">Safety Bounds & Enforcement:</div>
-            <div>&bull; Max Request Budget: <strong>50 requests</strong> &bull; Rate Limit: <strong>2.0 req/sec</strong></div>
-            <div>&bull; Safe GET/HEAD discovery only &bull; Active injection probes reported honestly as <em>Not Tested</em></div>
-            <div>&bull; Cryptographic Ed25519 Scan Passport & SHA-256 Hash Chain verification</div>
           </div>
 
           <div class="auth-checkbox-wrap">
             <input type="checkbox" id="ext_auth_ack" name="auth_ack" value="1" required checked>
             <label for="ext_auth_ack" class="auth-checkbox-text">
-              <strong>Legal Authorization Declaration:</strong> I certify that I am the owner or have explicit written authorization from the owner to assess this domain. I acknowledge that External Basic is restricted to non-destructive passive checks, and External Deep requires technical domain control.
+              <strong>Authorization Declaration:</strong> I certify that I own or have written authorization to assess this domain in compliance with ScopeGuard boundaries.
             </label>
           </div>
 
@@ -692,13 +652,12 @@
           </div>
         </form>
 
-        <!-- Technical Domain Control & Deep Verification Drawer -->
+        <!-- Domain Verification Drawer for Authorized Deep -->
         <details id="domain-verification-drawer" style="border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.18); padding: 0.8rem 1rem;">
           <summary style="cursor: pointer; font-weight: 700; color: var(--accent); user-select: none;">
             🛡️ Domain Ownership Verification (.well-known Token for Authorized Deep)
           </summary>
           <div style="margin-top: 1rem;">
-            <!-- Target Selector Dropdown -->
             <div class="form-group">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                 <label style="margin:0;">Select Registered Target</label>
@@ -716,7 +675,7 @@
               </select>
             </div>
 
-            <!-- Inline Target Registration Form -->
+            <!-- Inline Target Registration -->
             <div id="register-target-panel" class="verification-box" style="display: none; border-color: rgba(56, 189, 248, 0.4);">
               <div style="font-weight: 700; color: #f8fafc; margin-bottom: 0.8rem; font-size: 0.95rem;">
                 🌐 Register External Target Domain
@@ -724,7 +683,6 @@
               <div class="form-group">
                 <label for="reg_target_url">Target Base URL (HTTPS only)</label>
                 <input type="url" id="reg_target_url" placeholder="https://aakriti-portfolio-beryl.vercel.app">
-                <div class="hint">External scans require HTTPS on standard port 443.</div>
               </div>
               <div class="form-group">
                 <label for="reg_target_name">Site Name / Label</label>
@@ -739,7 +697,7 @@
               </button>
             </div>
 
-            <!-- Verification & Status Card -->
+            <!-- Status Card -->
             <div id="target-status-card" style="display: none;">
               <div class="verification-box">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
@@ -747,42 +705,15 @@
                   <span id="target-status-badge" class="status-pill sp-unregistered">UNREGISTERED</span>
                 </div>
 
-                <!-- Pending Verification Block -->
                 <div id="pending-verification-block" style="display: none;">
-                  <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.9rem;">
-                    <div style="color: var(--yellow); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem;">
-                      ⚠️ Technical Domain Ownership Verification Required for Deep Mode
-                    </div>
-                    <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
-                      External Deep active scanning requires proof of domain control. Add the verification token below before launching Authorized Deep scans.
-                    </div>
-                  </div>
-
-                  <div style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--muted);">
-                    Expected verification file URL:
-                  </div>
+                  <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">Expected verification URL:</div>
                   <code id="display-verification-url" style="display:block; padding:0.4rem 0.6rem; background:#0a0d12; border:1px solid var(--border); border-radius:4px; font-size:0.78rem; word-break:break-all; margin-bottom:0.7rem;"></code>
 
-                  <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">
-                    Verification Token:
-                  </div>
+                  <div style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);">Verification Token:</div>
                   <div style="display: flex; gap: 0.5rem; margin-bottom: 0.9rem;">
                     <input type="text" id="display-token" readonly style="font-family: monospace; font-size: 0.8rem; background: #0a0d12;">
                     <button type="button" class="btn-sm btn-secondary" onclick="copyToken()">Copy</button>
                   </div>
-
-                  <!-- Vercel Guide Accordion -->
-                  <details style="font-size: 0.8rem; color: var(--muted); background: rgba(0,0,0,0.2); padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid var(--border);">
-                    <summary style="cursor: pointer; font-weight: 700; color: var(--accent);">Instructions for Vercel / Next.js Portfolio</summary>
-                    <div style="margin-top: 0.6rem; line-height: 1.6; color: #cbd5e1;">
-                      1. In your project repository, navigate to the <code>public/</code> directory.<br>
-                      2. Create a folder named <code>.well-known</code>.<br>
-                      3. Create a file named <code>aegisscan-verification.txt</code>.<br>
-                      4. Paste the token above into the file (single line, no quotes).<br>
-                      5. Deploy to Vercel (<code>git push</code>).<br>
-                      6. Once live, click <strong>Verify Ownership Now</strong> below.
-                    </div>
-                  </details>
 
                   <button type="button" class="btn btn-secondary" onclick="verifyTargetOwnership()" id="btn-verify-ownership">
                     🔍 Verify Ownership Now
@@ -790,79 +721,67 @@
                   <div id="verify-result-msg" style="margin-top: 0.6rem; font-size: 0.82rem;"></div>
                 </div>
 
-                <!-- Verified Domain Block -->
                 <div id="verified-domain-block" style="display: none;">
-                  <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.5rem;">
-                    <div style="color: var(--green); font-size: 0.86rem; font-weight: 700;">
-                      ✓ Domain Control Verified (HTTP Challenge)
-                    </div>
-                    <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem;">
-                      Target canonical hostname is verified and approved for Authorized Deep testing.
-                    </div>
+                  <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 0.85rem;">
+                    <div style="color: var(--green); font-size: 0.86rem; font-weight: 700;">✓ Domain Control Verified</div>
+                    <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem;">Approved for Authorized Deep testing.</div>
                   </div>
                 </div>
-
               </div>
             </div>
 
           </div>
         </details>
-
       </div>
 
     </div>
 
-    <!-- Right Side: Fast Compare & Provenance Audit -->
+    <!-- Right Column: Scan Comparison & Quick Links -->
     <div style="display:flex;flex-direction:column;gap:1.5rem;">
 
-      <!-- Card 2: Differential Compare -->
+      <!-- Differential Compare Card -->
       <div class="card">
         <div class="card-title">⚖️ Vulnerable vs Fixed Comparison</div>
-        <div class="card-subtitle">Evaluate baseline vs re-scan to verify genuine vulnerability remediation</div>
+        <div class="card-subtitle">Compare baseline scan vs re-scan to confirm genuine vulnerability fixes.</div>
 
         {% if scans and scans|length >= 2 %}
         <form method="GET" action="/compare">
           <div class="form-group">
-            <label for="scan_a">Baseline Scan (Scan A):</label>
+            <label for="scan_a">Baseline Scan (Before Fix):</label>
             <select name="a" id="scan_a" required>
               {% for s in scans %}
-              <option value="{{ s.id }}" {% if default_scan_a and s.id == default_scan_a %}selected{% elif not default_scan_a and loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              <option value="{{ s.id }}" {% if default_scan_a and s.id == default_scan_a %}selected{% elif not default_scan_a and loop.index == 2 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} issues)</option>
               {% endfor %}
             </select>
           </div>
 
           <div class="form-group">
-            <label for="scan_b">Re-Scan (Scan B):</label>
+            <label for="scan_b">Re-Scan (After Fix):</label>
             <select name="b" id="scan_b" required>
               {% for s in scans %}
-              <option value="{{ s.id }}" {% if default_scan_b and s.id == default_scan_b %}selected{% elif not default_scan_b and loop.index == 1 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} vulns)</option>
+              <option value="{{ s.id }}" {% if default_scan_b and s.id == default_scan_b %}selected{% elif not default_scan_b and loop.index == 1 %}selected{% endif %}>Scan #{{ s.id }} &mdash; {{ s.target_name }} [{{ s.scan_mode|upper }}] ({{ s.active_vulns_count }} issues)</option>
               {% endfor %}
             </select>
           </div>
 
-          <button type="submit" class="btn btn-secondary">Run Differential Comparison</button>
+          <button type="submit" class="btn btn-secondary">Compare Scans &rarr;</button>
         </form>
         {% else %}
-        <div style="color:var(--muted);font-size:0.86rem;padding:1rem 0;">
-          Execute at least two scans to enable differential before/after comparison.
+        <div style="color:var(--muted);font-size:0.86rem;padding:0.6rem 0;">
+          Run at least two scans to compare before/after remediation results.
         </div>
         {% endif %}
       </div>
 
-      <!-- Card 3: Provenance Verification Shortcut -->
+      <!-- Quick Guidance Card -->
       <div class="card">
-        <div class="card-title">🔐 Cryptographic Trust Audit</div>
-        <div class="card-subtitle">Verify Ed25519 signatures and append-only SHA-256 scan-history chain</div>
-        <div style="font-size:0.84rem;color:#cbd5e1;margin-bottom:1rem;">
-          Every scan generates a canonical signed passport linked to the continuous ledger ($H_n = \text{SHA256}(R_n \parallel H_{n-1})$).
-        </div>
-        <div style="display:flex;gap:0.75rem;">
-          <a href="/api/scans/history/verify" target="_blank" class="btn btn-secondary" style="font-size:0.82rem;padding:0.6rem;">
-            🔍 Verify Hash Chain
-          </a>
-          <a href="/api/passports/public-key" target="_blank" class="btn btn-secondary" style="font-size:0.82rem;padding:0.6rem;">
-            🔑 Export Public Key
-          </a>
+        <div class="card-title">💡 Quick Guide for Evaluation</div>
+        <div class="card-subtitle">Recommended steps for demo presentation:</div>
+        <div style="font-size:0.84rem;color:#cbd5e1;line-height:1.6;">
+          <div>1. <strong>Run Local Deep Scan</strong> against AegisShop (<code>http://127.0.0.1:5001</code>).</div>
+          <div>2. <strong>Inspect Findings</strong>: SQLi, XSS, IDOR, headers, and AI canary leakage.</div>
+          <div>3. <strong>Toggle Secure Mode</strong> in AegisLab, re-scan, and run <strong>Comparison</strong>.</div>
+          <div>4. <strong>Audit Hash-Chain</strong> to verify tamper-evident cryptographic passport.</div>
         </div>
       </div>
 
@@ -870,11 +789,11 @@
 
   </div>
 
-  <!-- Past Scans Table Section -->
+  <!-- Recent Scans Table Section -->
   <div class="table-section">
     <div class="section-header">
-      <h2>Scan History &amp; Cryptographic Ledger</h2>
-      <span style="font-size:0.85rem;color:var(--muted);">{{ scans|length }} records linked</span>
+      <h2>Recent Scans</h2>
+      <span style="font-size:0.85rem;color:var(--muted);">{{ scans|length }} scans recorded</span>
     </div>
 
     <div class="table-wrap">
@@ -882,14 +801,12 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 60px;">#</th>
-            <th>Target &amp; Mode</th>
-            <th>Timestamp</th>
+            <th style="width: 70px;">Scan</th>
+            <th>Website Name</th>
+            <th>URL &amp; Scan Type</th>
             <th>Status</th>
-            <th>Category Breakdown</th>
-            <th>Severity Breakdown</th>
-            <th>Provenance</th>
-            <th style="text-align: right;">Action</th>
+            <th>Issues Found</th>
+            <th style="text-align: right;">Report</th>
           </tr>
         </thead>
         <tbody>
@@ -898,47 +815,27 @@
             <td><strong>#{{ s.id }}</strong></td>
             <td>
               <div style="font-weight:700;color:#f8fafc;">{{ s.target_name }}</div>
-              <div style="display:flex;align-items:center;gap:0.4rem;margin-top:2px;">
-                <span class="badge badge-{{ s.scan_mode }}">{{ s.scan_mode }}</span>
-                <code style="font-size:0.76rem;color:var(--muted);">{{ s.target_url }}</code>
+              <div style="color:var(--muted);font-size:0.78rem;">{{ s.started_at }}</div>
+            </td>
+            <td>
+              <div style="font-family:monospace;font-size:0.82rem;color:var(--accent);">{{ s.target_url }}</div>
+              <div style="margin-top:2px;">
+                <span class="badge badge-{{ s.scan_mode }}">{{ s.scan_mode | upper }}</span>
+                <span style="font-size:0.75rem;color:var(--muted);margin-left:4px;">{{ s.target_type }}</span>
               </div>
             </td>
-            <td style="color:var(--muted);font-size:0.82rem;">{{ s.started_at }}</td>
             <td>
-              <span class="badge status-{{ s.status }}">{{ s.status }}</span>
+              <span class="badge status-{{ s.status }}">{{ s.status | upper }}</span>
             </td>
             <td>
-              <span class="cat-pill cp-vuln">{{ s.active_vulns_count }} Vulns</span>
-              <span class="cat-pill cp-control">{{ s.verified_controls_count }} Controls</span>
-              {% if s.informational_count > 0 %}
-              <span class="cat-pill cp-info">{{ s.informational_count }} Info</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if s.severity_counts.Critical > 0 %}
-              <span style="color:var(--critical);font-weight:700;font-size:0.78rem;">{{ s.severity_counts.Critical }} Crit</span>
-              {% endif %}
-              {% if s.severity_counts.High > 0 %}
-              <span style="color:var(--high);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.High }} High</span>
-              {% endif %}
-              {% if s.severity_counts.Medium > 0 %}
-              <span style="color:var(--medium);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.Medium }} Med</span>
-              {% endif %}
-              {% if s.severity_counts.Low > 0 %}
-              <span style="color:var(--low);font-weight:700;font-size:0.78rem;margin-left:4px;">{{ s.severity_counts.Low }} Low</span>
-              {% endif %}
-              {% if s.findings_count == 0 %}
-              <span style="color:var(--green);font-size:0.78rem;font-weight:700;">Clean</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if s.has_passport %}
-              <a href="{{ s.passport_verify_url }}" target="_blank" class="passport-badge">
-                ✓ Ed25519 Signed
-              </a>
+              {% if s.active_vulns_count > 0 %}
+                <span style="color:var(--critical);font-weight:700;font-size:0.9rem;">{{ s.active_vulns_count }} issue{{ 's' if s.active_vulns_count != 1 else '' }}</span>
               {% else %}
-              <span style="color:var(--muted);font-size:0.78rem;">Pending</span>
+                <span style="color:var(--green);font-weight:700;font-size:0.85rem;">0 issues (clean)</span>
               {% endif %}
+              <div style="font-size:0.75rem;color:var(--muted);">
+                {{ s.verified_controls_count }} controls &bull; {{ s.informational_count }} info
+              </div>
             </td>
             <td style="text-align: right;">
               {% if s.status == 'running' %}
@@ -953,10 +850,45 @@
       {% else %}
       <div style="padding:3.5rem 1rem;text-align:center;color:var(--muted);">
         <div style="font-size:2.2rem;margin-bottom:0.5rem;">🛡️</div>
-        <div>No security scans recorded yet. Enter target URL above and launch a scan.</div>
+        <div>No security scans recorded yet. Enter a target URL above and launch a scan.</div>
       </div>
       {% endif %}
     </div>
+  </div>
+
+  <!-- Collapsible Advanced Security Details & Cryptographic Ledger -->
+  <div id="advanced-security" style="margin-top: 2.5rem;">
+    <details style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.5rem;">
+      <summary style="cursor: pointer; font-weight: 700; font-size: 1.05rem; color: #f8fafc; user-select: none;">
+        🔐 Advanced Security Details &amp; Cryptographic Ledger (Click to expand)
+      </summary>
+      <div style="margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1.2rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+        <h4 style="color: var(--accent); margin-bottom: 0.4rem; font-size: 0.95rem;">Continuous Hash-Chain Ledger Architecture</h4>
+        <p style="margin-bottom: 0.8rem;">
+          Every scan report is hashed to produce a canonical digest ($R_n$). Each scan is bound to the preceding record using an append-only SHA-256 hash chain:
+        </p>
+        <div style="background: #0a0d12; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 1rem; font-family: monospace; font-size: 0.85rem; color: var(--green); margin-bottom: 1rem;">
+          H_n = SHA-256( R_n || H_{n-1} )
+        </div>
+        <p style="margin-bottom: 1rem;">
+          This ensures that past scan reports cannot be modified, reordered, or deleted without invalidating subsequent blocks in the ledger.
+        </p>
+
+        <h4 style="color: var(--accent); margin-bottom: 0.4rem; font-size: 0.95rem;">Ed25519 Digital Signatures (RFC 8032)</h4>
+        <p style="margin-bottom: 1rem;">
+          Each scan generates a signed cryptographic scan passport. The scanner signs the canonical JSON representation using an Ed25519 private key, allowing third parties or academic evaluators to verify report authenticity without trusting the database.
+        </p>
+
+        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 1rem;">
+          <a href="/api/scans/history/verify" target="_blank" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.84rem;">
+            🔍 Verify Entire Hash Chain
+          </a>
+          <a href="/api/passports/public-key" target="_blank" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.84rem;">
+            🔑 View Scanner Public Key
+          </a>
+        </div>
+      </div>
+    </details>
   </div>
 
   <!-- Progress Overlay -->
@@ -972,8 +904,6 @@
   </div>
 
   <script>
-    let currentScanId = null;
-
     function showScanProgress() {
       document.getElementById('progress-overlay').style.display = 'flex';
       const btn = document.getElementById('launch-btn');
@@ -1052,7 +982,6 @@
           return;
         }
 
-        // Add to select dropdown and select it
         const sel = document.getElementById('external_target_select');
         const opt = document.createElement('option');
         opt.value = data.target_id;
@@ -1066,7 +995,6 @@
         sel.add(opt);
         sel.value = data.target_id;
 
-        // Hide form and show verification
         document.getElementById('register-target-panel').style.display = 'none';
         document.getElementById('btn-toggle-reg').innerText = '+ Register New';
         onTargetSelected(data.target_id);
@@ -1100,9 +1028,7 @@
       const verified = opt.getAttribute('data-verified') === 'true';
       const status = opt.getAttribute('data-status') || 'pending_verification';
       const token = opt.getAttribute('data-token') || '';
-      const hostname = opt.getAttribute('data-hostname') || '';
 
-      // Auto-populate direct scanning form inputs
       if (url && document.getElementById('ext_target_url')) {
         document.getElementById('ext_target_url').value = url;
       }
@@ -1112,7 +1038,6 @@
 
       card.style.display = 'block';
 
-      // Badge
       const badge = document.getElementById('target-status-badge');
       badge.className = 'status-pill ' + (verified ? 'sp-verified' : 'sp-pending');
       badge.innerText = status.replace('_', ' ').toUpperCase();
@@ -1123,7 +1048,6 @@
       if (!verified) {
         pendingBlock.style.display = 'block';
         verifiedBlock.style.display = 'none';
-
         document.getElementById('display-verification-url').innerText =
           url.replace(/\/$/, '') + '/.well-known/aegisscan-verification.txt';
         document.getElementById('display-token').value = token;
@@ -1150,19 +1074,16 @@
       const resultDiv = document.getElementById('verify-result-msg');
 
       btn.disabled = true;
-      btn.innerText = 'Probing /.well-known/aegisscan-verification.txt...';
+      btn.innerText = 'Probing verification token...';
       resultDiv.innerHTML = '<span style="color:var(--accent);">Probing target via ScopeGuard HTTPS transport...</span>';
 
       try {
-        const resp = await fetch('/api/targets/' + targetId + '/verify', {
-          method: 'POST'
-        });
+        const resp = await fetch('/api/targets/' + targetId + '/verify', { method: 'POST' });
         const data = await resp.json();
 
         if (resp.ok && data.verified) {
           resultDiv.innerHTML = '<span style="color:var(--green);font-weight:700;">' + data.message + '</span>';
           
-          // Automatically create initial external_basic authorization grant so user can scan immediately
           await fetch('/api/targets/' + targetId + '/authorize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1175,16 +1096,12 @@
             })
           });
 
-          // Update option attributes
           const opt = sel.options[sel.selectedIndex];
           opt.setAttribute('data-verified', 'true');
           opt.setAttribute('data-status', 'verified');
           opt.text = opt.getAttribute('data-name') + ' (' + opt.getAttribute('data-hostname') + ') — [VERIFIED]';
 
-          setTimeout(() => {
-            onTargetSelected(targetId);
-          }, 1200);
-
+          setTimeout(() => { onTargetSelected(targetId); }, 1200);
         } else {
           resultDiv.innerHTML = '<span style="color:var(--red);font-weight:700;">Verification failed: ' + (data.detail || data.error || 'Challenge mismatch') + '</span>';
         }
@@ -1216,8 +1133,8 @@
 
   <!-- Footer -->
   <div class="footer">
-    <div>AegisScan 2.0 &mdash; Explainable Web &amp; AI-Agent Security Scanner with Cryptographic Provenance</div>
-    <div>Course Project &bull; Evaluation Benchmark &bull; Academic Defense</div>
+    <div>AegisScan 2.0 &mdash; Web &amp; AI Security Platform with Cryptographic Provenance</div>
+    <div>Academic Defense Benchmark &bull; Course Project</div>
   </div>
 
 </body>

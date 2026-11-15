@@ -1,30 +1,28 @@
 {% extends "layout.html" %}
 {% set active_page = "decoy_product" %}
 
-{% block title %}Product Catalogue (Decoy) — AegisCloud Enterprise{% endblock %}
+{% block title %}{{ product.name if product else 'Product Details' }} — AegisShop{% endblock %}
 
 {% block breadcrumb %}
-<span>Marketplace &bull; Public Product Catalogue</span>
+<span>AegisShop Catalog &bull; {{ product.name if product else 'Product Details' }}</span>
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 860px; margin: 0 auto;">
+<div style="max-width: 900px; margin: 0 auto;">
 
+    <!-- Top Bar with SKU Switcher -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
-                    Public Product Catalogue
-                </h1>
-                <span class="badge badge-emerald">Safe Decoy</span>
-            </div>
+            <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
+                Product Specifications
+            </h1>
             <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 4px;">
-                Public inventory listing. Each SKU ID returns different public data without authentication.
+                Public inventory item details &bull; Real-time stock status
             </p>
         </div>
 
         <form action="/decoy/product" method="GET" style="display: flex; gap: 8px; align-items: center; background: var(--white); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--slate-200);">
-            <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">Product ID:</label>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">Product SKU:</label>
             <input type="number" name="id" value="{{ product_id }}" min="1" max="5" class="form-control" style="width: 70px; padding: 5px 8px; font-size: 0.84rem;">
             <button type="submit" class="btn btn-secondary btn-sm">Lookup SKU</button>
         </form>
@@ -40,34 +38,61 @@
     </div>
 
     {% if product %}
-    <div class="card" style="box-shadow: var(--shadow-sm);">
-        <div class="card-header">
-            <div>
-                <span class="badge badge-indigo" style="margin-bottom: 4px;">Verified SKU #{{ product_id }}</span>
-                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--navy-900); margin: 0;">{{ product.name }}</h2>
+    <div class="card" style="box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 0;">
+            <!-- Left: Product Graphic -->
+            <div style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); display: flex; align-items: center; justify-content: center; font-size: 5rem; padding: 40px; border-right: 1px solid var(--slate-200);">
+                {% if product_id == '1' %}⚙️
+                {% elif product_id == '2' %}📟
+                {% elif product_id == '3' %}🔬
+                {% elif product_id == '4' %}📦
+                {% else %}💎
+                {% endif %}
             </div>
-            <div style="font-size: 1.4rem; font-weight: 800; color: var(--emerald-600);">
-                {{ product.price }}
+
+            <!-- Right: Product Info & Cart -->
+            <div style="padding: 32px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <span class="badge badge-indigo">SKU #{{ product_id }}</span>
+                        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--navy-900); margin-top: 6px;">{{ product.name }}</h2>
+                    </div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--emerald-600);">
+                        {{ product.price }}
+                    </div>
+                </div>
+
+                <p style="font-size: 0.95rem; color: var(--slate-700); line-height: 1.6; margin-bottom: 20px;">
+                    {{ product.desc }}
+                </p>
+
+                <!-- Stock & Shipping Info -->
+                <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 0.84rem; color: var(--slate-600); margin-bottom: 24px;">
+                    <div>✓ <strong>In Stock</strong> &bull; Ready for same-day dispatch</div>
+                    <div style="margin-top: 4px;">✓ <strong>Warranty:</strong> 1-Year Full Replacement Guarantee</div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: auto;">
+                    <button type="button" class="btn btn-primary" onclick="alert('Item added to cart! In demo store, checkout is simulated.')" style="flex: 1; padding: 12px;">
+                        Add to Cart
+                    </button>
+                    <a href="/assistant" class="btn btn-secondary" style="padding: 12px;">
+                        Ask AI Assistant
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            <p style="font-size: 0.95rem; color: var(--slate-700); line-height: 1.6; margin-bottom: 20px;">
-                {{ product.desc }}
-            </p>
-            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.82rem; color: var(--slate-600);">
-                <strong>Inventory Details:</strong> Publicly available cloud resource &bull; Available in all regions &bull; SLA 99.99%
-            </div>
-        </div>
+
         <div class="card-footer">
-            <span style="color: var(--slate-500);">Product ID: {{ product_id }} &bull; Public data (non-sensitive)</span>
-            <a href="/" class="btn btn-outline btn-sm">&larr; Return to Dashboard</a>
+            <span style="color: var(--slate-500);">AegisShop Public Catalog Item &bull; SKU #{{ product_id }}</span>
+            <a href="/" class="btn btn-outline btn-sm">&larr; Back to Shop</a>
         </div>
     </div>
     {% else %}
     <div class="card" style="text-align: center; padding: 40px 20px;">
         <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--navy-900);">Product Not Found</h2>
         <p style="color: var(--slate-500); font-size: 0.86rem; margin-top: 6px;">
-            Product #{{ product_id }} is not in the catalogue. Try selecting SKU #1 through #5.
+            Product #{{ product_id }} is not in the catalogue. Try SKU #1 through #5.
         </p>
     </div>
     {% endif %}

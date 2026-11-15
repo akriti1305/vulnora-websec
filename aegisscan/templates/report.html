@@ -9,13 +9,19 @@
       --bg:        #0d1117;
       --surface:   #161b22;
       --surface2:  #1c2128;
+      --surface3:  #252d38;
       --border:    #30363d;
       --text:      #c9d1d9;
       --muted:     #8b949e;
       --accent:    #58a6ff;
+      --green:     #3fb950;
+      --green-bg:  rgba(63, 185, 80, 0.15);
       --critical:  #ff6b6b;
+      --critical-bg: rgba(255, 107, 107, 0.15);
       --high:      #ffa657;
+      --high-bg:   rgba(255, 166, 87, 0.15);
       --medium:    #e3b341;
+      --medium-bg: rgba(227, 179, 65, 0.15);
       --low:       #3fb950;
       --info:      #79c0ff;
     }
@@ -23,22 +29,41 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 15px;
       line-height: 1.6;
       padding: 2rem;
-      max-width: 1100px;
+      max-width: 1120px;
       margin: 0 auto;
     }
 
-    /* === Header === */
+    /* Top Nav */
+    .nav-bar {
+      margin-bottom: 1.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .nav-link:hover { text-decoration: underline; }
+
+    /* Header */
     .header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.8rem;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
     .logo {
       font-size: 2rem;
@@ -57,46 +82,85 @@
       color: var(--muted);
       text-align: right;
     }
-    .scan-label strong { color: var(--accent); font-size: 1.1rem; display: block; }
+    .scan-label strong { color: var(--accent); font-size: 1.15rem; display: block; }
 
-    /* === Meta table === */
-    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
-    .meta-table td { padding: .5rem .75rem; border: 1px solid var(--border); font-size: .9rem; vertical-align: top; }
-    .meta-table td:first-child { color: var(--muted); width: 160px; background: var(--surface); font-weight: 600; }
+    /* Meta Table */
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 1.8rem; }
+    .meta-table td { padding: .55rem .85rem; border: 1px solid var(--border); font-size: .9rem; vertical-align: middle; }
+    .meta-table td:first-child { color: var(--muted); width: 180px; background: var(--surface); font-weight: 600; }
     code { font-family: 'Consolas', monospace; font-size: .88em; color: var(--accent); }
 
-    /* === Summary grid === */
+    /* Summary Grid */
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.2rem;
       margin-bottom: 2rem;
     }
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 1.1rem 1.3rem;
+      padding: 1.1rem 1.4rem;
     }
-    .card .label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .card .value { font-size: 1.9rem; font-weight: 700; margin-top: .2rem; }
-    .card.c-critical .value { color: var(--critical); }
-    .card.c-high .value    { color: var(--high); }
-    .card.c-medium .value  { color: var(--medium); }
-    .card.c-low .value     { color: var(--low); }
-    .card.c-accent .value  { color: var(--accent); }
+    .card .label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+    .card .value { font-size: 2.1rem; font-weight: 800; margin-top: .2rem; line-height: 1.1; }
 
-    /* === Section heading === */
-    h2 { font-size: 1.1rem; margin: 2rem 0 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); color: var(--accent); }
+    /* Security Checks Table */
+    .checks-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 2.4rem;
+      background: var(--surface);
+    }
+    .checks-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .checks-table th {
+      background: var(--surface2);
+      padding: 0.8rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    .checks-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .checks-table tr:last-child td { border-bottom: none; }
+    .checks-table tr:hover td { background: rgba(56, 189, 248, 0.03); }
 
-    /* === Finding card === */
+    /* Status Pills */
+    .res-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 14px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .rp-issue      { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(255,107,107,0.4); }
+    .rp-passed     { background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,0.4); }
+    .rp-not_tested { background: rgba(139,148,158,0.15); color: var(--muted); border: 1px solid rgba(139,148,158,0.3); }
+    .rp-error      { background: var(--medium-bg); color: var(--medium); border: 1px solid rgba(227,179,65,0.4); }
+
+    /* Findings Cards */
     .finding {
       background: var(--surface);
       border: 1px solid var(--border);
       border-left: 4px solid var(--critical);
       border-radius: 10px;
       padding: 1.4rem;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.3rem;
     }
     .finding.sev-high    { border-left-color: var(--high); }
     .finding.sev-medium  { border-left-color: var(--medium); }
@@ -111,7 +175,7 @@
       margin-bottom: 1rem;
       flex-wrap: wrap;
     }
-    .finding-title { font-size: 1.05rem; font-weight: 700; }
+    .finding-title { font-size: 1.1rem; font-weight: 700; color: #f8fafc; }
 
     .badges { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
     .badge {
@@ -126,28 +190,51 @@
     .badge.high      { background: rgba(255,166,87,.15);  color: var(--high);     border: 1px solid var(--high); }
     .badge.medium    { background: rgba(227,179,65,.15);  color: var(--medium);   border: 1px solid var(--medium); }
     .badge.low       { background: rgba(63,185,80,.15);   color: var(--low);      border: 1px solid var(--low); }
-    .badge.confirmed { background: rgba(255,107,107,.1);  color: var(--critical); border: 1px solid var(--critical); }
-    .badge.potential { background: rgba(227,179,65,.15);  color: var(--medium);   border: 1px solid var(--medium); }
-    .badge.not_reproducible { background: rgba(139,148,158,.1); color: var(--muted); border: 1px solid var(--border); }
-    .badge.not_tested { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid var(--border); }
     .badge.info       { background: rgba(88,166,255,.15);  color: var(--accent);   border: 1px solid var(--accent); }
-    .badge.neutral   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
 
-    .cat-tag {
-      display: inline-block;
-      padding: .15rem .6rem;
-      border-radius: 4px;
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      margin-right: .4rem;
+    /* Friendly Explanation Section */
+    .expl-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
     }
-    .ct-confirmed_vulnerability { background: rgba(255,107,107,.18); color: var(--critical); border: 1px solid var(--critical); }
-    .ct-potential_vulnerability { background: rgba(227,179,65,.18); color: var(--medium); border: 1px solid var(--medium); }
-    .ct-verified_control        { background: rgba(63,185,80,.18); color: var(--low); border: 1px solid var(--low); }
-    .ct-informational           { background: rgba(88,166,255,.18); color: var(--accent); border: 1px solid var(--accent); }
-    .ct-not_reproducible        { background: rgba(139,148,158,.18); color: var(--muted); border: 1px solid var(--border); }
+    .expl-title { font-weight: 700; color: var(--accent); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .expl-text { color: #cbd5e1; margin-bottom: 0.7rem; line-height: 1.5; }
+    .expl-text:last-child { margin-bottom: 0; }
+
+    .remediation-box {
+      background: rgba(63, 185, 80, 0.08);
+      border: 1px solid rgba(63, 185, 80, 0.25);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .remediation-title {
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: .3rem;
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .evidence-box {
+      background: #0a0d11;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .7rem 1rem;
+      font-family: 'Consolas', 'Cascadia Code', monospace;
+      font-size: .81rem;
+      color: #79c0ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: .3rem;
+    }
 
     .filter-btn {
       background: var(--surface);
@@ -166,370 +253,256 @@
       border-color: var(--accent);
     }
 
-    /* === Detail rows === */
-    .detail-grid { display: grid; gap: .65rem; }
-    .detail-row  { display: grid; grid-template-columns: 140px 1fr; gap: .5rem; align-items: start; }
-    .detail-label { color: var(--muted); font-size: .84rem; padding-top: .15rem; }
-    .detail-value { font-size: .9rem; word-break: break-word; }
-
-    .evidence-box {
-      background: #0a0d11;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: .7rem 1rem;
-      font-family: 'Consolas', 'Cascadia Code', monospace;
-      font-size: .81rem;
-      color: #79c0ff;
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin-top: .3rem;
-    }
-
-    /* === Remediation === */
-    .remediation {
-      margin-top: 1rem;
-      padding: .9rem 1.1rem;
-      background: rgba(88,166,255,.06);
-      border: 1px solid rgba(88,166,255,.18);
-      border-radius: 8px;
-      font-size: .87rem;
-      line-height: 1.55;
-    }
-    .remediation-title {
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: .35rem;
-      font-size: .82rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-
-    /* === Empty state === */
-    .empty {
-      text-align: center;
-      padding: 2.5rem;
-      color: var(--muted);
-      border: 1px dashed var(--border);
-      border-radius: 10px;
-    }
-    .empty .icon { font-size: 2.5rem; margin-bottom: .5rem; }
-
-    /* === Footer === */
     .footer {
       margin-top: 3rem;
-      padding-top: 1rem;
+      padding-top: 1.2rem;
       border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: .82rem;
-      text-align: center;
-    }
-
-    /* === Vuln type pill === */
-    .type-pill {
-      display: inline-block;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: .15rem .55rem;
-      font-size: .78rem;
-      color: var(--muted);
-      margin-bottom: .4rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
   </style>
 </head>
 <body>
 
   <!-- Top Navigation Bar -->
-  <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-    <a href="/" style="color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-      &larr; Back to Dashboard
-    </a>
-    <a href="/compare?a={{ scan_id }}" style="color: var(--muted); text-decoration: none; font-size: 0.85rem;">
-      Compare this scan &rarr;
-    </a>
+  <div class="nav-bar">
+    <a href="/" class="nav-link">&larr; Back to Dashboard</a>
+    <div style="display:flex;gap:1.2rem;align-items:center;">
+      <a href="/compare?a={{ scan_id }}" class="nav-link">Compare This Scan &rarr;</a>
+      <a href="#advanced-verification" class="nav-link">Cryptographic Passport &darr;</a>
+    </div>
   </div>
 
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="logo">&#x1F6E1; AegisScan</div>
-      <div class="subtitle">Security Vulnerability Report</div>
+      <div class="logo">🛡️ AegisScan Report</div>
+      <div class="subtitle">Security Assessment &amp; Verification Findings</div>
     </div>
     <div class="scan-label">
       <strong>Scan #{{ scan_id }}</strong>
-      {{ scan_started_at }}
+      <span>{{ scan_started_at }}</span>
     </div>
   </div>
 
-  <!-- Scan metadata -->
+  <!-- Scan Metadata Table -->
   <table class="meta-table">
-    <tr><td>Target</td><td>{{ target_name }} &mdash; <code>{{ target_url }}</code></td></tr>
-    <tr><td>Target Network</td><td><span class="badge" style="background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid var(--accent);">{{ target_type | upper }}</span></td></tr>
-    <tr><td>Scan Mode</td><td><strong style="color:var(--accent);">{{ scan_mode | upper }} AUTHORIZED</strong></td></tr>
+    <tr>
+      <td>Target Scanned</td>
+      <td><strong>{{ target_name }}</strong> &mdash; <code>{{ target_url }}</code></td>
+    </tr>
+    <tr>
+      <td>Scan Mode / Network</td>
+      <td>
+        <span class="badge" style="background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid var(--accent);">{{ scan_mode | upper }} AUTHORIZED</span>
+        <span style="color:var(--muted);font-size:0.82rem;margin-left:8px;">Network: {{ target_type }}</span>
+      </td>
+    </tr>
+    <tr>
+      <td>Completion Status</td>
+      <td><span style="color:var(--green);font-weight:700;">✓ Completed Successfully</span></td>
+    </tr>
     {% if requests_count %}
-    <tr><td>Traffic &amp; Budget</td><td>{{ requests_count }} HTTP request(s) {% if scan_policy and scan_policy.request_budget %}(Budget cap: {{ scan_policy.request_budget }}){% endif %}</td></tr>
+    <tr>
+      <td>HTTP Traffic</td>
+      <td>{{ requests_count }} HTTP request(s) {% if scan_policy and scan_policy.request_budget %}(Budget cap: {{ scan_policy.request_budget }}){% endif %}</td>
+    </tr>
     {% endif %}
     {% if duration_seconds %}
-    <tr><td>Scan Duration</td><td>{{ "%.2f"|format(duration_seconds) }} seconds</td></tr>
+    <tr>
+      <td>Scan Duration</td>
+      <td>{{ "%.2f"|format(duration_seconds) }} seconds</td>
+    </tr>
     {% endif %}
-    <tr><td>Scan started</td><td>{{ scan_started_at }}</td></tr>
-    <tr><td>Scan finished</td><td>{{ scan_finished_at }}</td></tr>
+    <tr>
+      <td>Timestamps</td>
+      <td>Started: {{ scan_started_at }} &bull; Finished: {{ scan_finished_at }}</td>
+    </tr>
   </table>
 
-  <!-- Tier 1: Category Architecture -->
-  <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;margin-bottom:0.6rem;">
-    Finding Classification Summary
-  </div>
-  <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.2rem;">
-    <div class="card" style="border-left:4px solid var(--critical);">
-      <div class="label">Active Vulnerabilities</div>
-      <div class="value" style="color:var(--critical);">{{ active_vuln_count }}</div>
-      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Confirmed: {{ confirmed_count }} | Potential: {{ potential_count }}</div>
+  <!-- Immediate High-Level Answers: Summary Cards -->
+  <div class="summary-grid">
+    <div class="card" style="border-left: 4px solid var(--critical);">
+      <div class="label">Issues Found</div>
+      <div class="value" style="color: var(--critical);">{{ active_vuln_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        {{ confirmed_count }} confirmed &bull; {{ potential_count }} potential
+      </div>
     </div>
-    <div class="card" style="border-left:4px solid var(--low);">
-      <div class="label">Verified Security Controls</div>
-      <div class="value" style="color:var(--low);">{{ verified_control_count }}</div>
-      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Intact baselines &amp; gates</div>
+
+    <div class="card" style="border-left: 4px solid var(--green);">
+      <div class="label">Checks Passed</div>
+      <div class="value" style="color: var(--green);">{{ checks_passed_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        {{ verified_control_count }} verified security controls
+      </div>
     </div>
-    <div class="card" style="border-left:4px solid var(--accent);">
-      <div class="label">Informational Discoveries</div>
-      <div class="value" style="color:var(--accent);">{{ informational_count }}</div>
-      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Manifests &amp; architecture</div>
-    </div>
-    <div class="card" style="border-left:4px solid var(--border);">
-      <div class="label">Total Audited Findings</div>
-      <div class="value" style="color:var(--text);">{{ total_findings }}</div>
-      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">Total items evaluated</div>
+
+    <div class="card" style="border-left: 4px solid var(--muted);">
+      <div class="label">Not Tested / Info</div>
+      <div class="value" style="color: var(--accent);">{{ checks_not_tested_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        {{ informational_count }} info &bull; Mode boundaries honored
+      </div>
     </div>
   </div>
 
-  <!-- Tier 2: Severity Breakdown -->
-  <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;margin-bottom:0.6rem;">
-    Severity Distribution
-  </div>
-  <div class="summary-grid" style="margin-bottom:2rem;">
-    <div class="card c-critical">
-      <div class="label">Critical</div>
-      <div class="value">{{ severity_counts.get('Critical', 0) }}</div>
+  <!-- High-Level Security Checks Summary Table -->
+  <div style="margin-bottom: 2.2rem;">
+    <div style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.4rem;">
+      📋 Security Checks Summary
     </div>
-    <div class="card c-high">
-      <div class="label">High</div>
-      <div class="value">{{ severity_counts.get('High', 0) }}</div>
+    <div style="font-size: 0.84rem; color: var(--muted); margin-bottom: 1rem;">
+      High-level status of evaluated web vulnerability and AI-agent integrity checks.
     </div>
-    <div class="card c-medium">
-      <div class="label">Medium</div>
-      <div class="value">{{ severity_counts.get('Medium', 0) }}</div>
-    </div>
-    <div class="card c-low">
-      <div class="label">Low</div>
-      <div class="value">{{ severity_counts.get('Low', 0) }}</div>
-    </div>
-    <div class="card c-accent">
-      <div class="label">Info</div>
-      <div class="value">{{ severity_counts.get('Info', 0) }}</div>
+
+    <div class="checks-table-wrap">
+      <table class="checks-table">
+        <thead>
+          <tr>
+            <th style="width: 250px;">Security Check</th>
+            <th style="width: 140px;">Result</th>
+            <th style="width: 100px;">Severity</th>
+            <th>Details &amp; Observations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for chk in security_checks %}
+          <tr>
+            <td><strong>{{ chk.name }}</strong></td>
+            <td>
+              <span class="res-pill rp-{{ chk.status_class }}">{{ chk.result }}</span>
+            </td>
+            <td>
+              {% if chk.severity == 'Critical' %}
+                <span style="color:var(--critical);font-weight:700;">Critical</span>
+              {% elif chk.severity == 'High' %}
+                <span style="color:var(--high);font-weight:700;">High</span>
+              {% elif chk.severity == 'Medium' %}
+                <span style="color:var(--medium);font-weight:700;">Medium</span>
+              {% elif chk.severity == 'Low' %}
+                <span style="color:var(--low);font-weight:700;">Low</span>
+              {% else %}
+                <span style="color:var(--muted);">{{ chk.severity }}</span>
+              {% endif %}
+            </td>
+            <td style="color:#cbd5e1;font-size:0.86rem;">
+              {{ chk.details }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- AI Tool Integrity & Anti-Rug-Pull Monitor (Phase 10) -->
+  <!-- AI Tool Integrity & Anti-Rug-Pull Monitor (when applicable) -->
   {% if tool_integrity and tool_integrity.active %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin:1.8rem 0;box-shadow:0 4px 20px rgba(0,0,0,0.25);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
       <div style="display:flex;align-items:center;gap:.6rem;">
         <span style="font-size:1.3rem;">🛡️</span>
-        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">AI Tool Integrity & Anti-Rug-Pull Monitor</h3>
+        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">AI Tool Integrity &amp; Anti-Rug-Pull Monitor</h3>
       </div>
       <div>
         {% if tool_integrity.status == 'VERIFIED' %}
-          <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #3fb950;font-size:.8rem;padding:.3rem .8rem;">✓ ALL BASELINES VERIFIED</span>
+          <span class="res-pill rp-passed">✓ ALL BASELINES VERIFIED</span>
         {% elif tool_integrity.status == 'COMPROMISED' %}
-          <span class="badge" style="background:rgba(255,107,107,.2);color:#ff6b6b;border:1px solid #ff6b6b;font-size:.8rem;padding:.3rem .8rem;">⚠ RUG-PULL / TAMPERING DETECTED</span>
+          <span class="res-pill rp-issue">⚠️ RUG-PULL / TAMPERING DETECTED</span>
         {% else %}
-          <span class="badge not_tested" style="font-size:.8rem;padding:.3rem .8rem;">BASELINE UNAVAILABLE</span>
+          <span class="res-pill rp-not_tested">BASELINE UNAVAILABLE</span>
         {% endif %}
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1.2rem;">
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Verified Unchanged</div>
-        <div style="font-size:1.4rem;font-weight:700;color:#3fb950;margin-top:.2rem;">{{ tool_integrity.verified_count }}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1rem;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Verified Intact</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:.2rem;">{{ tool_integrity.verified_count }}</div>
       </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Changed Post-Approval</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if tool_integrity.changed_count > 0 %}#ff6b6b{% else %}#8b949e{% endif %};margin-top:.2rem;">{{ tool_integrity.changed_count }}</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Modified Post-Approval</div>
+        <div style="font-size:1.4rem;font-weight:700;color:{% if tool_integrity.changed_count > 0 %}var(--critical){% else %}var(--muted){% endif %};margin-top:.2rem;">{{ tool_integrity.changed_count }}</div>
       </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Missing Baselines</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if tool_integrity.unbaselined_count > 0 %}#e3b341{% else %}#8b949e{% endif %};margin-top:.2rem;">{{ tool_integrity.unbaselined_count }}</div>
-      </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
         <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Total Tools Monitored</div>
         <div style="font-size:1.4rem;font-weight:700;color:var(--accent);margin-top:.2rem;">{{ tool_integrity.total_count }}</div>
       </div>
     </div>
-
-    {% if tool_integrity.changed_tools %}
-    <div style="margin-top:1rem;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:1rem;">
-      <div style="font-weight:700;color:#ff6b6b;font-size:.88rem;margin-bottom:.5rem;">⚠️ High-Risk Tool Discrepancies:</div>
-      {% for ct in tool_integrity.changed_tools %}
-        <div style="font-size:.82rem;color:var(--text);margin-bottom:.4rem;">
-          <strong>{{ ct.location }}</strong>: {{ ct.evidence }}
-        </div>
-      {% endfor %}
-    </div>
-    {% endif %}
   </div>
   {% endif %}
 
-  <!-- AI Context Taint Tracking & Excessive Agency Analyzer (Phase 11) -->
+  <!-- AI Context Taint & Excessive Agency Analyzer (when applicable) -->
   {% if taint_permission and taint_permission.active %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin:1.8rem 0;box-shadow:0 4px 20px rgba(0,0,0,0.25);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
       <div style="display:flex;align-items:center;gap:.6rem;">
         <span style="font-size:1.3rem;">🔗</span>
-        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">Context Taint Tracking & Excessive Agency Analyzer</h3>
+        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">Context Taint Tracking &amp; Excessive Agency Analyzer</h3>
       </div>
       <div>
         {% if taint_permission.status == 'EXCESSIVE_AGENCY_DETECTED' %}
-          <span class="badge critical" style="font-size:.8rem;padding:.3rem .8rem;">⚠ EXCESSIVE AGENCY DETECTED</span>
+          <span class="res-pill rp-issue">⚠️ EXCESSIVE AGENCY DETECTED</span>
         {% elif taint_permission.status == 'APPROVAL_GATED' %}
-          <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #3fb950;font-size:.8rem;padding:.3rem .8rem;">✓ APPROVAL GATES ENFORCED</span>
+          <span class="res-pill rp-passed">✓ APPROVAL GATES ENFORCED</span>
         {% else %}
-          <span class="badge not_tested" style="font-size:.8rem;padding:.3rem .8rem;">NOT TESTED</span>
+          <span class="res-pill rp-not_tested">NOT TESTED</span>
         {% endif %}
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1.2rem;">
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1rem;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
         <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Unapproved Actions</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if taint_permission.excessive_agency_count > 0 %}#ff6b6b{% else %}#3fb950{% endif %};margin-top:.2rem;">{{ taint_permission.excessive_agency_count }}</div>
+        <div style="font-size:1.4rem;font-weight:700;color:{% if taint_permission.excessive_agency_count > 0 %}var(--critical){% else %}var(--green){% endif %};margin-top:.2rem;">{{ taint_permission.excessive_agency_count }}</div>
       </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
         <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Gated Actions Blocked</div>
-        <div style="font-size:1.4rem;font-weight:700;color:#3fb950;margin-top:.2rem;">{{ taint_permission.gate_verified_count }}</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:.2rem;">{{ taint_permission.gate_verified_count }}</div>
       </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Complete Attack Paths</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if taint_permission.taint_paths_count > 0 %}#ff6b6b{% else %}#8b949e{% endif %};margin-top:.2rem;">{{ taint_permission.taint_paths_count }}</div>
-      </div>
-    </div>
-
-    <!-- Visual Attack Path Flow -->
-    <div style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem;">
-      <div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:.6rem;">Observed Attack Path Flow Architecture:</div>
-      <div style="font-family:'Consolas','Cascadia Code',monospace;font-size:.82rem;color:#79c0ff;display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;">
-        <span style="background:rgba(255,107,107,.15);color:#ff6b6b;padding:.2rem .6rem;border-radius:4px;border:1px solid #ff6b6b;">UNTRUSTED DOCUMENT</span>
-        <span>──(observed)──&gt;</span>
-        <span style="background:rgba(227,179,65,.15);color:#e3b341;padding:.2rem .6rem;border-radius:4px;border:1px solid #e3b341;">ASSISTANT CONTEXT</span>
-        <span>──(observed)──&gt;</span>
-        <span style="background:rgba(88,166,255,.15);color:#58a6ff;padding:.2rem .6rem;border-radius:4px;border:1px solid #58a6ff;">TOOL SELECTION</span>
-        <span>──(observed)──&gt;</span>
-        <span style="background:rgba(255,107,107,.2);color:#ff6b6b;padding:.2rem .6rem;border-radius:4px;border:1px solid #ff6b6b;font-weight:700;">PRIVILEGED SINK</span>
-      </div>
-    </div>
-
-    {% if taint_permission.excessive_agency_findings %}
-    <div style="margin-top:1rem;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:1rem;">
-      <div style="font-weight:700;color:#ff6b6b;font-size:.88rem;margin-bottom:.5rem;">⚠️ Excessive Agency Audit Evidence:</div>
-      {% for ea in taint_permission.excessive_agency_findings %}
-        <div style="font-size:.82rem;color:var(--text);margin-bottom:.4rem;">
-          <strong>{{ ea.location }}</strong>: {{ ea.evidence }}
-        </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- Cryptographic Scan Passport & Provenance Hash Chain (Phase 12) -->
-  {% if passport and passport.active %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin:1.8rem 0;box-shadow:0 4px 20px rgba(0,0,0,0.25);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
-      <div style="display:flex;align-items:center;gap:.6rem;">
-        <span style="font-size:1.3rem;">🔏</span>
-        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">Cryptographic Scan Passport & Provenance Chain</h3>
-      </div>
-      <div style="display:flex;align-items:center;gap:.5rem;">
-        <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #3fb950;font-size:.8rem;padding:.3rem .8rem;">✓ ED25519 SIGNED (RFC 8032)</span>
-        <span class="badge" style="background:rgba(88,166,255,.15);color:#58a6ff;border:1px solid #58a6ff;font-size:.8rem;padding:.3rem .8rem;">CHAIN SEQ #{{ passport.chain_sequence }}</span>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.2rem;">
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Signing Algorithm</div>
-        <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-top:.2rem;">{{ passport.signing_algorithm }}</div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Schema v{{ passport.schema_version }}</div>
-      </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Public Key ID</div>
-        <div style="font-size:.88rem;font-weight:700;color:#58a6ff;font-family:monospace;margin-top:.2rem;">{{ passport.public_key_identifier }}</div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Active Scanner Identity</div>
-      </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Canonical Payload SHA-256</div>
-        <div style="font-size:.82rem;font-weight:700;color:#3fb950;font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.canonical_payload_hash }}">{{ passport.canonical_payload_hash[:16] }}...{{ passport.canonical_payload_hash[-8:] }}</div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Tamper-Evident Evidence Digest</div>
-      </div>
-      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Hash-Chain Head (H<sub>n</sub>)</div>
-        <div style="font-size:.82rem;font-weight:700;color:#e3b341;font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.chain_hash }}">{{ passport.chain_hash[:16] }}...{{ passport.chain_hash[-8:] }}</div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Linked to H<sub>{{ passport.chain_sequence - 1 }}</sub></div>
-      </div>
-    </div>
-
-    <!-- Actions & Verification Links -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;">
-      <div style="font-size:.82rem;color:var(--muted);">
-        <strong style="color:var(--text);">Cryptographic Verification Actions:</strong>
-        <span style="display:block;margin-top:.2rem;font-size:.75rem;color:var(--muted);">Verify signature integrity or export the raw signed JSON passport artifact.</span>
-      </div>
-      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-        <a href="{{ passport.download_url }}" class="btn" style="background:#238636;color:#fff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
-          📥 Download JSON Passport
-        </a>
-        <a href="{{ passport.verify_url }}" target="_blank" class="btn" style="background:rgba(88,166,255,.15);border:1px solid #58a6ff;color:#58a6ff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
-          🔍 Verify Signature
-        </a>
-        <a href="{{ passport.history_verify_url }}" target="_blank" class="btn" style="background:rgba(227,179,65,.15);border:1px solid #e3b341;color:#e3b341;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
-          ⛓️ Audit Hash Chain
-        </a>
-      </div>
-    </div>
-
-    <div style="margin-top:.8rem;font-size:.74rem;color:var(--muted);line-height:1.4;">
-      ℹ️ <strong>Provenance Notice:</strong> A digital signature proves the authenticity, origin, and integrity of the signed scan record against tampering. It does not certify that all findings are objectively free of false positives or false negatives.
     </div>
   </div>
   {% endif %}
 
-  <!-- Findings Section Header with Category Tabs -->
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:2rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
-    <h2 style="margin:0;border:none;padding:0;color:var(--accent);">&#x26A0; Findings ({{ total_findings }})</h2>
+  <!-- Detailed Findings Header & Filter Tabs -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:2.5rem 0 1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+    <div>
+      <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc;margin:0;">
+        ⚠️ Detailed Findings &amp; Evidence ({{ total_findings }})
+      </h2>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
+        Clear plain-English explanations with observed evidence and suggested remediation.
+      </div>
+    </div>
     <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
       <button class="filter-btn active" onclick="filterFindings('all', this)">All ({{ total_findings }})</button>
-      <button class="filter-btn" onclick="filterFindings('confirmed_vulnerability', this)">Confirmed Vulns ({{ confirmed_count }})</button>
+      <button class="filter-btn" onclick="filterFindings('confirmed_vulnerability', this)">Confirmed ({{ confirmed_count }})</button>
       <button class="filter-btn" onclick="filterFindings('potential_vulnerability', this)">Potential ({{ potential_count }})</button>
       <button class="filter-btn" onclick="filterFindings('verified_control', this)">Verified Controls ({{ verified_control_count }})</button>
-      <button class="filter-btn" onclick="filterFindings('informational', this)">Informational ({{ informational_count }})</button>
+      <button class="filter-btn" onclick="filterFindings('informational', this)">Info ({{ informational_count }})</button>
       {% if not_tested and not_tested|length > 0 %}
       <button class="filter-btn" onclick="filterFindings('not_tested', this)">Not Tested ({{ not_tested|length }})</button>
       {% endif %}
     </div>
   </div>
 
+  <!-- Findings Cards List -->
   {% if findings %}
     {% for f in findings %}
     {% set sev_class = f.severity | lower %}
     <div class="finding sev-{{ sev_class }}" data-category="{{ f.category }}">
+      
+      <!-- Finding Title Header -->
       <div class="finding-header">
         <div>
-          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;flex-wrap:wrap;">
-            <span class="cat-tag ct-{{ f.category }}">{{ f.category | replace('_', ' ') | upper }}</span>
-            <span class="type-pill">{{ f.vulnerability_type }}</span>
+          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.2rem;">
+            {{ f.category | replace('_', ' ') }}
           </div>
-          <div class="finding-title">{{ f.vulnerability_type }} &mdash; {{ f.location }}</div>
+          <div class="finding-title">{{ f.plain_name | default(f.vulnerability_type) }}</div>
         </div>
         <div class="badges">
           <span class="badge {{ sev_class }}">{{ f.severity }}</span>
@@ -537,129 +510,137 @@
         </div>
       </div>
 
-      <div class="detail-grid">
-        <div class="detail-row">
-          <span class="detail-label">Location</span>
-          <span class="detail-value"><code>{{ f.location }}</code></span>
+      <!-- Plain English Explanations -->
+      <div class="expl-box">
+        <div class="expl-title">What is it?</div>
+        <div class="expl-text">{{ f.what_is_it }}</div>
+
+        <div class="expl-title">Why is it dangerous?</div>
+        <div class="expl-text">{{ f.why_dangerous }}</div>
+
+        <div class="expl-title">What AegisScan Observed:</div>
+        <div class="expl-text" style="color: #79c0ff; font-family: monospace; font-size: 0.85rem; background: #0a0d11; padding: 0.5rem 0.8rem; border-radius: 4px; border: 1px solid var(--border);">
+          {{ f.what_observed }}
         </div>
-        {% if f.payload %}
-        <div class="detail-row">
-          <span class="detail-label">Payload</span>
-          <span class="detail-value"><code>{{ f.payload }}</code></span>
-        </div>
-        {% endif %}
-        {% if f.evidence %}
-        <div class="detail-row">
-          <span class="detail-label">Evidence</span>
-          <span class="detail-value">
-            <div class="evidence-box">{{ f.evidence }}</div>
-          </span>
-        </div>
-        {% endif %}
       </div>
 
-      {% if f.remediation %}
-      <div class="remediation">
-        <div class="remediation-title">&#x2705; How to Fix</div>
-        {{ f.remediation }}
+      <!-- Suggested Fix -->
+      <div class="remediation-box">
+        <div class="remediation-title">✅ Suggested Fix</div>
+        <div>{{ f.suggested_fix }}</div>
       </div>
-      {% endif %}
+
+      <!-- Expandable Technical Details -->
+      <details style="font-size: 0.84rem; color: var(--muted); margin-top: 0.8rem;">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--accent); user-select: none;">
+          Inspect Technical Details &amp; Raw Evidence
+        </summary>
+        <div style="margin-top: 0.6rem; background: #0a0d11; border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem 1rem;">
+          <div style="margin-bottom: 0.4rem;"><strong>Endpoint Location:</strong> <code>{{ f.location }}</code></div>
+          {% if f.payload %}
+          <div style="margin-bottom: 0.4rem;"><strong>Test Payload:</strong> <code>{{ f.payload }}</code></div>
+          {% endif %}
+          {% if f.evidence %}
+          <div><strong>Raw Evidence Output:</strong></div>
+          <div class="evidence-box">{{ f.evidence }}</div>
+          {% endif %}
+        </div>
+      </details>
+
     </div>
     {% endfor %}
   {% else %}
-    <div class="empty">
-      <div class="icon">&#x2705;</div>
-      <div>No vulnerabilities detected in this scan.</div>
+    <div style="text-align: center; padding: 3rem; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; color: var(--muted);">
+      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">✅</div>
+      <div>No vulnerabilities detected in this scan. All evaluated checks were clean.</div>
     </div>
   {% endif %}
 
-
-  <div class="footer" style="margin-top:0">
-    Generated by AegisScan &mdash; Academic Cybersecurity Project &mdash;
-    For ethical / authorised use only. Do not run against systems you do not own.
-  </div>
-
-</div><!-- end main content -->
-
-<!-- ===== Evaluation Accuracy Box ===== -->
-{% if eval_data %}
-<div style="max-width:1100px;margin:0 auto 3rem;padding:0 2rem;">
-  <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:1.5rem;">
-    <h2 style="color:#58a6ff;font-size:1.1rem;margin-bottom:1rem;">
-      📊 Scanner Accuracy Evaluation (vs AegisLab Ground Truth)
-    </h2>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-
-      {% for stage_key, stage_label in [('pre_validation','Before Validation (raw detections)'),
-                                        ('post_validation','After Validation (confirmed only)')] %}
-      {% if stage_key in eval_data %}
-      {% set e = eval_data[stage_key] %}
-      <div style="background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:1.2rem;">
-        <div style="font-weight:700;margin-bottom:.8rem;color:#c9d1d9;">{{ stage_label }}</div>
-        <div style="display:flex;gap:1rem;margin-bottom:.8rem;flex-wrap:wrap;">
-          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
-            <div style="font-size:1.6rem;font-weight:800;color:#3fb950;">{{ "%.0f"|format(e.precision*100) }}%</div>
-            <div style="font-size:.75rem;color:#8b949e;">Precision</div>
-          </div>
-          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
-            <div style="font-size:1.6rem;font-weight:800;color:#ffa657;">{{ "%.0f"|format(e.recall*100) }}%</div>
-            <div style="font-size:.75rem;color:#8b949e;">Recall</div>
-          </div>
-          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
-            <div style="font-size:1.6rem;font-weight:800;color:#a371f7;">{{ "%.0f"|format(e.f1*100) }}%</div>
-            <div style="font-size:.75rem;color:#8b949e;">F1 Score</div>
-          </div>
-          <div style="text-align:center;background:#0d1117;border-radius:8px;padding:.5rem 1rem;min-width:80px;">
-            <div style="font-size:1rem;font-weight:700;color:#58a6ff;">{{ e.TP }}TP / {{ e.FP }}FP / {{ e.FN }}FN</div>
-            <div style="font-size:.75rem;color:#8b949e;">counts</div>
-          </div>
-        </div>
-        {% if e.fp_list %}
-        <div style="margin-top:.6rem;font-size:.8rem;color:#ff6b6b;">
-          <strong>False Positives:</strong>
-          <ul style="margin:.3rem 0 0 1.2rem;">
-            {% for fp in e.fp_list %}<li>{{ fp }}</li>{% endfor %}
-          </ul>
-        </div>
+  <!-- Advanced Verification & Cryptographic Provenance Section -->
+  <div id="advanced-verification" style="margin-top: 3rem;">
+    <details style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+      <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #f8fafc; user-select: none; display: flex; align-items: center; justify-content: space-between;">
+        <span>🔏 Advanced Cryptographic Verification &amp; Provenance Ledger (Click to expand)</span>
+        {% if passport and passport.active %}
+        <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #3fb950;font-size:.78rem;">✓ ED25519 SIGNED</span>
         {% endif %}
-        {% if e.fn_list %}
-        <div style="margin-top:.6rem;font-size:.8rem;color:#e3b341;">
-          <strong>False Negatives (missed):</strong>
-          <ul style="margin:.3rem 0 0 1.2rem;">
-            {% for fn in e.fn_list %}<li>{{ fn }}</li>{% endfor %}
-          </ul>
+      </summary>
+
+      {% if passport and passport.active %}
+      <div style="margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1.2rem;">
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.2rem;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+            <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Signing Algorithm</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-top:.2rem;">{{ passport.signing_algorithm }}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">RFC 8032 Digital Signature</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+            <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Public Key ID</div>
+            <div style="font-size:.88rem;font-weight:700;color:var(--accent);font-family:monospace;margin-top:.2rem;">{{ passport.public_key_identifier }}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Verified Scanner Identity</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+            <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Canonical SHA-256 Digest</div>
+            <div style="font-size:.82rem;font-weight:700;color:var(--green);font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.canonical_payload_hash }}">{{ passport.canonical_payload_hash[:16] }}...{{ passport.canonical_payload_hash[-8:] }}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Tamper-Evident Report Hash</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
+            <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Hash-Chain Head (H<sub>n</sub>)</div>
+            <div style="font-size:.82rem;font-weight:700;color:var(--medium);font-family:monospace;margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;" title="{{ passport.chain_hash }}">{{ passport.chain_hash[:16] }}...{{ passport.chain_hash[-8:] }}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;">Sequence Block #{{ passport.chain_sequence }}</div>
+          </div>
         </div>
-        {% endif %}
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;">
+          <div style="font-size:.84rem;color:var(--muted);">
+            <strong style="color:var(--text);">Cryptographic Verification Actions:</strong>
+            <div style="margin-top:.2rem;font-size:.76rem;color:var(--muted);">Verify signature authenticity or download the canonical signed passport.</div>
+          </div>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+            <a href="{{ passport.download_url }}" class="btn" style="background:#238636;color:#fff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+              📥 Download Signed JSON Passport
+            </a>
+            <a href="{{ passport.verify_url }}" target="_blank" class="btn" style="background:rgba(88,166,255,.15);border:1px solid #58a6ff;color:#58a6ff;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+              🔍 Verify Signature
+            </a>
+            <a href="{{ passport.history_verify_url }}" target="_blank" class="btn" style="background:rgba(227,179,65,.15);border:1px solid #e3b341;color:#e3b341;padding:.4rem .9rem;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;">
+              ⛓️ Audit Entire Hash Chain
+            </a>
+          </div>
+        </div>
+
+      </div>
+      {% else %}
+      <div style="padding: 1rem 0; color: var(--muted); font-size: 0.85rem;">
+        Cryptographic passport is generated upon completion of authorized scans.
       </div>
       {% endif %}
-      {% endfor %}
 
-    </div>
+    </details>
   </div>
-</div>
-{% endif %}
 
-<div class="footer" style="padding:1rem 2rem;max-width:1100px;margin:0 auto 2rem;">
-  Generated by AegisScan &mdash; Academic Cybersecurity Project &mdash;
-  For ethical / authorised use only.
-</div>
+  <!-- Footer -->
+  <div class="footer">
+    <div>AegisScan 2.0 &mdash; Web &amp; AI Security Platform with Cryptographic Provenance</div>
+    <div>Academic Defense Benchmark &bull; For Authorized Testing Only</div>
+  </div>
 
-<script>
-  function filterFindings(cat, btn) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+  <script>
+    function filterFindings(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
 
-    const items = document.querySelectorAll('.finding');
-    items.forEach(el => {
-      if (cat === 'all' || el.getAttribute('data-category') === cat) {
-        el.style.display = 'block';
-      } else {
-        el.style.display = 'none';
-      }
-    });
-  }
-</script>
+      const items = document.querySelectorAll('.finding');
+      items.forEach(el => {
+        if (cat === 'all' || el.getAttribute('data-category') === cat) {
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+  </script>
 
 </body>
 </html>
