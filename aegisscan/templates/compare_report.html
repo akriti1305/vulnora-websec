@@ -14,8 +14,11 @@
       --muted:    #8b949e;
       --accent:   #58a6ff;
       --green:    #3fb950;
+      --green-bg: rgba(63, 185, 80, 0.15);
       --red:      #ff6b6b;
+      --red-bg:   rgba(255, 107, 107, 0.15);
       --yellow:   #e3b341;
+      --yellow-bg: rgba(227, 179, 65, 0.15);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -25,7 +28,7 @@
       font-size: 15px;
       line-height: 1.6;
       padding: 2rem;
-      max-width: 1000px;
+      max-width: 1040px;
       margin: 0 auto;
     }
     .logo {
@@ -67,6 +70,20 @@
     .banner.good   { background: #0d2318; border: 1px solid #3fb950; }
     .banner.mixed  { background: #211a08; border: 1px solid #e3b341; }
     .banner.bad    { background: #2b0d0d; border: 1px solid #ff6b6b; }
+
+    /* Status Pills */
+    .res-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 14px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .rp-issue, .rp-persists { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,107,107,0.4); }
+    .rp-passed, .rp-resolved { background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,0.4); }
+    .rp-not_tested { background: rgba(139,148,158,0.15); color: var(--muted); border: 1px solid rgba(139,148,158,0.3); }
 
     /* === Sections === */
     .section { margin-bottom: 2rem; }
@@ -208,6 +225,128 @@
 {% endif %}
 
 {% if compare %}
+
+<!-- ===================================================================== -->
+<!-- PRIORITY 4: BEGINNER-FRIENDLY FOCUSED DEMO COMPARISON (2 CHECKS)      -->
+<!-- ===================================================================== -->
+{% if compare.focused_demo %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+    <div>
+      <h2 style="font-size:1.15rem;font-weight:800;color:#f8fafc;margin:0;">
+        🎯 Focused Demonstration: 2 Security Checks Comparison
+      </h2>
+      <div style="font-size:0.84rem;color:var(--muted);margin-top:2px;">
+        Evidence-based before/after differential comparing the 2 demonstration categories (SQL Injection &amp; XSS).
+      </div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:0.8rem;font-weight:700;">
+      <span style="color:var(--red);">Before Fix: {{ compare.focused_demo.before_affected_count }} affected categories</span>
+      <span style="color:var(--muted);margin:0 6px;">&rarr;</span>
+      <span style="color:{% if compare.focused_demo.after_affected_count < compare.focused_demo.before_affected_count %}var(--green){% else %}var(--yellow){% endif %};">After Fix: {{ compare.focused_demo.after_affected_count }} affected category</span>
+    </div>
+  </div>
+
+  <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:6px;padding:0.6rem 0.9rem;font-size:0.8rem;color:#cbd5e1;margin-bottom:1.2rem;">
+    <strong>Presentation Filter Note:</strong> These counts reflect <em>Focused Demo Categories</em> only (SQL Injection and XSS), not total website vulnerabilities. All other categories and findings are shown in the sections below.
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1.2rem;">
+    {% for cat in compare.focused_demo.categories %}
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1.1rem;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+        <span style="font-size:1rem;font-weight:700;color:#f8fafc;">
+          {% if cat.key == 'sqli' %}💉{% else %}⚡{% endif %} {{ cat.name }}
+        </span>
+        <span class="sev-badge sev-{{ cat.severity }}">{{ cat.severity }}</span>
+      </div>
+
+      <div style="background:#0a0d11;border:1px solid var(--border);border-radius:6px;padding:0.7rem 0.9rem;margin-bottom:0.6rem;font-size:0.84rem;">
+        <div style="color:var(--muted);font-size:0.75rem;text-transform:uppercase;font-weight:700;">BEFORE FIX (Scan #{{ scan_a_id }}):</div>
+        <div style="color:{% if cat.status_a == 'Issue Found' %}var(--red){% else %}var(--green){% endif %};font-weight:700;margin-top:2px;">
+          {{ cat.name }} &mdash; {{ cat.status_a }}
+          {% if cat.count_a > 0 %}<span style="font-weight:400;color:var(--muted);">({{ cat.count_a }} observation{% if cat.count_a != 1 %}s{% endif %})</span>{% endif %}
+        </div>
+      </div>
+
+      <div style="background:#0a0d11;border:1px solid var(--border);border-radius:6px;padding:0.7rem 0.9rem;margin-bottom:0.8rem;font-size:0.84rem;">
+        <div style="color:var(--muted);font-size:0.75rem;text-transform:uppercase;font-weight:700;">AFTER FIX (Scan #{{ scan_b_id }}):</div>
+        <div style="color:{% if cat.status_b == 'No Longer Reproduced' %}var(--green){% elif cat.status_b == 'Issue Found' %}var(--yellow){% else %}var(--muted){% endif %};font-weight:700;margin-top:2px;">
+          {{ cat.name }} &mdash; {{ cat.status_b }}
+          {% if cat.count_b > 0 %}
+          <span style="font-weight:400;color:var(--muted);">({{ cat.count_b }} observation{% if cat.count_b != 1 %}s{% endif %})</span>
+          {% elif cat.status_b == 'No Longer Reproduced' %}
+          <span style="font-weight:400;color:var(--green);">(Verified absent after retesting)</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="margin-top:auto;padding-top:0.6rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700;">Retest Status:</span>
+        <span class="res-pill rp-{% if cat.change_class == 'resolved' %}passed{% elif cat.change_class == 'persists' %}issue{% else %}not_tested{% endif %}">
+          {{ cat.change_label }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== OTHER CHECKS: FULL CATEGORY STATUS ===== -->
+{% if compare.category_diffs %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:1rem;">
+    <h3 style="font-size:1.05rem;font-weight:700;color:#f8fafc;margin:0;">
+      🌐 Other Web Security Checks (Unchanged or Changed Results)
+    </h3>
+    <div style="font-size:0.82rem;color:var(--muted);">
+      Total Web Categories Affected: <strong style="color:var(--red);">{{ compare.web_before_affected }}</strong> &rarr; <strong style="color:{% if compare.web_after_affected < compare.web_before_affected %}var(--green){% else %}var(--yellow){% endif %};">{{ compare.web_after_affected }}</strong>
+    </div>
+  </div>
+  <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">
+    Actual results for remaining checks, confirming honest differential reporting.
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
+      <thead>
+        <tr style="background:var(--surface2);text-align:left;border-bottom:1px solid var(--border);">
+          <th style="padding:8px 12px;color:var(--muted);">Security Category</th>
+          <th style="padding:8px 12px;color:var(--muted);">Before (Scan #{{ scan_a_id }})</th>
+          <th style="padding:8px 12px;color:var(--muted);">After (Scan #{{ scan_b_id }})</th>
+          <th style="padding:8px 12px;color:var(--muted);">Retest Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in compare.category_diffs %}
+        {% if cat.key not in ('sqli', 'xss') %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-weight:600;color:#f8fafc;">{{ cat.name }}</td>
+          <td style="padding:10px 12px;">
+            <span style="color:{% if cat.status_a == 'Issue Found' %}var(--red){% else %}var(--green){% endif %};font-weight:600;">
+              {{ cat.status_a }} {% if cat.count_a > 0 %}({{ cat.count_a }}){% endif %}
+            </span>
+          </td>
+          <td style="padding:10px 12px;">
+            <span style="color:{% if cat.status_b == 'Issue Found' %}var(--yellow){% elif cat.status_b == 'No Longer Reproduced' %}var(--green){% else %}var(--muted){% endif %};font-weight:600;">
+              {{ cat.status_b }} {% if cat.count_b > 0 %}({{ cat.count_b }}){% endif %}
+            </span>
+          </td>
+          <td style="padding:10px 12px;">
+            <span class="res-pill rp-{% if cat.change_class == 'resolved' %}passed{% elif cat.change_class == 'persists' %}issue{% else %}not_tested{% endif %}">
+              {{ cat.change_label }}
+            </span>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <!-- ===== Summary Banner ===== -->
 {% set has_resolved = compare.resolved_after_retest_count > 0 %}
 {% set has_new      = compare.newly_detected_count > 0 %}
@@ -237,88 +376,6 @@
   <div style="flex:1;text-align:right;color:var(--muted);font-size:.85rem;">
     Scan A [{{ compare.scan_a_mode|upper }}]: <strong style="color:var(--text)">{{ compare.total_in_a }}</strong> findings<br>
     Scan B [{{ compare.scan_b_mode|upper }}]: <strong style="color:var(--text)">{{ compare.total_in_b }}</strong> findings
-  </div>
-</div>
-
-<!-- ===== Layer 1 vs Layer 2 Audit Summary Grid ===== -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2rem;">
-  <!-- Layer 1 Card -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;">
-    <h3 style="font-size:0.95rem;color:var(--accent);margin-bottom:0.75rem;">🌐 Layer 1: Traditional Web Security</h3>
-    <div style="font-size:0.84rem;color:var(--muted);line-height:1.6;">
-      <div>• SQL Injection: 
-        {% if compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "SQL Injection")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved after retest</strong>
-        {% elif compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "SQL Injection")|list|length > 0 %}
-        <strong style="color:var(--red);">Still confirmed</strong>
-        {% else %}
-        <span style="color:var(--muted);">Not detected in baseline</span>
-        {% endif %}
-      </div>
-      <div>• Reflected XSS: 
-        {% if compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Reflected XSS")|list|length > 0 %}
-        <strong style="color:var(--yellow);">Still confirmed</strong>
-        {% elif compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Reflected XSS")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved after retest</strong>
-        {% else %}
-        <span style="color:var(--muted);">Not detected</span>
-        {% endif %}
-      </div>
-      <div>• IDOR / Access Control: 
-        {% if compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "IDOR (Broken Access Control)")|list|length > 0 %}
-        <strong style="color:var(--yellow);">Still confirmed</strong>
-        {% elif compare.layer1_breakdown.resolved|selectattr("vulnerability_type", "equalto", "IDOR (Broken Access Control)")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved after retest</strong>
-        {% else %}
-        <span style="color:var(--muted);">Not detected</span>
-        {% endif %}
-      </div>
-      <div>• Security Headers: 
-        <strong style="color:var(--yellow);">Persisting missing controls</strong> ({{ compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Missing Security Header")|list|length }} missing)
-      </div>
-      <div>• Cookie Configuration: 
-        <strong style="color:var(--yellow);">Persisting insecure flags</strong> ({{ compare.layer1_breakdown.persists|selectattr("vulnerability_type", "equalto", "Insecure Cookie")|list|length }} flags)
-      </div>
-    </div>
-  </div>
-
-  <!-- Layer 2 Card -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;">
-    <h3 style="font-size:0.95rem;color:var(--accent);margin-bottom:0.75rem;">🤖 Layer 2: AI-Agent Security</h3>
-    <div style="font-size:0.84rem;color:var(--muted);line-height:1.6;">
-      <div>• Indirect Prompt Injection: 
-        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved &amp; Defended</strong>
-        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
-        <strong style="color:var(--red);">Still confirmed</strong>
-        {% elif compare.not_retested|selectattr("vulnerability_type", "equalto", "Indirect Prompt Injection")|list|length > 0 %}
-        <strong style="color:var(--muted);">Not retested (Basic mode)</strong>
-        {% else %}
-        <span style="color:var(--muted);">Clean</span>
-        {% endif %}
-      </div>
-      <div>• AI Canary Disclosure: 
-        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "AI Canary Token Leakage")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved &amp; Secret Protected</strong>
-        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "AI Canary Token Leakage")|list|length > 0 %}
-        <strong style="color:var(--red);">Still confirmed</strong>
-        {% else %}
-        <span style="color:var(--muted);">Protected</span>
-        {% endif %}
-      </div>
-      <div>• Excessive Agency / Approval Gate: 
-        {% if compare.ai_breakdown.resolved|selectattr("vulnerability_type", "equalto", "Excessive Agency: Unapproved High-Impact Action")|list|length > 0 %}
-        <strong style="color:var(--green);">Resolved &rarr; Approval Gate Enforced</strong>
-        {% elif compare.ai_breakdown.persists|selectattr("vulnerability_type", "equalto", "Excessive Agency: Unapproved High-Impact Action")|list|length > 0 %}
-        <strong style="color:var(--red);">Still confirmed (Unapproved actions)</strong>
-        {% else %}
-        <span style="color:var(--muted);">Gated</span>
-        {% endif %}
-      </div>
-      <div>• Tool Integrity / Anti-Rug-Pull: 
-        <strong style="color:var(--green);">Verified Baseline</strong> (Canonical hashes match)
-      </div>
-    </div>
   </div>
 </div>
 
@@ -362,16 +419,16 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-note">No persisting vulnerabilities.</div>
+  <div class="empty-note">No vulnerabilities persisted across both scans.</div>
   {% endif %}
 </div>
 
 <!-- ===== 3. Newly Detected ===== -->
+{% if compare.newly_detected %}
 <div class="section">
   <div class="section-title new-sec">
-    🆕 Newly Detected ({{ compare.newly_detected_count }}) &mdash; Absent in Scan #{{ scan_a_id }}, detected in Scan #{{ scan_b_id }}
+    🆕 Newly Detected ({{ compare.newly_detected_count }}) &mdash; Not seen in Scan #{{ scan_a_id }}
   </div>
-  {% if compare.newly_detected %}
   <div class="card-list">
     {% for f in compare.newly_detected %}
     <div class="card-item">
@@ -383,16 +440,14 @@
     </div>
     {% endfor %}
   </div>
-  {% else %}
-  <div class="empty-note" style="border-radius: 6px;">No new issues introduced in re-scan.</div>
-  {% endif %}
 </div>
+{% endif %}
 
 <!-- ===== 4. Not Retested ===== -->
 {% if compare.not_retested %}
 <div class="section">
-  <div class="section-title" style="background:#1c2128;color:var(--muted);">
-    ⏸️ Not Retested ({{ compare.not_retested_count }}) &mdash; Omitted because Scan #{{ scan_b_id }} was run in {{ compare.scan_b_mode|upper }} mode
+  <div class="section-title" style="background:#161b22;color:var(--muted)">
+    ⏸️ Not Retested ({{ compare.not_retested_count }}) &mdash; Scope or mode excluded retest in Scan #{{ scan_b_id }}
   </div>
   <div class="card-list">
     {% for f in compare.not_retested %}
@@ -400,7 +455,7 @@
       <span class="sev-badge sev-{{ f.severity }}">{{ f.severity }}</span>
       <div>
         <div class="item-type">{{ f.vulnerability_type }}</div>
-        <div class="item-loc">{{ f.location }} (Cannot claim resolved: feature not tested in re-scan)</div>
+        <div class="item-loc">{{ f.location }}</div>
       </div>
     </div>
     {% endfor %}
@@ -408,15 +463,11 @@
 </div>
 {% endif %}
 
-{% else %}
-<div style="background:var(--surface); border: 1px dashed var(--border); border-radius: 8px; padding: 2.5rem; text-align: center; color: var(--muted); margin-bottom: 2rem;">
-  Select two scans from the dropdown above and click <strong>Compare</strong> to view the differential analysis.
-</div>
 {% endif %}
 
-
 <div class="footer">
-  AegisScan &mdash; Before/After Comparison &mdash; Academic Cybersecurity Project
+  <div>AegisScan 2.0 &mdash; Differential Vulnerability &amp; Verification Comparison Engine</div>
+  <div style="margin-top:4px;">Academic Defense Benchmark &bull; Tamper-Evident Security Passport Linked</div>
 </div>
 
 </body>

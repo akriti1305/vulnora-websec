@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AegisScan Report &mdash; Scan #{{ scan_id }}</title>
+  <title>AegisScan Report &mdash; Scan #{{ scan_id }} {% if is_focused_view %}(Focused Web Demo){% endif %}</title>
   <style>
     :root {
       --bg:        #0d1117;
@@ -56,6 +56,31 @@
     }
     .nav-link:hover { text-decoration: underline; }
 
+    .view-toggle-pill {
+      display: inline-flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .toggle-opt {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .toggle-opt:hover {
+      color: var(--text);
+    }
+    .toggle-opt.active {
+      background: var(--accent);
+      color: #0d1117;
+    }
+
     /* Header */
     .header {
       display: flex;
@@ -106,38 +131,6 @@
     .card .label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
     .card .value { font-size: 2.1rem; font-weight: 800; margin-top: .2rem; line-height: 1.1; }
 
-    /* Security Checks Table */
-    .checks-table-wrap {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 2.4rem;
-      background: var(--surface);
-    }
-    .checks-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-    .checks-table th {
-      background: var(--surface2);
-      padding: 0.8rem 1rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-    }
-    .checks-table td {
-      padding: 0.85rem 1rem;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.88rem;
-      vertical-align: middle;
-    }
-    .checks-table tr:last-child td { border-bottom: none; }
-    .checks-table tr:hover td { background: rgba(56, 189, 248, 0.03); }
-
     /* Status Pills */
     .res-pill {
       display: inline-block;
@@ -153,29 +146,35 @@
     .rp-not_tested { background: rgba(139,148,158,0.15); color: var(--muted); border: 1px solid rgba(139,148,158,0.3); }
     .rp-error      { background: var(--medium-bg); color: var(--medium); border: 1px solid rgba(227,179,65,0.4); }
 
-    /* Findings Cards */
-    .finding {
+    /* Category Cards */
+    .cat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-left: 4px solid var(--critical);
       border-radius: 10px;
-      padding: 1.4rem;
-      margin-bottom: 1.3rem;
+      padding: 1.3rem 1.4rem;
+      margin-bottom: 1.2rem;
     }
-    .finding.sev-high    { border-left-color: var(--high); }
-    .finding.sev-medium  { border-left-color: var(--medium); }
-    .finding.sev-low     { border-left-color: var(--low); }
-    .finding.sev-info    { border-left-color: var(--info); }
+    .cat-card.status-passed     { border-left-color: var(--green); }
+    .cat-card.status-not_tested { border-left-color: var(--muted); }
+    .cat-card.status-error      { border-left-color: var(--medium); }
 
-    .finding-header {
+    .cat-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 1rem;
-      margin-bottom: 1rem;
       flex-wrap: wrap;
+      margin-bottom: 0.6rem;
     }
-    .finding-title { font-size: 1.1rem; font-weight: 700; color: #f8fafc; }
+    .cat-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .badges { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
     .badge {
@@ -190,37 +189,22 @@
     .badge.high      { background: rgba(255,166,87,.15);  color: var(--high);     border: 1px solid var(--high); }
     .badge.medium    { background: rgba(227,179,65,.15);  color: var(--medium);   border: 1px solid var(--medium); }
     .badge.low       { background: rgba(63,185,80,.15);   color: var(--low);      border: 1px solid var(--low); }
-    .badge.info       { background: rgba(88,166,255,.15);  color: var(--accent);   border: 1px solid var(--accent); }
+    .badge.info      { background: rgba(88,166,255,.15);  color: var(--accent);   border: 1px solid var(--accent); }
 
-    /* Friendly Explanation Section */
-    .expl-box {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.2rem;
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
-    }
-    .expl-title { font-weight: 700; color: var(--accent); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
-    .expl-text { color: #cbd5e1; margin-bottom: 0.7rem; line-height: 1.5; }
-    .expl-text:last-child { margin-bottom: 0; }
-
-    .remediation-box {
-      background: rgba(63, 185, 80, 0.08);
-      border: 1px solid rgba(63, 185, 80, 0.25);
-      border-radius: 8px;
-      padding: 0.9rem 1.1rem;
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
+    .cat-expl {
+      color: #cbd5e1;
+      font-size: 0.90rem;
+      margin-bottom: 0.8rem;
       line-height: 1.5;
     }
-    .remediation-title {
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: .3rem;
-      font-size: .82rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
+
+    .obs-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 600;
     }
 
     .evidence-box {
@@ -236,25 +220,38 @@
       margin-top: .3rem;
     }
 
-    .filter-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: .45rem .95rem;
-      border-radius: 6px;
-      font-size: .82rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
+    .remediation-box {
+      background: rgba(63, 185, 80, 0.08);
+      border: 1px solid rgba(63, 185, 80, 0.25);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin: 0.6rem 0;
+      font-size: 0.86rem;
+      line-height: 1.5;
     }
-    .filter-btn:hover, .filter-btn.active {
-      background: var(--surface2);
-      color: var(--accent);
-      border-color: var(--accent);
+
+    .callout-banner {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      padding: 1rem 1.4rem;
+      margin-bottom: 1.8rem;
+      font-size: 0.88rem;
+    }
+
+    .section-title-wrap {
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     .footer {
-      margin-top: 3rem;
+      margin-top: 3.5rem;
       padding-top: 1.2rem;
       border-top: 1px solid var(--border);
       color: var(--muted);
@@ -271,6 +268,17 @@
   <!-- Top Navigation Bar -->
   <div class="nav-bar">
     <a href="/" class="nav-link">&larr; Back to Dashboard</a>
+    
+    <!-- View Mode Switcher -->
+    <div class="view-toggle-pill">
+      <a href="/api/scans/{{ scan_id }}/report" class="toggle-opt {% if not is_focused_view %}active{% endif %}">
+        📋 Full Security Report
+      </a>
+      <a href="/api/scans/{{ scan_id }}/report?view=focused" class="toggle-opt {% if is_focused_view %}active{% endif %}">
+        🎯 Focused Web Demo (2 Checks)
+      </a>
+    </div>
+
     <div style="display:flex;gap:1.2rem;align-items:center;">
       <a href="/compare?a={{ scan_id }}" class="nav-link">Compare This Scan &rarr;</a>
       <a href="#advanced-verification" class="nav-link">Cryptographic Passport &darr;</a>
@@ -280,8 +288,19 @@
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="logo">🛡️ AegisScan Report</div>
-      <div class="subtitle">Security Assessment &amp; Verification Findings</div>
+      <div class="logo">
+        🛡️ AegisScan Report
+        {% if is_focused_view %}
+        <span style="font-size:1.1rem;color:var(--accent);font-weight:600;">&bull; Focused Web Demo</span>
+        {% endif %}
+      </div>
+      <div class="subtitle">
+        {% if is_focused_view %}
+        Focused Demonstration: 2 Primary Security Checks (SQL Injection &amp; XSS)
+        {% else %}
+        Complete Security Assessment &amp; Verification Findings
+        {% endif %}
+      </div>
     </div>
     <div class="scan-label">
       <strong>Scan #{{ scan_id }}</strong>
@@ -324,236 +343,350 @@
     </tr>
   </table>
 
-  <!-- Immediate High-Level Answers: Summary Cards -->
+  {% if is_focused_view %}
+  <!-- ===================================================================== -->
+  <!-- PRIORITY 2: FOCUSED WEB DEMONSTRATION VIEW (2 CHECKS)                 -->
+  <!-- ===================================================================== -->
+
+  <!-- Presentation Filter Disclaimer Callout -->
+  <div class="callout-banner">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div style="flex:1;min-width:280px;">
+        <div style="font-weight: 700; color: var(--accent); font-size: 0.95rem; margin-bottom: 0.25rem;">
+          🎯 Focused Demonstration: 2 Security Checks
+        </div>
+        <div style="color: #cbd5e1; font-size: 0.86rem; line-height: 1.5;">
+          <strong>Presentation Filter:</strong> This focused view highlights only 2 primary web security checks (SQL Injection and Cross-Site Scripting) for a clear, beginner-friendly live demonstration. This does <strong>NOT</strong> imply that the target website has only two vulnerabilities.
+        </div>
+      </div>
+      <div>
+        <a href="/api/scans/{{ scan_id }}/report" style="background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:.45rem 1rem;border-radius:6px;text-decoration:none;font-size:.84rem;font-weight:700;display:inline-block;">
+          📋 View Full Security Report &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Focused Summary Grid -->
   <div class="summary-grid">
     <div class="card" style="border-left: 4px solid var(--critical);">
-      <div class="label">Issues Found</div>
-      <div class="value" style="color: var(--critical);">{{ active_vuln_count }}</div>
+      <div class="label">Focused Demo Issues</div>
+      <div class="value" style="color: var(--critical);">{{ focused_issues_count }} / 2</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
-        {{ confirmed_count }} confirmed &bull; {{ potential_count }} potential
+        Categories requiring code remediation
       </div>
     </div>
 
     <div class="card" style="border-left: 4px solid var(--green);">
-      <div class="label">Checks Passed</div>
-      <div class="value" style="color: var(--green);">{{ checks_passed_count }}</div>
+      <div class="label">Focused Checks Clean</div>
+      <div class="value" style="color: var(--green);">{{ focused_passed_count }} / 2</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
-        {{ verified_control_count }} verified security controls
+        Categories verified absent / resolved
       </div>
     </div>
 
-    <div class="card" style="border-left: 4px solid var(--muted);">
-      <div class="label">Not Tested / Info</div>
-      <div class="value" style="color: var(--accent);">{{ checks_not_tested_count }}</div>
+    <div class="card" style="border-left: 4px solid var(--accent);">
+      <div class="label">Full Assessment Scope</div>
+      <div class="value" style="color: var(--accent); font-size: 1.4rem; padding-top: 6px;">9 Categories</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
-        {{ informational_count }} info &bull; Mode boundaries honored
+        <a href="/api/scans/{{ scan_id }}/report" style="color:var(--accent);text-decoration:none;">View all web &amp; AI findings &rarr;</a>
       </div>
     </div>
   </div>
 
-  <!-- High-Level Security Checks Summary Table -->
-  <div style="margin-bottom: 2.2rem;">
-    <div style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.4rem;">
-      📋 Security Checks Summary
-    </div>
-    <div style="font-size: 0.84rem; color: var(--muted); margin-bottom: 1rem;">
-      High-level status of evaluated web vulnerability and AI-agent integrity checks.
-    </div>
-
-    <div class="checks-table-wrap">
-      <table class="checks-table">
-        <thead>
-          <tr>
-            <th style="width: 250px;">Security Check</th>
-            <th style="width: 140px;">Result</th>
-            <th style="width: 100px;">Severity</th>
-            <th>Details &amp; Observations</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for chk in security_checks %}
-          <tr>
-            <td><strong>{{ chk.name }}</strong></td>
-            <td>
-              <span class="res-pill rp-{{ chk.status_class }}">{{ chk.result }}</span>
-            </td>
-            <td>
-              {% if chk.severity == 'Critical' %}
-                <span style="color:var(--critical);font-weight:700;">Critical</span>
-              {% elif chk.severity == 'High' %}
-                <span style="color:var(--high);font-weight:700;">High</span>
-              {% elif chk.severity == 'Medium' %}
-                <span style="color:var(--medium);font-weight:700;">Medium</span>
-              {% elif chk.severity == 'Low' %}
-                <span style="color:var(--low);font-weight:700;">Low</span>
-              {% else %}
-                <span style="color:var(--muted);">{{ chk.severity }}</span>
-              {% endif %}
-            </td>
-            <td style="color:#cbd5e1;font-size:0.86rem;">
-              {{ chk.details }}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- AI Tool Integrity & Anti-Rug-Pull Monitor (when applicable) -->
-  {% if tool_integrity and tool_integrity.active %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
-      <div style="display:flex;align-items:center;gap:.6rem;">
-        <span style="font-size:1.3rem;">🛡️</span>
-        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">AI Tool Integrity &amp; Anti-Rug-Pull Monitor</h3>
-      </div>
-      <div>
-        {% if tool_integrity.status == 'VERIFIED' %}
-          <span class="res-pill rp-passed">✓ ALL BASELINES VERIFIED</span>
-        {% elif tool_integrity.status == 'COMPROMISED' %}
-          <span class="res-pill rp-issue">⚠️ RUG-PULL / TAMPERING DETECTED</span>
-        {% else %}
-          <span class="res-pill rp-not_tested">BASELINE UNAVAILABLE</span>
-        {% endif %}
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1rem;">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Verified Intact</div>
-        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:.2rem;">{{ tool_integrity.verified_count }}</div>
-      </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Modified Post-Approval</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if tool_integrity.changed_count > 0 %}var(--critical){% else %}var(--muted){% endif %};margin-top:.2rem;">{{ tool_integrity.changed_count }}</div>
-      </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Total Tools Monitored</div>
-        <div style="font-size:1.4rem;font-weight:700;color:var(--accent);margin-top:.2rem;">{{ tool_integrity.total_count }}</div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- AI Context Taint & Excessive Agency Analyzer (when applicable) -->
-  {% if taint_permission and taint_permission.active %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
-      <div style="display:flex;align-items:center;gap:.6rem;">
-        <span style="font-size:1.3rem;">🔗</span>
-        <h3 style="margin:0;font-size:1.05rem;color:var(--text);font-weight:700;">Context Taint Tracking &amp; Excessive Agency Analyzer</h3>
-      </div>
-      <div>
-        {% if taint_permission.status == 'EXCESSIVE_AGENCY_DETECTED' %}
-          <span class="res-pill rp-issue">⚠️ EXCESSIVE AGENCY DETECTED</span>
-        {% elif taint_permission.status == 'APPROVAL_GATED' %}
-          <span class="res-pill rp-passed">✓ APPROVAL GATES ENFORCED</span>
-        {% else %}
-          <span class="res-pill rp-not_tested">NOT TESTED</span>
-        {% endif %}
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:1rem;margin-bottom:1rem;">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Unapproved Actions</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if taint_permission.excessive_agency_count > 0 %}var(--critical){% else %}var(--green){% endif %};margin-top:.2rem;">{{ taint_permission.excessive_agency_count }}</div>
-      </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;">Gated Actions Blocked</div>
-        <div style="font-size:1.4rem;font-weight:700;color:var(--green);margin-top:.2rem;">{{ taint_permission.gate_verified_count }}</div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Detailed Findings Header & Filter Tabs -->
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:2.5rem 0 1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
-    <div>
-      <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc;margin:0;">
-        ⚠️ Detailed Findings &amp; Evidence ({{ total_findings }})
-      </h2>
-      <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
-        Clear plain-English explanations with observed evidence and suggested remediation.
-      </div>
-    </div>
-    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-      <button class="filter-btn active" onclick="filterFindings('all', this)">All ({{ total_findings }})</button>
-      <button class="filter-btn" onclick="filterFindings('confirmed_vulnerability', this)">Confirmed ({{ confirmed_count }})</button>
-      <button class="filter-btn" onclick="filterFindings('potential_vulnerability', this)">Potential ({{ potential_count }})</button>
-      <button class="filter-btn" onclick="filterFindings('verified_control', this)">Verified Controls ({{ verified_control_count }})</button>
-      <button class="filter-btn" onclick="filterFindings('informational', this)">Info ({{ informational_count }})</button>
-      {% if not_tested and not_tested|length > 0 %}
-      <button class="filter-btn" onclick="filterFindings('not_tested', this)">Not Tested ({{ not_tested|length }})</button>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Findings Cards List -->
-  {% if findings %}
-    {% for f in findings %}
-    {% set sev_class = f.severity | lower %}
-    <div class="finding sev-{{ sev_class }}" data-category="{{ f.category }}">
-      
-      <!-- Finding Title Header -->
-      <div class="finding-header">
-        <div>
-          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:0.2rem;">
-            {{ f.category | replace('_', ' ') }}
-          </div>
-          <div class="finding-title">{{ f.plain_name | default(f.vulnerability_type) }}</div>
+  <!-- Focused Category Cards -->
+  <div style="margin-bottom: 2rem;">
+    {% for cat in focused_categories %}
+    <div class="cat-card status-{{ cat.status_class }}">
+      <div class="cat-header">
+        <div class="cat-title">
+          <span>{% if cat.key == 'sqli' %}💉{% else %}⚡{% endif %}</span>
+          <span>{{ cat.name }}</span>
         </div>
         <div class="badges">
-          <span class="badge {{ sev_class }}">{{ f.severity }}</span>
-          <span class="badge {{ f.status }}">{{ f.status }}</span>
+          <span class="res-pill rp-{{ cat.status_class }}">{{ cat.status }}</span>
+          <span class="badge {{ cat.severity | lower }}">{{ cat.severity }}</span>
         </div>
       </div>
 
-      <!-- Plain English Explanations -->
-      <div class="expl-box">
-        <div class="expl-title">What is it?</div>
-        <div class="expl-text">{{ f.what_is_it }}</div>
+      <div class="cat-expl">{{ cat.explanation }}</div>
 
-        <div class="expl-title">Why is it dangerous?</div>
-        <div class="expl-text">{{ f.why_dangerous }}</div>
-
-        <div class="expl-title">What AegisScan Observed:</div>
-        <div class="expl-text" style="color: #79c0ff; font-family: monospace; font-size: 0.85rem; background: #0a0d11; padding: 0.5rem 0.8rem; border-radius: 4px; border: 1px solid var(--border);">
-          {{ f.what_observed }}
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <span class="obs-count-badge">
+          🔍 {{ cat.observation_count }} observation(s)
+          {% if cat.observation_count > 0 %}&bull; Click below to inspect raw evidence{% endif %}
+        </span>
       </div>
 
-      <!-- Suggested Fix -->
-      <div class="remediation-box">
-        <div class="remediation-title">✅ Suggested Fix</div>
-        <div>{{ f.suggested_fix }}</div>
-      </div>
-
-      <!-- Expandable Technical Details -->
-      <details style="font-size: 0.84rem; color: var(--muted); margin-top: 0.8rem;">
-        <summary style="cursor: pointer; font-weight: 600; color: var(--accent); user-select: none;">
-          Inspect Technical Details &amp; Raw Evidence
+      {% if cat.observations and cat.observations|length > 0 %}
+      <details style="margin-top: 0.6rem;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:0.86rem;user-select:none;">
+          Inspect Technical Evidence &amp; Explanations ({{ cat.observation_count }} finding{% if cat.observation_count != 1 %}s{% endif %})
         </summary>
-        <div style="margin-top: 0.6rem; background: #0a0d11; border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem 1rem;">
-          <div style="margin-bottom: 0.4rem;"><strong>Endpoint Location:</strong> <code>{{ f.location }}</code></div>
-          {% if f.payload %}
-          <div style="margin-bottom: 0.4rem;"><strong>Test Payload:</strong> <code>{{ f.payload }}</code></div>
-          {% endif %}
-          {% if f.evidence %}
-          <div><strong>Raw Evidence Output:</strong></div>
-          <div class="evidence-box">{{ f.evidence }}</div>
-          {% endif %}
+        <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 1rem;">
+          {% for obs in cat.observations %}
+          <div style="background:#0a0d11;border:1px solid var(--border);border-radius:8px;padding:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.5rem;">
+              <span style="font-size:0.88rem;font-weight:700;color:#f8fafc;">{{ obs.plain_name | default(obs.vulnerability_type) }}</span>
+              <span class="badge {{ obs.severity | lower }}">{{ obs.severity }}</span>
+            </div>
+            
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.4rem;">
+              <strong>Target Location:</strong> <code>{{ obs.location }}</code>
+            </div>
+
+            {% if obs.what_is_it %}
+            <div style="font-size:0.84rem;color:#cbd5e1;margin-bottom:0.4rem;">
+              <strong>What is it?</strong> {{ obs.what_is_it }}
+            </div>
+            {% endif %}
+
+            {% if obs.what_observed %}
+            <div style="font-size:0.82rem;color:var(--muted);margin-top:0.4rem;"><strong>What AegisScan Observed:</strong></div>
+            <div class="evidence-box">{{ obs.what_observed }}</div>
+            {% endif %}
+
+            {% if obs.suggested_fix %}
+            <div class="remediation-box">
+              <strong style="color:var(--green);">✅ Suggested Fix:</strong> {{ obs.suggested_fix }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
         </div>
       </details>
+      {% endif %}
 
     </div>
     {% endfor %}
-  {% else %}
-    <div style="text-align: center; padding: 3rem; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; color: var(--muted);">
-      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">✅</div>
-      <div>No vulnerabilities detected in this scan. All evaluated checks were clean.</div>
+  </div>
+
+  <div style="text-align:center;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:2rem;">
+    <div style="font-size:1.05rem;font-weight:700;color:#f8fafc;margin-bottom:0.3rem;">
+      Ready to review all findings across all layers?
     </div>
+    <div style="font-size:0.86rem;color:var(--muted);margin-bottom:1rem;">
+      The full report includes Broken Access Control (IDOR), Security Headers, Cookie Flags, AI Agent Security, and Cryptographic Passports.
+    </div>
+    <a href="/api/scans/{{ scan_id }}/report" style="background:#238636;color:white;padding:0.55rem 1.3rem;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.88rem;display:inline-block;">
+      📋 Open Full Security Report &rarr;
+    </a>
+  </div>
+
+  {% else %}
+  <!-- ===================================================================== -->
+  <!-- PRIORITY 1: FULL REPORT (SEPARATE WEB & AI SECTIONS)                  -->
+  <!-- ===================================================================== -->
+
+  <!-- Full Report High-Level Summary Cards -->
+  <div class="summary-grid">
+    <div class="card" style="border-left: 4px solid var(--critical);">
+      <div class="label">Web Security Issues</div>
+      <div class="value" style="color: var(--critical);">{{ web_issues_count }} / 5</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        Categories affected &bull; {{ active_vuln_count }} raw observations
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--accent);">
+      <div class="label">AI Security Issues</div>
+      <div class="value" style="color: var(--accent);">{{ ai_issues_count }} / 4</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        Deterministic AI benchmark simulator
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--green);">
+      <div class="label">Clean / Passed Categories</div>
+      <div class="value" style="color: var(--green);">{{ web_passed_count + ai_passed_count }}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
+        Verified absent or secured
+      </div>
+    </div>
+  </div>
+
+  <!-- Focused Web Demo Quick Access Banner -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.9rem 1.2rem;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <span style="font-weight:700;color:var(--accent);font-size:0.9rem;">🎯 Student Presentation Shortcut:</span>
+      <span style="font-size:0.85rem;color:#cbd5e1;margin-left:6px;">Need a simple 2-check demo for your evaluators?</span>
+    </div>
+    <a href="/api/scans/{{ scan_id }}/report?view=focused" style="background:rgba(88,166,255,0.15);border:1px solid var(--accent);color:var(--accent);padding:0.35rem 0.9rem;border-radius:6px;text-decoration:none;font-size:0.82rem;font-weight:700;">
+      View Focused Web Demo (2 Checks) &rarr;
+    </a>
+  </div>
+
+  <!-- SECTION A: WEB SECURITY (5 Check Categories) -->
+  <div class="section-title-wrap">
+    <div>
+      <h2 style="font-size:1.3rem;font-weight:800;color:#f8fafc;display:flex;align-items:center;gap:8px;">
+        <span>🌐</span> Section A: Web Security (5 Check Categories)
+      </h2>
+      <div style="font-size:0.84rem;color:var(--muted);margin-top:3px;">
+        Category-level evaluation across the 5 primary web application vulnerability domains.
+      </div>
+    </div>
+    <div style="font-size:0.82rem;font-weight:700;color:var(--muted);">
+      {{ web_issues_count }} Issues &bull; {{ web_passed_count }} Passed
+    </div>
+  </div>
+
+  <!-- Web Categories Cards List -->
+  <div style="margin-bottom: 2.5rem;">
+    {% for cat in web_categories %}
+    <div class="cat-card status-{{ cat.status_class }}">
+      <div class="cat-header">
+        <div class="cat-title">
+          <span>
+            {% if cat.key == 'sqli' %}💉
+            {% elif cat.key == 'xss' %}⚡
+            {% elif cat.key == 'idor' %}🔓
+            {% elif cat.key == 'headers' %}🛡️
+            {% else %}🍪{% endif %}
+          </span>
+          <span>{{ cat.name }}</span>
+        </div>
+        <div class="badges">
+          <span class="res-pill rp-{{ cat.status_class }}">{{ cat.status }}</span>
+          <span class="badge {{ cat.severity | lower }}">{{ cat.severity }}</span>
+        </div>
+      </div>
+
+      <div class="cat-expl">{{ cat.explanation }}</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+        <span class="obs-count-badge">
+          🔍 {{ cat.observation_count }} observation(s)
+          {% if cat.observation_count > 0 %}&bull; Click to view underlying evidence{% endif %}
+        </span>
+      </div>
+
+      {% if cat.observations and cat.observations|length > 0 %}
+      <details style="margin-top: 0.6rem;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:0.85rem;user-select:none;">
+          Inspect Technical Evidence &amp; Observations ({{ cat.observation_count }})
+        </summary>
+        <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.8rem;">
+          {% for obs in cat.observations %}
+          <div style="background:#0a0d11;border:1px solid var(--border);border-radius:8px;padding:0.9rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;flex-wrap:wrap;gap:0.4rem;">
+              <span style="font-size:0.86rem;font-weight:700;color:#f8fafc;">{{ obs.plain_name | default(obs.vulnerability_type) }}</span>
+              <span class="badge {{ obs.severity | lower }}">{{ obs.severity }}</span>
+            </div>
+
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.3rem;">
+              <strong>Target Location:</strong> <code>{{ obs.location }}</code>
+            </div>
+
+            {% if obs.what_observed %}
+            <div style="font-size:0.80rem;color:var(--muted);margin-top:0.3rem;"><strong>Observed Evidence:</strong></div>
+            <div class="evidence-box">{{ obs.what_observed }}</div>
+            {% endif %}
+
+            {% if obs.suggested_fix %}
+            <div class="remediation-box">
+              <strong style="color:var(--green);">✅ Suggested Fix:</strong> {{ obs.suggested_fix }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION B: AI SECURITY (4 Categories) -->
+  <div class="section-title-wrap">
+    <div>
+      <h2 style="font-size:1.3rem;font-weight:800;color:#f8fafc;display:flex;align-items:center;gap:8px;">
+        <span>🤖</span> Section B: AI Security (4 Check Categories)
+      </h2>
+      <div style="font-size:0.84rem;color:var(--muted);margin-top:3px;">
+        Controlled benchmark testing prompt injection, canary token disclosure, and tool authorization.
+      </div>
+    </div>
+    <div style="font-size:0.82rem;font-weight:700;color:var(--muted);">
+      {{ ai_issues_count }} Issues &bull; {{ ai_passed_count }} Passed
+    </div>
+  </div>
+
+  <!-- AI Simulator Notice Banner -->
+  <div class="callout-banner">
+    <strong>🤖 Controlled Deterministic AI Security Simulator:</strong>
+    <div style="margin-top:3px;color:#cbd5e1;">
+      The target AI assistant (<code>/assistant</code>) operates in a deterministic testbed designed to measure indirect prompt injection, sensitive canary disclosure, and excessive agency under strict benchmark controls.
+    </div>
+  </div>
+
+  <!-- AI Categories Cards List -->
+  <div style="margin-bottom: 2.5rem;">
+    {% for cat in ai_categories %}
+    <div class="cat-card status-{{ cat.status_class }}">
+      <div class="cat-header">
+        <div class="cat-title">
+          <span>
+            {% if cat.key == 'ai_prompt_injection' %}🎯
+            {% elif cat.key == 'ai_info_leakage' %}🔑
+            {% elif cat.key == 'ai_tool_integrity' %}🛡️
+            {% else %}⚡{% endif %}
+          </span>
+          <span>{{ cat.name }}</span>
+        </div>
+        <div class="badges">
+          <span class="res-pill rp-{{ cat.status_class }}">{{ cat.status }}</span>
+          <span class="badge {{ cat.severity | lower }}">{{ cat.severity }}</span>
+        </div>
+      </div>
+
+      <div class="cat-expl">{{ cat.explanation }}</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+        <span class="obs-count-badge">
+          🔍 {{ cat.observation_count }} observation(s)
+          {% if cat.observation_count > 0 %}&bull; Click to view underlying evidence{% endif %}
+        </span>
+      </div>
+
+      {% if cat.observations and cat.observations|length > 0 %}
+      <details style="margin-top: 0.6rem;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:0.85rem;user-select:none;">
+          Inspect Technical Evidence &amp; Observations ({{ cat.observation_count }})
+        </summary>
+        <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.8rem;">
+          {% for obs in cat.observations %}
+          <div style="background:#0a0d11;border:1px solid var(--border);border-radius:8px;padding:0.9rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;flex-wrap:wrap;gap:0.4rem;">
+              <span style="font-size:0.86rem;font-weight:700;color:#f8fafc;">{{ obs.plain_name | default(obs.vulnerability_type) }}</span>
+              <span class="badge {{ obs.severity | lower }}">{{ obs.severity }}</span>
+            </div>
+
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.3rem;">
+              <strong>Target Location:</strong> <code>{{ obs.location }}</code>
+            </div>
+
+            {% if obs.what_observed %}
+            <div style="font-size:0.80rem;color:var(--muted);margin-top:0.3rem;"><strong>Observed Evidence:</strong></div>
+            <div class="evidence-box">{{ obs.what_observed }}</div>
+            {% endif %}
+
+            {% if obs.suggested_fix %}
+            <div class="remediation-box">
+              <strong style="color:var(--green);">✅ Suggested Fix:</strong> {{ obs.suggested_fix }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
   {% endif %}
 
   <!-- Advanced Verification & Cryptographic Provenance Section -->
@@ -625,22 +758,6 @@
     <div>AegisScan 2.0 &mdash; Web &amp; AI Security Platform with Cryptographic Provenance</div>
     <div>Academic Defense Benchmark &bull; For Authorized Testing Only</div>
   </div>
-
-  <script>
-    function filterFindings(cat, btn) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const items = document.querySelectorAll('.finding');
-      items.forEach(el => {
-        if (cat === 'all' || el.getAttribute('data-category') === cat) {
-          el.style.display = 'block';
-        } else {
-          el.style.display = 'none';
-        }
-      });
-    }
-  </script>
 
 </body>
 </html>

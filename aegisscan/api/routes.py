@@ -1245,6 +1245,82 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
     # Security controls verified in Scan B
     controls_b = [f for f in scan_b.findings if f.vulnerability_type in ("Tool Integrity Verified", "AI Agent Approval Gate Verified")]
 
+    # -------------------------------------------------------------------------
+    # Category-Level Differential Analysis (Web & Focused Demo)
+    # -------------------------------------------------------------------------
+    def get_cat_status(findings_list, cat_key, mode):
+        if cat_key == "sqli":
+            flaws = [f for f in findings_list if f.vulnerability_type == "SQL Injection" and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "xss":
+            flaws = [f for f in findings_list if "xss" in f.vulnerability_type.lower() and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "idor":
+            flaws = [f for f in findings_list if ("idor" in f.vulnerability_type.lower() or "broken access control" in f.vulnerability_type.lower()) and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "headers":
+            flaws = [f for f in findings_list if "header" in f.vulnerability_type.lower() and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else ("No Longer Reproduced", 0)
+        elif cat_key == "cookies":
+            flaws = [f for f in findings_list if "cookie" in f.vulnerability_type.lower() and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else ("No Longer Reproduced", 0)
+        return ("Not Tested", 0)
+
+    cat_keys = [
+        ("sqli", "SQL Injection", "Critical"),
+        ("xss", "Cross-Site Scripting (XSS)", "High"),
+        ("idor", "Broken Access Control (IDOR)", "Critical"),
+        ("headers", "Security Headers", "Medium"),
+        ("cookies", "Cookie Security", "High"),
+    ]
+
+    category_diffs = []
+    for key, name, default_sev in cat_keys:
+        status_a, count_a = get_cat_status(scan_a.findings, key, getattr(scan_a, "scan_mode", "deep"))
+        status_b, count_b = get_cat_status(scan_b.findings, key, scan_b_mode)
+        
+        if status_a == "Issue Found" and status_b == "No Longer Reproduced":
+            change_label = "RESOLVED AFTER RETEST"
+            change_class = "resolved"
+        elif status_a == "Issue Found" and status_b == "Issue Found":
+            change_label = "UNCHANGED (STILL CONFIRMED)"
+            change_class = "persists"
+        elif status_a != "Issue Found" and status_b == "Issue Found":
+            change_label = "NEWLY DETECTED"
+            change_class = "new"
+        elif status_a == "No Longer Reproduced" and status_b == "No Longer Reproduced":
+            change_label = "PASSING (NO REGRESSION)"
+            change_class = "passed"
+        else:
+            change_label = "NOT TESTED"
+            change_class = "not_tested"
+
+        category_diffs.append({
+            "key": key,
+            "name": name,
+            "severity": default_sev,
+            "status_a": status_a,
+            "count_a": count_a,
+            "status_b": status_b,
+            "count_b": count_b,
+            "change_label": change_label,
+            "change_class": change_class,
+        })
+
+    focused_demo_cats = [c for c in category_diffs if c["key"] in ("sqli", "xss")]
+    focused_before_affected = sum(1 for c in focused_demo_cats if c["status_a"] == "Issue Found")
+    focused_after_affected = sum(1 for c in focused_demo_cats if c["status_b"] == "Issue Found")
+
+    web_before_affected = sum(1 for c in category_diffs if c["status_a"] == "Issue Found")
+    web_after_affected = sum(1 for c in category_diffs if c["status_b"] == "Issue Found")
+
+    focused_demo_info = {
+        "categories": focused_demo_cats,
+        "before_affected_count": focused_before_affected,
+        "after_affected_count": focused_after_affected,
+        "total_categories": 2,
+    }
+
     return {
         "scan_a"          : a,
         "scan_b"          : b,
@@ -1282,6 +1358,11 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
             "new": ai_new,
             "controls_verified": [fmt(f, "verified_control") for f in controls_b]
         },
+        # Category-level & Focused Demo breakdowns
+        "category_diffs"  : category_diffs,
+        "focused_demo"    : focused_demo_info,
+        "web_before_affected": web_before_affected,
+        "web_after_affected": web_after_affected,
         "compare_report_url": f"http://127.0.0.1:8000/api/scans/compare/report?a={a}&b={b}",
     }
 
@@ -1368,7 +1449,7 @@ def get_findings(scan_id: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 @router.get("/scans/{scan_id}/report", summary="HTML security report",
             response_class=HTMLResponse)
-def get_report(scan_id: int, db: Session = Depends(get_db)):
+def get_report(scan_id: int, view: Optional[str] = None, db: Session = Depends(get_db)):
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail=f"Scan {scan_id} not found")
@@ -1466,6 +1547,7 @@ def get_report(scan_id: int, db: Session = Depends(get_db)):
         scan_policy_data = policy_data,
         requests_count   = getattr(scan, "requests_count", 0) or (policy_data.get("requests_made", 0) if policy_data else 0),
         duration_seconds = getattr(scan, "duration_seconds", None),
+        is_focused_view  = (view == "focused"),
     )
     return HTMLResponse(content=html, status_code=200)
 

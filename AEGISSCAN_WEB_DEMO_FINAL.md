@@ -385,3 +385,4 @@ And `result = db.execute(query).fetchone()`, so the lab is ready for the next ev
 | **Remediated Source Code** | `D:\PRJ4\aegislab\app.py` (line ~168) | `"SELECT ... ? ...", (username, password)` |
 | **AI Manifest** | `http://127.0.0.1:5001/.well-known/aegisscan-ai.json` | Tools, canary token, security policies |
 | **Database File** | `D:\PRJ4\aegisscan.db` | SQLite persistence (scans, targets, grants) |
+

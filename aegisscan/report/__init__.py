@@ -176,6 +176,224 @@ def _enrich_finding(f: dict) -> dict:
     return f_copy
 
 
+def build_category_breakdowns(sorted_findings: List[dict], scan_mode: str, target_url: str) -> dict:
+    """
+    Build structured category-level summaries for:
+      - Section A: 5 Primary Web Security Categories (SQLi, XSS, IDOR, Headers, Cookies)
+      - Section B: 4 AI Security Categories (Prompt Injection, Sensitive Info Leakage, Tool Integrity, Unauthorized AI Actions)
+      - Focused Web Demo: Exactly 2 checks (SQL Injection, XSS)
+    """
+    # -------------------------------------------------------------------------
+    # Section A: Five Primary Web Security Categories
+    # -------------------------------------------------------------------------
+    web_categories = []
+
+    # 1. SQL Injection
+    sqli_all = [f for f in sorted_findings if "sql injection" in f.get("vulnerability_type", "").lower() or f.get("vulnerability_type") == "SQL Injection"]
+    sqli_flaws = [f for f in sqli_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    sqli_status = "Issue Found" if sqli_flaws else ("Not Tested" if scan_mode in ("basic", "external_basic") else "Passed")
+    sqli_sev = sqli_flaws[0].get("severity", "Critical") if sqli_flaws else ("Info" if sqli_status == "Not Tested" else "Low")
+    web_categories.append({
+        "key": "sqli",
+        "name": "SQL Injection",
+        "status": sqli_status,
+        "status_class": "issue" if sqli_status == "Issue Found" else ("not_tested" if sqli_status == "Not Tested" else "passed"),
+        "severity": sqli_sev,
+        "explanation": "Untrusted user input is concatenated directly into SQL queries without parameterized binding, allowing authentication bypass or unauthorized database manipulation.",
+        "observations": sqli_flaws if sqli_flaws else sqli_all,
+        "observation_count": len(sqli_flaws) if sqli_flaws else (0 if sqli_status == "Passed" else len(sqli_all)),
+        "is_issue": sqli_status == "Issue Found",
+    })
+
+    # 2. Cross-Site Scripting (XSS)
+    xss_all = [f for f in sorted_findings if "xss" in f.get("vulnerability_type", "").lower()]
+    xss_flaws = [f for f in xss_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    xss_status = "Issue Found" if xss_flaws else ("Not Tested" if scan_mode in ("basic", "external_basic") else "Passed")
+    xss_sev = xss_flaws[0].get("severity", "High") if xss_flaws else ("Info" if xss_status == "Not Tested" else "Low")
+    web_categories.append({
+        "key": "xss",
+        "name": "Cross-Site Scripting (XSS)",
+        "status": xss_status,
+        "status_class": "issue" if xss_status == "Issue Found" else ("not_tested" if xss_status == "Not Tested" else "passed"),
+        "severity": xss_sev,
+        "explanation": "The application echoes unescaped user input directly into HTML responses, enabling arbitrary script execution in client browsers.",
+        "observations": xss_flaws if xss_flaws else xss_all,
+        "observation_count": len(xss_flaws) if xss_flaws else (0 if xss_status == "Passed" else len(xss_all)),
+        "is_issue": xss_status == "Issue Found",
+    })
+
+    # 3. Broken Access Control (IDOR)
+    idor_all = [f for f in sorted_findings if "idor" in f.get("vulnerability_type", "").lower() or "broken access control" in f.get("vulnerability_type", "").lower()]
+    idor_flaws = [f for f in idor_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    idor_status = "Issue Found" if idor_flaws else ("Not Tested" if scan_mode in ("basic", "external_basic") else "Passed")
+    idor_sev = idor_flaws[0].get("severity", "Critical") if idor_flaws else ("Info" if idor_status == "Not Tested" else "Low")
+    web_categories.append({
+        "key": "idor",
+        "name": "Broken Access Control (IDOR)",
+        "status": idor_status,
+        "status_class": "issue" if idor_status == "Issue Found" else ("not_tested" if idor_status == "Not Tested" else "passed"),
+        "severity": idor_sev,
+        "explanation": "User profile or account records are retrieved using client-supplied IDs without verifying session authorization, exposing private customer records.",
+        "observations": idor_flaws if idor_flaws else idor_all,
+        "observation_count": len(idor_flaws) if idor_flaws else (0 if idor_status == "Passed" else len(idor_all)),
+        "is_issue": idor_status == "Issue Found",
+    })
+
+    # 4. Security Headers
+    header_all = [f for f in sorted_findings if "header" in f.get("vulnerability_type", "").lower()]
+    header_flaws = [f for f in header_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    header_status = "Issue Found" if header_flaws else "Passed"
+    header_sev = "Medium" if header_flaws else "Low"
+    web_categories.append({
+        "key": "headers",
+        "name": "Security Headers",
+        "status": header_status,
+        "status_class": "issue" if header_status == "Issue Found" else "passed",
+        "severity": header_sev,
+        "explanation": "Defensive HTTP response headers (such as Content-Security-Policy, HSTS, and X-Frame-Options) are missing, exposing users to clickjacking and MIME attacks.",
+        "observations": header_flaws if header_flaws else header_all,
+        "observation_count": len(header_flaws) if header_flaws else 0,
+        "is_issue": header_status == "Issue Found",
+    })
+
+    # 5. Cookie Security
+    cookie_all = [f for f in sorted_findings if "cookie" in f.get("vulnerability_type", "").lower()]
+    cookie_flaws = [f for f in cookie_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    cookie_status = "Issue Found" if cookie_flaws else "Passed"
+    cookie_sev = cookie_flaws[0].get("severity", "High") if cookie_flaws else "Low"
+    web_categories.append({
+        "key": "cookies",
+        "name": "Cookie Security",
+        "status": cookie_status,
+        "status_class": "issue" if cookie_status == "Issue Found" else "passed",
+        "severity": cookie_sev,
+        "explanation": "Session and authentication cookies omit security flags (HttpOnly, Secure, SameSite), risking credential theft via script or unencrypted transport.",
+        "observations": cookie_flaws if cookie_flaws else cookie_all,
+        "observation_count": len(cookie_flaws) if cookie_flaws else 0,
+        "is_issue": cookie_status == "Issue Found",
+    })
+
+    # -------------------------------------------------------------------------
+    # Section B: Four AI Security Categories
+    # -------------------------------------------------------------------------
+    ai_categories = []
+
+    # 1. Prompt Injection
+    ai_inj_all = [f for f in sorted_findings if "prompt injection" in f.get("vulnerability_type", "").lower()]
+    ai_inj_flaws = [f for f in ai_inj_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    ai_inj_controls = [f for f in ai_inj_all if f.get("category") in ("verified_control", "not_reproducible")]
+    if scan_mode in ("basic", "external_basic"):
+        ai_inj_status = "Not Tested"
+    elif ai_inj_flaws:
+        ai_inj_status = "Issue Found"
+    elif ai_inj_controls:
+        ai_inj_status = "Passed"
+    else:
+        ai_inj_status = "Not Tested"
+    ai_categories.append({
+        "key": "ai_prompt_injection",
+        "name": "Prompt Injection",
+        "status": ai_inj_status,
+        "status_class": "issue" if ai_inj_status == "Issue Found" else ("not_tested" if ai_inj_status == "Not Tested" else "passed"),
+        "severity": "Critical" if ai_inj_status == "Issue Found" else ("Info" if ai_inj_status == "Not Tested" else "Low"),
+        "explanation": "Untrusted external context ingested by the AI assistant successfully hijacks model behavior and overrides system guidelines.",
+        "observations": ai_inj_flaws if ai_inj_flaws else ai_inj_all,
+        "observation_count": len(ai_inj_flaws) if ai_inj_flaws else (0 if ai_inj_status == "Passed" else len(ai_inj_all)),
+        "is_issue": ai_inj_status == "Issue Found",
+    })
+
+    # 2. Sensitive Information Leakage
+    ai_leak_all = [f for f in sorted_findings if "canary" in f.get("vulnerability_type", "").lower() or "sensitive information" in f.get("vulnerability_type", "").lower()]
+    ai_leak_flaws = [f for f in ai_leak_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    ai_leak_controls = [f for f in ai_leak_all if f.get("category") in ("verified_control", "not_reproducible")]
+    if scan_mode in ("basic", "external_basic"):
+        ai_leak_status = "Not Tested"
+    elif ai_leak_flaws:
+        ai_leak_status = "Issue Found"
+    elif ai_leak_controls:
+        ai_leak_status = "Passed"
+    else:
+        ai_leak_status = "Not Tested"
+    ai_categories.append({
+        "key": "ai_info_leakage",
+        "name": "Sensitive Information Leakage",
+        "status": ai_leak_status,
+        "status_class": "issue" if ai_leak_status == "Issue Found" else ("not_tested" if ai_leak_status == "Not Tested" else "passed"),
+        "severity": "Critical" if ai_leak_status == "Issue Found" else ("Info" if ai_leak_status == "Not Tested" else "Low"),
+        "explanation": "The AI assistant disclosed protected internal system instructions and private canary tokens under adversarial prompting.",
+        "observations": ai_leak_flaws if ai_leak_flaws else ai_leak_all,
+        "observation_count": len(ai_leak_flaws) if ai_leak_flaws else (0 if ai_leak_status == "Passed" else len(ai_leak_all)),
+        "is_issue": ai_leak_status == "Issue Found",
+    })
+
+    # 3. Tool Integrity
+    ai_tool_all = [f for f in sorted_findings if "tool" in f.get("vulnerability_type", "").lower()]
+    ai_tool_flaws = [f for f in ai_tool_all if f.get("vulnerability_type") in ("Tool Metadata Rug-Pull", "Poisoned Tool Description") and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    ai_tool_verified = [f for f in ai_tool_all if f.get("vulnerability_type") == "Tool Integrity Verified"]
+    if scan_mode in ("basic", "external_basic"):
+        ai_tool_status = "Not Tested"
+    elif ai_tool_flaws:
+        ai_tool_status = "Issue Found"
+    elif ai_tool_verified:
+        ai_tool_status = "Passed"
+    else:
+        ai_tool_status = "Not Tested"
+    ai_categories.append({
+        "key": "ai_tool_integrity",
+        "name": "Tool Integrity",
+        "status": ai_tool_status,
+        "status_class": "issue" if ai_tool_status == "Issue Found" else ("not_tested" if ai_tool_status == "Not Tested" else "passed"),
+        "severity": "High" if ai_tool_status == "Issue Found" else ("Info" if ai_tool_status == "Not Tested" else "Low"),
+        "explanation": "Cryptographic SHA-256 verification of AI tool schemas ensures tool metadata and parameters match approved baselines without runtime rug-pulls.",
+        "observations": ai_tool_flaws if ai_tool_flaws else ai_tool_verified,
+        "observation_count": len(ai_tool_flaws) if ai_tool_flaws else len(ai_tool_verified),
+        "is_issue": ai_tool_status == "Issue Found",
+    })
+
+    # 4. Unauthorized AI Actions
+    ai_act_all = [f for f in sorted_findings if "excessive agency" in f.get("vulnerability_type", "").lower() or "context taint" in f.get("vulnerability_type", "").lower() or "approval gate" in f.get("vulnerability_type", "").lower()]
+    ai_act_flaws = [f for f in ai_act_all if f.get("vulnerability_type") in ("Excessive Agency: Unapproved High-Impact Action", "Context Taint Hijack: Complete Attack Path") and f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
+    ai_act_controls = [f for f in ai_act_all if f.get("vulnerability_type") == "AI Agent Approval Gate Verified"]
+    if scan_mode in ("basic", "external_basic"):
+        ai_act_status = "Not Tested"
+    elif ai_act_flaws:
+        ai_act_status = "Issue Found"
+    elif ai_act_controls:
+        ai_act_status = "Passed"
+    else:
+        ai_act_status = "Not Tested"
+    ai_categories.append({
+        "key": "ai_unauthorized_actions",
+        "name": "Unauthorized AI Actions",
+        "status": ai_act_status,
+        "status_class": "issue" if ai_act_status == "Issue Found" else ("not_tested" if ai_act_status == "Not Tested" else "passed"),
+        "severity": "Critical" if ai_act_status == "Issue Found" else ("Info" if ai_act_status == "Not Tested" else "Low"),
+        "explanation": "Evaluates whether prompt-injected instructions can manipulate the AI assistant into executing high-impact external actions without human approval.",
+        "observations": ai_act_flaws if ai_act_flaws else ai_act_controls,
+        "observation_count": len(ai_act_flaws) if ai_act_flaws else (0 if ai_act_status == "Passed" else len(ai_act_all)),
+        "is_issue": ai_act_status == "Issue Found",
+    })
+
+    # -------------------------------------------------------------------------
+    # Priority 2: Focused Web Demo (2 Security Checks: SQLi & XSS)
+    # -------------------------------------------------------------------------
+    focused_categories = [web_categories[0], web_categories[1]]
+
+    return {
+        "web_categories": web_categories,
+        "ai_categories": ai_categories,
+        "focused_categories": focused_categories,
+        "web_issues_count": sum(1 for c in web_categories if c["status"] == "Issue Found"),
+        "web_passed_count": sum(1 for c in web_categories if c["status"] == "Passed"),
+        "web_not_tested_count": sum(1 for c in web_categories if c["status"] in ("Not Tested", "Could Not Test")),
+        "ai_issues_count": sum(1 for c in ai_categories if c["status"] == "Issue Found"),
+        "ai_passed_count": sum(1 for c in ai_categories if c["status"] == "Passed"),
+        "ai_not_tested_count": sum(1 for c in ai_categories if c["status"] in ("Not Tested", "Could Not Test")),
+        "focused_issues_count": sum(1 for c in focused_categories if c["status"] == "Issue Found"),
+        "focused_passed_count": sum(1 for c in focused_categories if c["status"] == "Passed"),
+    }
+
+
 def generate_html_report(
     scan_id: int,
     target_url: str,
@@ -191,6 +409,7 @@ def generate_html_report(
     scan_policy_data: Optional[Dict[str, Any]] = None,
     requests_count: int = 0,
     duration_seconds: Optional[float] = None,
+    is_focused_view: bool = False,
 ) -> str:
     """
     Render the HTML security report with honest classification separating:
@@ -576,6 +795,8 @@ def generate_html_report(
     checks_issues_count = sum(1 for c in security_checks if c["result"] == "Issue Found")
     checks_not_tested_count = sum(1 for c in security_checks if c["result"] in ("Not Tested", "Could Not Test"))
 
+    cat_data = build_category_breakdowns(sorted_findings, scan_mode, target_url)
+
     html = template.render(
         scan_id          = scan_id,
         target_url       = target_url,
@@ -609,6 +830,19 @@ def generate_html_report(
         checks_passed_count = checks_passed_count,
         checks_issues_count = checks_issues_count,
         checks_not_tested_count = checks_not_tested_count,
+        # Priority 1: Separated Web & AI Category Structures
+        web_categories        = cat_data["web_categories"],
+        ai_categories         = cat_data["ai_categories"],
+        focused_categories    = cat_data["focused_categories"],
+        web_issues_count      = cat_data["web_issues_count"],
+        web_passed_count      = cat_data["web_passed_count"],
+        web_not_tested_count  = cat_data["web_not_tested_count"],
+        ai_issues_count       = cat_data["ai_issues_count"],
+        ai_passed_count       = cat_data["ai_passed_count"],
+        ai_not_tested_count   = cat_data["ai_not_tested_count"],
+        focused_issues_count  = cat_data["focused_issues_count"],
+        focused_passed_count  = cat_data["focused_passed_count"],
+        is_focused_view       = is_focused_view,
     )
     return html
 
