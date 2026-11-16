@@ -278,6 +278,96 @@ class TestFinalIntegrationPhase13(unittest.TestCase):
         self.assertIn("Scan Comparison", r_compare.text)
         self.assertIn("Resolved After Retest", r_compare.text)
 
+    # -----------------------------------------------------------------------
+    # 7. Regression Tests: Report Full & Focused Views & Template Resilience
+    # -----------------------------------------------------------------------
+    def test_report_html_full_and_focused_rendering(self):
+        """8. HTML report renders both full (5 web + 4 AI) and focused (2 checks) without HTTP 500."""
+        scan = Scan(target_id=self.target.id, status="completed", scan_mode="deep")
+        self.db.add(scan)
+        self.db.commit()
+
+        # Add representative findings across categories
+        f_sqli = Finding(scan_id=scan.id, vulnerability_type="SQL Injection", severity="Critical", status="confirmed", location="http://127.0.0.1:5001/login", category="confirmed_vulnerability")
+        f_xss = Finding(scan_id=scan.id, vulnerability_type="Reflected XSS", severity="High", status="confirmed", location="http://127.0.0.1:5001/search", category="confirmed_vulnerability")
+        f_hdr = Finding(scan_id=scan.id, vulnerability_type="Missing Security Header", severity="Low", status="confirmed", location="http://127.0.0.1:5001/", category="confirmed_vulnerability")
+        f_ai = Finding(scan_id=scan.id, vulnerability_type="Indirect Prompt Injection", severity="High", status="confirmed", location="http://127.0.0.1:5001/assistant", category="confirmed_vulnerability")
+        self.db.add_all([f_sqli, f_xss, f_hdr, f_ai])
+        self.db.commit()
+
+        # Test full report
+        r_full = self.client.get(f"/api/scans/{scan.id}/report")
+        self.assertEqual(r_full.status_code, 200)
+        self.assertIn("Section A: Web Security", r_full.text)
+        self.assertIn("Section B: AI Security", r_full.text)
+        self.assertIn("SQL Injection", r_full.text)
+        self.assertIn("Cross-Site Scripting (XSS)", r_full.text)
+        self.assertIn("Controlled Deterministic AI Security Simulator", r_full.text)
+
+        # Test focused report
+        r_focused = self.client.get(f"/api/scans/{scan.id}/report?view=focused")
+        self.assertEqual(r_focused.status_code, 200)
+        self.assertIn("Focused Demonstration: 2 Security Checks", r_focused.text)
+        self.assertIn("Presentation Filter:", r_focused.text)
+        self.assertIn("SQL Injection", r_focused.text)
+        self.assertIn("Cross-Site Scripting (XSS)", r_focused.text)
+
+        # Test HTML comparison view
+        scan_after = Scan(target_id=self.target.id, status="completed", scan_mode="deep")
+        self.db.add(scan_after)
+        self.db.commit()
+        # Post-fix scan only has XSS (SQLi fixed)
+        f_xss2 = Finding(scan_id=scan_after.id, vulnerability_type="Reflected XSS", severity="High", status="confirmed", location="http://127.0.0.1:5001/search", category="confirmed_vulnerability")
+        self.db.add(f_xss2)
+        self.db.commit()
+
+        r_cmp = self.client.get(f"/api/scans/compare/report?a={scan.id}&b={scan_after.id}")
+        self.assertEqual(r_cmp.status_code, 200)
+        self.assertIn("Focused Demonstration: 2 Security Checks Comparison", r_cmp.text)
+        self.assertIn("RESOLVED AFTER RETEST", r_cmp.text)
+
+    def test_report_template_resilience_missing_variables(self):
+        """9. report.html does not raise UndefinedError when optional counts/categories are omitted."""
+        from jinja2 import Environment, FileSystemLoader
+        env = Environment(loader=FileSystemLoader(os.path.join(_scan_dir, "templates")))
+        t = env.get_template("report.html")
+        # Render with minimal variables (missing web_passed_count, ai_passed_count, web_categories, etc.)
+        rendered = t.render(
+            scan_id=999,
+            target_url="http://127.0.0.1:5001",
+            target_name="Test Target",
+            scan_started_at=None,
+            scan_finished_at=None,
+            duration_seconds=5.0,
+            requests_count=10,
+            scan_mode="deep",
+            target_type="local",
+            findings=[],
+            confirmed_vulns=[],
+            potential_vulns=[],
+            verified_controls=[],
+            info_discoveries=[],
+            not_reproducible=[],
+            not_tested=[],
+            total_findings=0,
+            active_vuln_count=0,
+            confirmed_count=0,
+            potential_count=0,
+            verified_control_count=0,
+            informational_count=0,
+            severity_counts={},
+            eval_data={},
+            tool_integrity={},
+            taint_permission={},
+            passport={},
+            security_checks=[],
+            checks_passed_count=0,
+            checks_issues_count=0,
+            checks_not_tested_count=0,
+        )
+        self.assertIn("Test Target", rendered)
+        self.assertIn("Clean / Passed Categories", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

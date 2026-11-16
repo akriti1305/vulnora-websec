@@ -396,7 +396,7 @@
 
   <!-- Focused Category Cards -->
   <div style="margin-bottom: 2rem;">
-    {% for cat in focused_categories %}
+    {% for cat in focused_categories | default([]) %}
     <div class="cat-card status-{{ cat.status_class }}">
       <div class="cat-header">
         <div class="cat-title">
@@ -482,15 +482,15 @@
   <div class="summary-grid">
     <div class="card" style="border-left: 4px solid var(--critical);">
       <div class="label">Web Security Issues</div>
-      <div class="value" style="color: var(--critical);">{{ web_issues_count }} / 5</div>
+      <div class="value" style="color: var(--critical);">{{ web_issues_count | default(0) }} / 5</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
-        Categories affected &bull; {{ active_vuln_count }} raw observations
+        Categories affected &bull; {{ active_vuln_count | default(0) }} raw observations
       </div>
     </div>
 
     <div class="card" style="border-left: 4px solid var(--accent);">
       <div class="label">AI Security Issues</div>
-      <div class="value" style="color: var(--accent);">{{ ai_issues_count }} / 4</div>
+      <div class="value" style="color: var(--accent);">{{ ai_issues_count | default(0) }} / 4</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
         Deterministic AI benchmark simulator
       </div>
@@ -498,7 +498,7 @@
 
     <div class="card" style="border-left: 4px solid var(--green);">
       <div class="label">Clean / Passed Categories</div>
-      <div class="value" style="color: var(--green);">{{ web_passed_count + ai_passed_count }}</div>
+      <div class="value" style="color: var(--green);">{{ (web_passed_count | default(0)) + (ai_passed_count | default(0)) }}</div>
       <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">
         Verified absent or secured
       </div>
@@ -533,7 +533,7 @@
 
   <!-- Web Categories Cards List -->
   <div style="margin-bottom: 2.5rem;">
-    {% for cat in web_categories %}
+    {% for cat in web_categories | default([]) %}
     <div class="cat-card status-{{ cat.status_class }}">
       <div class="cat-header">
         <div class="cat-title">
@@ -623,7 +623,7 @@
 
   <!-- AI Categories Cards List -->
   <div style="margin-bottom: 2.5rem;">
-    {% for cat in ai_categories %}
+    {% for cat in ai_categories | default([]) %}
     <div class="cat-card status-{{ cat.status_class }}">
       <div class="cat-header">
         <div class="cat-title">
