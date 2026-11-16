@@ -1269,7 +1269,7 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
             flaws = [f for f in findings_list if "prompt injection" in f.vulnerability_type.lower() and is_vuln(f)]
             return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
         elif cat_key == "ai_info_leakage":
-            flaws = [f for f in findings_list if ("canary" in f.vulnerability_type.lower() or "sensitive information" in f.vulnerability_type.lower()) and is_vuln(f)]
+            flaws = [f for f in findings_list if ("canary" in f.vulnerability_type.lower() or "sensitive information" in f.vulnerability_type.lower() or "customer information" in f.vulnerability_type.lower() or "customer" in getattr(f, "plain_name", "").lower()) and is_vuln(f)]
             return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
         elif cat_key == "ai_tool_integrity":
             flaws = [f for f in findings_list if f.vulnerability_type in ("Tool Metadata Rug-Pull", "Poisoned Tool Description") and is_vuln(f)]
@@ -1322,7 +1322,7 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
 
     ai_cat_keys = [
         ("ai_prompt_injection", "Prompt Injection", "Critical"),
-        ("ai_info_leakage", "Sensitive Information Leakage", "Critical"),
+        ("ai_info_leakage", "Protected Customer Information Disclosure", "Critical"),
         ("ai_tool_integrity", "Tool Integrity", "High"),
         ("ai_unauthorized_actions", "Unauthorized AI Actions", "Critical"),
     ]

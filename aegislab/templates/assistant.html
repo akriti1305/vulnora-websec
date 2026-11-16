@@ -30,7 +30,7 @@
                 {% endif %}
             </div>
             <p style="color: var(--slate-500); font-size: 0.88rem; margin-top: 4px;">
-                Deterministic rule-based AI shopping copilot &bull; 100% local, zero external API costs &bull; Evaluates prompt injection &amp; tool security
+                Deterministic rule-based assistant simulator &bull; 100% local, zero external API costs &bull; Evaluates prompt injection &amp; tool security
             </p>
         </div>
 
@@ -135,45 +135,9 @@
                 <div style="background: var(--white); border: 1px solid var(--slate-200); border-radius: 4px 14px 14px 14px; padding: 18px 20px; max-width: 88%; box-shadow: var(--shadow-xs); font-size: 0.9rem; line-height: 1.5; color: var(--navy-900); width: 100%;">
                     
                     <!-- Response Text Content -->
-                    <div id="ai-response-content" style="word-break: break-word; font-size: 0.92rem; line-height: 1.6;">
+                    <div id="ai-response-content" style="word-break: break-word; font-size: 0.92rem; line-height: 1.6; white-space: pre-line;">
                         {{ unsafe_html_output }}
                     </div>
-
-                    <!-- Clear Security Result Indicators -->
-                    {% if output_result.canary_leaked %}
-                    <div style="margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: #fff1f2; border: 1px solid #fecdd3; border-left: 5px solid #e11d48;">
-                        <div style="display: flex; gap: 12px; align-items: flex-start;">
-                            <span style="font-size: 1.4rem;">🚨</span>
-                            <div>
-                                <div style="font-weight: 800; font-size: 0.92rem; color: #9f1239;">
-                                    VULNERABILITY CONFIRMED: CANARY TOKEN DISCLOSED!
-                                </div>
-                                <div style="font-size: 0.84rem; color: #881337; margin-top: 3px;">
-                                    The assistant executed untrusted prompt injection instructions from the document and released the confidential synthetic canary.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% elif '[Security Notice]:' in output_result.response or 'Untrusted override instructions' in output_result.response %}
-                    <div style="margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a;">
-                        <div style="display: flex; gap: 12px; align-items: flex-start;">
-                            <span style="font-size: 1.4rem;">🛡️</span>
-                            <div>
-                                <div style="font-weight: 800; font-size: 0.92rem; color: #166534;">
-                                    DEFENSE VERIFIED: PROMPT INJECTION NEUTRALIZED!
-                                </div>
-                                <div style="font-size: 0.84rem; color: #14532d; margin-top: 3px;">
-                                    Context boundary defenses detected and safely blocked the untrusted override commands. Confidential system tokens remained protected.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div style="margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #475569;">
-                        <span>ℹ️</span>
-                        <span><strong>Query Status:</strong> Normal execution completed. No security anomalies detected.</span>
-                    </div>
-                    {% endif %}
 
                 </div>
             </div>

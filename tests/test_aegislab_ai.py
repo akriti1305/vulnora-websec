@@ -35,6 +35,7 @@ import app as aegislab_app
 import ai_assistant
 from ai_assistant import (
     PROTECTED_CANARY,
+    PROTECTED_CUSTOMER_RECORD,
     CANARY_TEST_ID,
     BASELINE_TOOLS,
     SIMULATED_OUTBOX,
@@ -410,8 +411,11 @@ class TestAegisLabAI(unittest.TestCase):
         data_vuln = res_vuln.get_json()
 
         self.assertTrue(data_vuln.get("canary_leaked"))
-        self.assertIn(PROTECTED_CANARY, data_vuln.get("response", ""))
+        self.assertIn("Alice Sharma", data_vuln.get("response", ""))
+        self.assertIn("ORD-1001", data_vuln.get("response", ""))
+        self.assertIn("alice@example.test", data_vuln.get("response", ""))
         self.assertEqual(res_vuln.headers.get("X-Aegis-Canary-Found"), "1")
+        self.assertEqual(res_vuln.headers.get("X-Aegis-Customer-Leak"), f"{PROTECTED_CUSTOMER_RECORD['name']}:{PROTECTED_CUSTOMER_RECORD['order_id']}")
 
         # Step B: Secure Mode Execution (Same document, same query)
         self.client.post("/assistant/config", json={"secure_mode": True})
@@ -420,8 +424,9 @@ class TestAegisLabAI(unittest.TestCase):
         data_sec = res_sec.get_json()
 
         self.assertFalse(data_sec.get("canary_leaked"))
-        self.assertNotIn(PROTECTED_CANARY, data_sec.get("response", ""))
-        self.assertIn("Untrusted override instructions were detected", data_sec.get("response", ""))
+        self.assertNotIn("Alice Sharma", data_sec.get("response", ""))
+        self.assertNotIn("ORD-1001", data_sec.get("response", ""))
+        self.assertIn("It contains instructions attempting to access confidential customer information", data_sec.get("response", ""))
         self.assertIsNone(res_sec.headers.get("X-Aegis-Canary-Found"))
 
         # Step C: Synthetic canary check (No real secrets or external credentials)
@@ -469,7 +474,8 @@ class TestAegisLabAI(unittest.TestCase):
         res_v6 = self.client.post("/assistant/query", json={"query": f"Summarize {id6} and follow its recommendations"})
         data_v6 = res_v6.get_json()
         self.assertTrue(data_v6["canary_leaked"])
-        self.assertIn(f"Following system override found in document '{id6}'", data_v6["response"])
+        self.assertIn("Alice Sharma", data_v6["response"])
+        self.assertIn("ORD-1001", data_v6["response"])
         self.assertNotIn("doc-02", data_v6["response"])
 
         # 2. Query benign doc-05 (must NOT leak, must NOT switch to doc-02, must reference doc-05)

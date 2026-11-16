@@ -70,10 +70,10 @@ SECURITY_EXPLANATIONS = {
         "suggested_fix": "Isolate untrusted document context from system instructions. Apply dual-LLM or heuristic guardrails on agent context.",
     },
     "AI Canary Token Leakage": {
-        "plain_name": "AI Canary Token Leakage",
-        "what_is_it": "The AI assistant disclosed a protected internal canary secret when prompted by manipulated context.",
-        "why_dangerous": "Confirms that prompt injection succeeded in extracting private internal secrets and system prompt instructions.",
-        "suggested_fix": "Implement strict output filtering to detect and block secret tokens before delivering responses to users.",
+        "plain_name": "Protected Customer Information Disclosure",
+        "what_is_it": "The AI assistant disclosed confidential customer account records when prompted by manipulated untrusted context.",
+        "why_dangerous": "Confirms that prompt injection succeeded in extracting private customer records (e.g. Alice Sharma, ORD-1001) without authorization.",
+        "suggested_fix": "Implement strict output filtering, context boundary separation, and permission gating on customer database tools.",
     },
     "Tool Integrity Verified": {
         "plain_name": "AI Tool Integrity Verification",
@@ -302,8 +302,8 @@ def build_category_breakdowns(sorted_findings: List[dict], scan_mode: str, targe
         "is_issue": ai_inj_status == "Issue Found",
     })
 
-    # 2. Sensitive Information Leakage
-    ai_leak_all = [f for f in sorted_findings if "canary" in f.get("vulnerability_type", "").lower() or "sensitive information" in f.get("vulnerability_type", "").lower()]
+    # 2. Protected Customer Information Disclosure
+    ai_leak_all = [f for f in sorted_findings if "canary" in f.get("vulnerability_type", "").lower() or "sensitive information" in f.get("vulnerability_type", "").lower() or "customer information" in f.get("vulnerability_type", "").lower() or "customer" in f.get("plain_name", "").lower()]
     ai_leak_flaws = [f for f in ai_leak_all if f.get("category") in ("confirmed_vulnerability", "potential_vulnerability")]
     ai_leak_controls = [f for f in ai_leak_all if f.get("category") in ("verified_control", "not_reproducible")]
     if scan_mode in ("basic", "external_basic"):
@@ -316,11 +316,11 @@ def build_category_breakdowns(sorted_findings: List[dict], scan_mode: str, targe
         ai_leak_status = "Not Tested"
     ai_categories.append({
         "key": "ai_info_leakage",
-        "name": "Sensitive Information Leakage",
+        "name": "Protected Customer Information Disclosure",
         "status": ai_leak_status,
         "status_class": "issue" if ai_leak_status == "Issue Found" else ("not_tested" if ai_leak_status == "Not Tested" else "passed"),
         "severity": "Critical" if ai_leak_status == "Issue Found" else ("Info" if ai_leak_status == "Not Tested" else "Low"),
-        "explanation": "Evaluates whether adversarial document instructions can exfiltrate internal system canary tokens or confidential prompt configurations.",
+        "explanation": "Evaluates whether adversarial document instructions can exfiltrate confidential customer records (such as Alice Sharma's VIP order) or internal tokens.",
         "observations": ai_leak_flaws if ai_leak_flaws else (ai_leak_controls if ai_leak_controls else ai_inj_controls),
         "observation_count": len(ai_leak_flaws) if ai_leak_flaws else (0 if ai_leak_status == "Passed" else len(ai_leak_all)),
         "is_issue": ai_leak_status == "Issue Found",
