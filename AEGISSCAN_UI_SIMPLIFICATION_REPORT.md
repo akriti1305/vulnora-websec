@@ -156,3 +156,4 @@ The AegisScan 2.0 platform is now fully prepared for evaluation:
 - Reports answer all critical questions immediately while keeping deep technical details available on demand.
 - AegisShop looks like an authentic, professional e-commerce application.
 - The dual capabilities &mdash; web vulnerability scanning and AI-agent prompt-injection benchmarking &mdash; are demonstrable within minutes.
+

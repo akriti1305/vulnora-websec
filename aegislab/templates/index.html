@@ -12,19 +12,19 @@
 <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); border-radius: var(--radius-xl); padding: 36px 40px; color: white; margin-bottom: 32px; box-shadow: var(--shadow-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px;">
     <div style="max-width: 620px;">
         <span class="badge" style="background: rgba(255, 255, 255, 0.15); color: #c7d2fe; border: 1px solid rgba(255, 255, 255, 0.25); margin-bottom: 12px; font-size: 0.76rem;">
-            ⚡ Spring Collection 2026 &bull; Same-Day Dispatch
+            ⚡ Spring Collection 2026 &bull; Same-Day Dispatch Across India
         </span>
         <h1 style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 10px;">
             Smart Gadgets &amp; Hardware for Modern Builders
         </h1>
         <p style="color: #c7d2fe; font-size: 0.96rem; line-height: 1.6; margin-bottom: 20px;">
-            Explore premium components, diagnostic tools, and modular gadgets. Supported by our intelligent AI shopping copilot.
+            Explore premium consumer electronics, accessories, and modular hardware. Supported by our intelligent AI shopping copilot.
         </p>
 
         <!-- Product Search Bar -->
         <form action="/search" method="GET" style="display: flex; gap: 10px; max-width: 520px;">
             <div style="position: relative; flex: 1;">
-                <input type="text" name="q" value="gadget" placeholder="Search products, widgets, components..." class="form-control" style="background: white; color: var(--navy-900); padding-left: 38px; height: 44px; border-radius: var(--radius-md);">
+                <input type="text" name="q" value="gadget" placeholder="Search products, keyboards, chargers..." class="form-control" style="background: white; color: var(--navy-900); padding-left: 38px; height: 44px; border-radius: var(--radius-md);">
                 <svg style="position: absolute; left: 12px; top: 13px; width: 18px; height: 18px; color: var(--slate-400);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                 </svg>
@@ -42,123 +42,64 @@
             <div style="font-weight: 700; font-size: 1.05rem; color: #ffffff;">AI Shopping Assistant</div>
         </div>
         <p style="font-size: 0.84rem; color: #e0e7ff; line-height: 1.5; margin-bottom: 14px;">
-            Need help choosing specs, calculating bulk pricing, or tracking orders? Ask AegisShop Copilot!
+            Need help choosing specs, calculating discounts, or tracking shipments? Ask AegisShop Copilot!
         </p>
-        <a href="/assistant" class="btn" style="background: #ffffff; color: #4338ca; width: 100%; font-weight: 700; font-size: 0.84rem; border-radius: var(--radius-sm);">
+        <a href="/assistant" class="btn" style="background: #ffffff; color: #4338ca; width: 100%; font-weight: 700; font-size: 0.84rem; border-radius: var(--radius-sm); display: block; text-align: center; text-decoration: none;">
             Launch AI Assistant &rarr;
         </a>
     </div>
 </div>
 
-<!-- Featured Products Section -->
+<!-- Featured Products Section (10 Products in INR ₹) -->
 <div style="margin-bottom: 36px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
         <div>
             <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--navy-900); letter-spacing: -0.02em;">
-                Featured Products &amp; Components
+                Featured Products &amp; Accessories
             </h2>
-            <p style="font-size: 0.85rem; color: var(--slate-500);">Hand-picked top sellers with instant delivery</p>
+            <p style="font-size: 0.85rem; color: var(--slate-500);">Top-rated consumer electronics &bull; All prices in Indian Rupees (₹) with same-day dispatch</p>
         </div>
         <form action="/decoy/product" method="GET" style="display: flex; gap: 8px; align-items: center;">
             <label style="font-size: 0.82rem; font-weight: 600; color: var(--slate-600);">Product SKU:</label>
-            <input type="number" name="id" value="1" min="1" max="5" class="form-control" style="width: 70px; padding: 6px 10px; font-size: 0.84rem;">
+            <input type="number" name="id" value="1" min="1" max="10" class="form-control" style="width: 70px; padding: 6px 10px; font-size: 0.84rem;">
             <button type="submit" class="btn btn-secondary btn-sm">Lookup SKU</button>
         </form>
     </div>
 
-    <!-- Product Cards Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-        
-        <!-- Product 1: Widget Alpha -->
+    <!-- Product Cards Grid (10 items) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px;">
+        {% for pid, p in (products.items() if products else [
+            ('1', {'name': 'Wireless Optical Mouse', 'desc': 'Ergonomic 2.4GHz wireless mouse with silent clicks.', 'price': '₹699', 'icon': '🖱️', 'badge': 'Best Seller'}),
+            ('2', {'name': 'USB-C Fast Charger (65W)', 'desc': 'Compact GaN dual-port fast charger with Power Delivery 3.0.', 'price': '₹1,499', 'icon': '⚡', 'badge': 'Fast Charging'}),
+            ('3', {'name': 'Mechanical Gaming Keyboard', 'desc': 'Tenkeyless mechanical keyboard featuring tactile blue switches.', 'price': '₹2,499', 'icon': '⌨️', 'badge': 'Top Rated'}),
+            ('4', {'name': 'Noise-Cancelling Wireless Earbuds', 'desc': 'True wireless earbuds with active noise cancellation (ANC).', 'price': '₹1,999', 'icon': '🎧', 'badge': 'Popular'}),
+            ('5', {'name': 'Ultra-Slim Power Bank (20000mAh)', 'desc': 'High-capacity power bank with 22.5W bidirectional fast charging.', 'price': '₹1,299', 'icon': '🔋', 'badge': 'High Capacity'}),
+            ('6', {'name': 'Smart Fitness Band', 'desc': 'Waterproof fitness tracker with 1.47-inch AMOLED display.', 'price': '₹1,899', 'icon': '⌚', 'badge': 'New Arrival'}),
+            ('7', {'name': '1080p Full HD Streaming Webcam', 'desc': 'Crisp 1080p 30fps USB webcam with dual noise-reducing stereo mics.', 'price': '₹1,749', 'icon': '📷', 'badge': 'HD Video'}),
+            ('8', {'name': 'Braided HDMI 2.1 Cable (2m)', 'desc': 'Ultra High Speed 48Gbps HDMI cable supporting 8K@60Hz HDR.', 'price': '₹499', 'icon': '🔌', 'badge': 'Value Pack'}),
+            ('9', {'name': 'Ergonomic Aluminum Laptop Stand', 'desc': 'Adjustable foldable laptop riser constructed from aluminum alloy.', 'price': '₹899', 'icon': '💻', 'badge': 'Ergonomic'}),
+            ('10', {'name': 'Portable Bluetooth Speaker (16W)', 'desc': 'IPX7 waterproof wireless speaker delivering punchy 360 bass.', 'price': '₹1,599', 'icon': '🔊', 'badge': 'Waterproof'})
+        ]) %}
         <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
-            <div style="height: 140px; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                ⚙️
+            <div style="height: 130px; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); display: flex; align-items: center; justify-content: center; font-size: 3.2rem; border-bottom: 1px solid var(--slate-100);">
+                {{ p.icon }}
             </div>
-            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">SKU #1 &bull; Best Seller</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Widget Alpha</h3>
-                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
-                    A robust and reliable widget. High endurance mechanical build for continuous workloads.
+            <div class="card-body" style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">SKU #{{ pid }}</span>
+                    <span class="badge badge-indigo" style="font-size: 0.68rem; padding: 2px 6px;">{{ p.badge }}</span>
+                </div>
+                <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">{{ p.name }}</h3>
+                <p style="font-size: 0.80rem; color: var(--slate-600); line-height: 1.45; margin-bottom: 14px; flex: 1;">
+                    {{ p.desc }}
                 </p>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$9.99</div>
-                    <a href="/decoy/product?id=1" class="btn btn-outline btn-sm">View Item</a>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">{{ p.price }}</div>
+                    <a href="/decoy/product?id={{ pid }}" class="btn btn-outline btn-sm">View Details</a>
                 </div>
             </div>
         </div>
-
-        <!-- Product 2: Gadget Beta -->
-        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
-            <div style="height: 140px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                📟
-            </div>
-            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--emerald-600); text-transform: uppercase;">SKU #2 &bull; New Arrival</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Gadget Beta</h3>
-                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
-                    Compact gadget for everyday use. Pocket-sized wireless controller with rechargeable cell.
-                </p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$14.99</div>
-                    <a href="/decoy/product?id=2" class="btn btn-outline btn-sm">View Item</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Product 3: Doohickey Gamma -->
-        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
-            <div style="height: 140px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                🔬
-            </div>
-            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--amber-600); text-transform: uppercase;">SKU #3 &bull; Precision</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Doohickey Gamma</h3>
-                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
-                    Precision-engineered doohickey with sub-millimeter calibration and titanium casing.
-                </p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$24.99</div>
-                    <a href="/decoy/product?id=3" class="btn btn-outline btn-sm">View Item</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Product 4: Thingamajig Delta -->
-        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
-            <div style="height: 140px; background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                📦
-            </div>
-            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--amber-600); text-transform: uppercase;">SKU #4 &bull; Value Pack</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Thingamajig Delta</h3>
-                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
-                    Versatile thingamajig, 2-pack. Multi-purpose adapter bundle with lifetime warranty.
-                </p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$19.99</div>
-                    <a href="/decoy/product?id=4" class="btn btn-outline btn-sm">View Item</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Product 5: Contraption Epsilon -->
-        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column;">
-            <div style="height: 140px; background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                💎
-            </div>
-            <div class="card-body" style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--rose-600); text-transform: uppercase;">SKU #5 &bull; Flagship</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin: 4px 0 6px;">Contraption Epsilon</h3>
-                <p style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.4; margin-bottom: 14px; flex: 1;">
-                    Patent-pending contraption. High-performance computing module with passive heat sink.
-                </p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--slate-100);">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--emerald-600);">$49.99</div>
-                    <a href="/decoy/product?id=5" class="btn btn-outline btn-sm">View Item</a>
-                </div>
-            </div>
-        </div>
-
+        {% endfor %}
     </div>
 </div>
 
@@ -257,49 +198,57 @@
 
 </div>
 
-<!-- Auxiliary Services & Diagnostic Endpoints -->
-<div style="margin-bottom: 24px;">
-    <div style="font-size: 1.1rem; font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
-        Partner Services &amp; Storefront Diagnostics
-    </div>
-    <div style="font-size: 0.82rem; color: var(--slate-500); margin-bottom: 16px;">
-        Secondary endpoints and partner integration gateways
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
-        
-        <!-- Decoy 1: Echo search -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-body" style="padding: 16px 20px;">
-                <div style="font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
-                    Echo Search Diagnostic
+<!-- Collapsible Academic Demo & Security Testing Diagnostics -->
+<details style="margin-bottom: 28px; background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 18px 22px;">
+    <summary style="font-size: 0.95rem; font-weight: 700; color: var(--navy-800); cursor: pointer; user-select: none;">
+        🛠️ Academic Demo &amp; Security Testing Diagnostics (Click to Expand Decoy Endpoints)
+    </summary>
+    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--slate-100);">
+        <p style="font-size: 0.82rem; color: var(--slate-500); margin-bottom: 16px;">
+            These secondary diagnostic endpoints allow AegisScan to verify false-positive suppression and control validation (e.g., entity-encoded echo vs reflected XSS, simulated login vs true SQL injection authentication bypass).
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <!-- Decoy 1: Echo search -->
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px 16px;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--navy-900); margin-bottom: 4px;">
+                    Echo Search Diagnostic (/decoy/echo)
                 </div>
-                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 12px;">
-                    Safe look-alike search endpoint with strict HTML entity encoding.
+                <p style="font-size: 0.78rem; color: var(--slate-600); margin-bottom: 10px;">
+                    Safe look-alike search endpoint with strict HTML entity encoding. Used by AegisScan to verify false-positive suppression.
                 </p>
                 <form action="/decoy/echo" method="GET" style="display: flex; gap: 8px;">
-                    <input type="text" name="q" value="smart gear" class="form-control" style="font-size: 0.82rem; padding: 6px 10px;">
-                    <button type="submit" class="btn btn-secondary btn-sm">Echo</button>
+                    <input type="text" name="q" value="smart gear" class="form-control" style="font-size: 0.8rem; padding: 5px 8px;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Echo Test</button>
                 </form>
             </div>
-        </div>
 
-        <!-- Decoy 2: Partner SSO -->
-        <div class="card" style="margin-bottom: 0;">
-            <div class="card-body" style="padding: 16px 20px;">
-                <div style="font-weight: 700; color: var(--navy-900); margin-bottom: 4px;">
-                    Partner SSO Gateway
+            <!-- Decoy 2: Partner SSO -->
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px 16px;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--navy-900); margin-bottom: 4px;">
+                    Partner SSO Gateway (/decoy/login)
                 </div>
-                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 12px;">
-                    Simulated affiliate partner authentication portal.
+                <p style="font-size: 0.78rem; color: var(--slate-600); margin-bottom: 10px;">
+                    Simulated affiliate partner authentication portal. Always returns "Welcome", demonstrating validation control-request checks.
                 </p>
-                <a href="/decoy/login" class="btn btn-secondary btn-sm" style="width: 100%;">
-                    Open Partner SSO Gateway
+                <a href="/decoy/login" class="btn btn-secondary btn-sm" style="display: inline-block;">
+                    Open Partner SSO Gateway &rarr;
+                </a>
+            </div>
+
+            <!-- AI Manifest -->
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px 16px;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--navy-900); margin-bottom: 4px;">
+                    AI Agent Security Manifest
+                </div>
+                <p style="font-size: 0.78rem; color: var(--slate-600); margin-bottom: 10px;">
+                    Structured JSON manifest at <code>/.well-known/aegisscan-ai.json</code> defining tools, scopes, canary, and policy rules.
+                </p>
+                <a href="/.well-known/aegisscan-ai.json" target="_blank" class="btn btn-outline btn-sm" style="display: inline-block;">
+                    View AI Manifest (JSON) &rarr;
                 </a>
             </div>
         </div>
-
     </div>
-</div>
+</details>
 
 {% endblock %}

@@ -198,3 +198,4 @@ Show evaluators that AegisScan scan records are immutable:
 
 **Q4: What is the purpose of the Ed25519 signature and SHA-256 hash chain?**
 > *"In compliance and penetration testing, scan reports can be tampered with or deleted by malicious insiders. AegisScan signs every report with an Ed25519 key and links each scan into an append-only SHA-256 ledger ($H_n = \text{SHA256}(R_n \parallel H_{n-1})$). This guarantees that historical scan records cannot be modified or reordered after the fact."*
+

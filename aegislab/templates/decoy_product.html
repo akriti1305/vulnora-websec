@@ -23,16 +23,16 @@
 
         <form action="/decoy/product" method="GET" style="display: flex; gap: 8px; align-items: center; background: var(--white); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--slate-200);">
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600);">Product SKU:</label>
-            <input type="number" name="id" value="{{ product_id }}" min="1" max="5" class="form-control" style="width: 70px; padding: 5px 8px; font-size: 0.84rem;">
+            <input type="number" name="id" value="{{ product_id }}" min="1" max="10" class="form-control" style="width: 70px; padding: 5px 8px; font-size: 0.84rem;">
             <button type="submit" class="btn btn-secondary btn-sm">Lookup SKU</button>
         </form>
     </div>
 
     <!-- SKU Selector Pills -->
     <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
-        {% for pid in ['1','2','3','4','5'] %}
+        {% for pid in ['1','2','3','4','5','6','7','8','9','10'] %}
         <a href="/decoy/product?id={{ pid }}" class="btn btn-outline btn-sm {% if product_id|string == pid %}btn-secondary{% endif %}">
-            Product SKU #{{ pid }}
+            SKU #{{ pid }}
         </a>
         {% endfor %}
     </div>
@@ -42,12 +42,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 0;">
             <!-- Left: Product Graphic -->
             <div style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); display: flex; align-items: center; justify-content: center; font-size: 5rem; padding: 40px; border-right: 1px solid var(--slate-200);">
-                {% if product_id == '1' %}⚙️
-                {% elif product_id == '2' %}📟
-                {% elif product_id == '3' %}🔬
-                {% elif product_id == '4' %}📦
-                {% else %}💎
-                {% endif %}
+                {{ product.icon or '📦' }}
             </div>
 
             <!-- Right: Product Info & Cart -->
@@ -92,7 +87,7 @@
     <div class="card" style="text-align: center; padding: 40px 20px;">
         <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--navy-900);">Product Not Found</h2>
         <p style="color: var(--slate-500); font-size: 0.86rem; margin-top: 6px;">
-            Product #{{ product_id }} is not in the catalogue. Try SKU #1 through #5.
+            Product #{{ product_id }} is not in the catalogue. Try SKU #1 through #10.
         </p>
     </div>
     {% endif %}

@@ -125,7 +125,7 @@ def index():
     A crawler starting here will discover all other routes.
     """
     logged_in_user = session.get("username")
-    return render_template("index.html", logged_in_user=logged_in_user)
+    return render_template("index.html", logged_in_user=logged_in_user, products=DECOY_PRODUCTS)
 
 
 # ---------------------------------------------------------------------------
@@ -300,11 +300,86 @@ def decoy_login():
 # We do NOT hide this -- if the IDOR detector flags it, it's an honest FP.
 # ---------------------------------------------------------------------------
 DECOY_PRODUCTS = {
-    "1": {"name": "Widget Alpha",  "desc": "A robust and reliable widget.",  "price": "$9.99"},
-    "2": {"name": "Gadget Beta",   "desc": "Compact gadget for everyday use.", "price": "$14.99"},
-    "3": {"name": "Doohickey Gamma","desc": "Precision-engineered doohickey.", "price": "$24.99"},
-    "4": {"name": "Thingamajig Delta","desc": "Versatile thingamajig, 2-pack.","price": "$19.99"},
-    "5": {"name": "Contraption Epsilon","desc": "Patent-pending contraption.", "price": "$49.99"},
+    "1": {
+        "name": "Wireless Optical Mouse",
+        "desc": "Ergonomic 2.4GHz wireless mouse with silent clicks, nano USB receiver, and 1600 DPI optical sensor.",
+        "price": "₹699",
+        "icon": "🖱️",
+        "badge": "Best Seller",
+        "category": "Peripherals",
+    },
+    "2": {
+        "name": "USB-C Fast Charger (65W)",
+        "desc": "Compact GaN dual-port fast charger with Power Delivery 3.0 for laptops, tablets, and smartphones.",
+        "price": "₹1,499",
+        "icon": "⚡",
+        "badge": "Fast Charging",
+        "category": "Power & Cables",
+    },
+    "3": {
+        "name": "Mechanical Gaming Keyboard",
+        "desc": "Tenkeyless mechanical keyboard featuring tactile blue switches, per-key RGB backlighting, and braided cable.",
+        "price": "₹2,499",
+        "icon": "⌨️",
+        "badge": "Top Rated",
+        "category": "Gaming",
+    },
+    "4": {
+        "name": "Noise-Cancelling Wireless Earbuds",
+        "desc": "True wireless earbuds with active noise cancellation (ANC), transparency mode, and 30-hour battery case.",
+        "price": "₹1,999",
+        "icon": "🎧",
+        "badge": "Popular",
+        "category": "Audio",
+    },
+    "5": {
+        "name": "Ultra-Slim Power Bank (20000mAh)",
+        "desc": "High-capacity lithium-polymer power bank with 22.5W bidirectional fast charging and LED battery display.",
+        "price": "₹1,299",
+        "icon": "🔋",
+        "badge": "High Capacity",
+        "category": "Power & Cables",
+    },
+    "6": {
+        "name": "Smart Fitness Band",
+        "desc": "Waterproof fitness tracker with 1.47-inch AMOLED display, SpO2 sensor, heart-rate monitor, and 14-day battery.",
+        "price": "₹1,899",
+        "icon": "⌚",
+        "badge": "New Arrival",
+        "category": "Wearables",
+    },
+    "7": {
+        "name": "1080p Full HD Streaming Webcam",
+        "desc": "Crisp 1080p 30fps USB webcam with dual noise-reducing stereo microphones and integrated privacy shutter.",
+        "price": "₹1,749",
+        "icon": "📷",
+        "badge": "HD Video",
+        "category": "Peripherals",
+    },
+    "8": {
+        "name": "Braided HDMI 2.1 Cable (2m)",
+        "desc": "Ultra High Speed 48Gbps HDMI cable supporting 8K@60Hz, 4K@120Hz HDR, eARC, and gold-plated connectors.",
+        "price": "₹499",
+        "icon": "🔌",
+        "badge": "Value Pack",
+        "category": "Cables",
+    },
+    "9": {
+        "name": "Ergonomic Aluminum Laptop Stand",
+        "desc": "Adjustable foldable laptop riser constructed from sandblasted aluminum alloy with anti-slip silicone pads.",
+        "price": "₹899",
+        "icon": "💻",
+        "badge": "Ergonomic",
+        "category": "Accessories",
+    },
+    "10": {
+        "name": "Portable Bluetooth Speaker (16W)",
+        "desc": "IPX7 waterproof wireless speaker delivering punchy 360-degree bass, dual pairing mode, and 12-hour playtime.",
+        "price": "₹1,599",
+        "icon": "🔊",
+        "badge": "Waterproof",
+        "category": "Audio",
+    },
 }
 
 @app.route("/decoy/product")
