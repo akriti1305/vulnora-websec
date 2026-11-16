@@ -64,7 +64,7 @@ def classify_finding_category(vuln_type: str, status: str) -> str:
         return "not_tested"
     if s == "not_reproducible":
         return "not_reproducible"
-    if v in ("Tool Integrity Verified", "AI Agent Approval Gate Verified") or s in ("verified", "verified_control"):
+    if v in ("Tool Integrity Verified", "AI Agent Approval Gate Verified", "AI Canary Token Protection Verified") or s in ("verified", "verified_control"):
         return "verified_control"
     if (
         v in (

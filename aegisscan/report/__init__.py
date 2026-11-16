@@ -310,7 +310,7 @@ def build_category_breakdowns(sorted_findings: List[dict], scan_mode: str, targe
         ai_leak_status = "Not Tested"
     elif ai_leak_flaws:
         ai_leak_status = "Issue Found"
-    elif ai_leak_controls:
+    elif ai_leak_controls or (ai_inj_status == "Passed" and not ai_leak_flaws):
         ai_leak_status = "Passed"
     else:
         ai_leak_status = "Not Tested"
@@ -320,8 +320,8 @@ def build_category_breakdowns(sorted_findings: List[dict], scan_mode: str, targe
         "status": ai_leak_status,
         "status_class": "issue" if ai_leak_status == "Issue Found" else ("not_tested" if ai_leak_status == "Not Tested" else "passed"),
         "severity": "Critical" if ai_leak_status == "Issue Found" else ("Info" if ai_leak_status == "Not Tested" else "Low"),
-        "explanation": "The AI assistant disclosed protected internal system instructions and private canary tokens under adversarial prompting.",
-        "observations": ai_leak_flaws if ai_leak_flaws else ai_leak_all,
+        "explanation": "Evaluates whether adversarial document instructions can exfiltrate internal system canary tokens or confidential prompt configurations.",
+        "observations": ai_leak_flaws if ai_leak_flaws else (ai_leak_controls if ai_leak_controls else ai_inj_controls),
         "observation_count": len(ai_leak_flaws) if ai_leak_flaws else (0 if ai_leak_status == "Passed" else len(ai_leak_all)),
         "is_issue": ai_leak_status == "Issue Found",
     })

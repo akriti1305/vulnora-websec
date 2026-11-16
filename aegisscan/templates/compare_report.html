@@ -347,6 +347,56 @@
 </div>
 {% endif %}
 
+{% if compare.ai_category_diffs %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.4rem;margin-bottom:2rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem;">
+    <div>
+      <h3 style="font-size:1.05rem;font-weight:700;color:#f8fafc;margin:0;">
+        🤖 AI Assistant Security Retest Comparison (4 Categories)
+      </h3>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
+        Evaluates prompt injection, sensitive canary leakage, tool schema tampering, and unapproved actions.
+      </div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
+      <thead>
+        <tr style="background:var(--surface2);text-align:left;border-bottom:1px solid var(--border);">
+          <th style="padding:8px 12px;color:var(--muted);">AI Category</th>
+          <th style="padding:8px 12px;color:var(--muted);">Before (Scan #{{ scan_a_id }})</th>
+          <th style="padding:8px 12px;color:var(--muted);">After (Scan #{{ scan_b_id }})</th>
+          <th style="padding:8px 12px;color:var(--muted);">Retest Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in compare.ai_category_diffs %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-weight:600;color:#f8fafc;">{{ cat.name }}</td>
+          <td style="padding:10px 12px;">
+            <span style="color:{% if cat.status_a == 'Issue Found' %}var(--red){% else %}var(--green){% endif %};font-weight:600;">
+              {{ cat.status_a }} {% if cat.count_a > 0 %}({{ cat.count_a }}){% endif %}
+            </span>
+          </td>
+          <td style="padding:10px 12px;">
+            <span style="color:{% if cat.status_b == 'Issue Found' %}var(--yellow){% elif cat.status_b == 'No Longer Reproduced' %}var(--green){% else %}var(--muted){% endif %};font-weight:600;">
+              {{ cat.status_b }} {% if cat.count_b > 0 %}({{ cat.count_b }}){% endif %}
+            </span>
+          </td>
+          <td style="padding:10px 12px;">
+            <span class="res-pill rp-{% if cat.change_class == 'resolved' %}passed{% elif cat.change_class == 'persists' %}issue{% else %}not_tested{% endif %}">
+              {{ cat.change_label }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <!-- ===== Summary Banner ===== -->
 {% set has_resolved = compare.resolved_after_retest_count > 0 %}
 {% set has_new      = compare.newly_detected_count > 0 %}

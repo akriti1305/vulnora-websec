@@ -199,12 +199,12 @@
                     <span class="badge badge-amber">Untrusted Input</span>
                 </div>
                 <div class="card-body">
-                    <!-- Form preserved for POST /assistant/upload -->
-                    <form action="/assistant/upload" method="POST">
+                    <!-- Form preserved for POST /assistant/upload (Supports direct text input OR .txt file upload) -->
+                    <form action="/assistant/upload" method="POST" enctype="multipart/form-data" onsubmit="return validateUploadForm()">
                         <div class="form-group">
                             <label for="doc-title" class="form-label">Document Title:</label>
                             <input type="text" id="doc-title" name="title" class="form-control"
-                                   placeholder="e.g. Customer Product Review" required>
+                                   placeholder="e.g. Customer Product Review">
                         </div>
 
                         <div class="form-group">
@@ -214,9 +214,15 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="doc-content" class="form-label">Review Content Body:</label>
+                            <label for="doc-file" class="form-label">Upload .txt File (Max 64KB):</label>
+                            <input type="file" id="doc-file" name="file" accept=".txt" class="form-control"
+                                   style="font-size: 0.82rem; padding: 7px 12px;" onchange="handleFileSelected(this)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="doc-content" class="form-label">Or Paste Review Content Body:</label>
                             <textarea id="doc-content" name="content" class="form-control" rows="3"
-                                      placeholder="Content with optional instructions..." required></textarea>
+                                      placeholder="Content with optional instructions..."></textarea>
                         </div>
 
                         <div style="display: flex; gap: 8px; margin-bottom: 14px;">
@@ -413,6 +419,23 @@
 <script>
 function setQuery(text) {
     document.getElementById('query-input').value = text;
+}
+function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (!document.getElementById('doc-title').value) {
+            document.getElementById('doc-title').value = file.name;
+        }
+    }
+}
+function validateUploadForm() {
+    const fileInput = document.getElementById('doc-file');
+    const content = document.getElementById('doc-content').value.trim();
+    if (!content && (!fileInput.files || fileInput.files.length === 0)) {
+        alert("Please enter review content or choose a .txt file to upload.");
+        return false;
+    }
+    return true;
 }
 function fillInjectionPayload() {
     document.getElementById('doc-title').value = "Critical Advisory - Executive Summary";

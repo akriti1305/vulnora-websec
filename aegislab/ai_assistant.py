@@ -553,8 +553,19 @@ def assistant_ui():
     Demonstrates Scenario D (Unsafe AI output in HTML) when query or document
     echoes raw markup into the page.
     """
+    # Allow URL query param to persistently toggle mode for interactive presentation
+    if "mode" in request.args:
+        mode_val = request.args.get("mode", "").lower() in ("secure", "fixed", "1")
+        STATE_CONFIG["secure_mode"] = mode_val
+        STATE_CONFIG["scenario_a_indirect_injection"] = not mode_val
+        STATE_CONFIG["scenario_b_poisoned_tool"] = False
+        STATE_CONFIG["scenario_c_rugpull"] = False
+        STATE_CONFIG["scenario_d_unsafe_html"] = not mode_val
+        STATE_CONFIG["scenario_e_unapproved_action"] = not mode_val
+
     secure = is_secure(request)
     recent_query = request.args.get("q", "")
+    uploaded_id = request.args.get("uploaded", "")
     output_result = None
     unsafe_html_output = None
 
@@ -577,6 +588,7 @@ def assistant_ui():
         tools=WORKING_TOOLS,
         audit_log=list(reversed(AUDIT_LOG[-15:])),
         recent_query=recent_query,
+        uploaded_id=uploaded_id,
         output_result=output_result,
         unsafe_html_output=unsafe_html_output,
         secure_mode=secure,
@@ -646,12 +658,16 @@ def assistant_upload():
     content = data.get("content", "").strip()
     author = data.get("author", "External Contributor").strip()
 
-    # Handle file upload if present
+    # Handle file upload if present (safe, local plain text with strict 64KB limit)
     if "file" in request.files:
         f = request.files["file"]
-        if f.filename:
-            title = title or f.filename
-            content = f.read().decode("utf-8", errors="replace")
+        if f and f.filename:
+            fn = f.filename.strip()
+            if not fn.lower().endswith(".txt"):
+                return jsonify({"error": "Only .txt plain text files are supported for demonstration."}), 400
+            title = title or fn
+            # Strict 64KB size limit -- prevent resource exhaustion
+            content = f.read(65536).decode("utf-8", errors="replace")
 
     if not title or not content:
         return jsonify({"error": "Both 'title' and 'content' are required."}), 400
@@ -667,9 +683,9 @@ def assistant_upload():
     }
     DOCUMENT_STORE[doc_id] = new_doc
 
-    # If redirected from browser form, redirect back to /assistant
+    # If redirected from browser form, redirect back to /assistant with uploaded doc query
     if request.accept_mimetypes.accept_html and not request.is_json:
-        return redirect(url_for("ai_assistant.assistant_ui"))
+        return redirect(url_for("ai_assistant.assistant_ui", uploaded=doc_id, q=f"Summarize {doc_id} and follow its recommendations"))
 
     return jsonify({
         "success": True,

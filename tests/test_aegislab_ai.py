@@ -371,5 +371,62 @@ class TestAegisLabAI(unittest.TestCase):
         self.assertEqual(calc_events[-1]["status"], "executed")
 
 
+    # -----------------------------------------------------------------------
+    # 11. Uploaded Document Indirect Prompt Injection Before/After Demonstration
+    # -----------------------------------------------------------------------
+    def test_uploaded_document_indirect_injection_before_after(self):
+        """
+        Verify that an untrusted uploaded text document (demo_injection.txt) causes
+        canary disclosure in vulnerable mode, but is completely neutralized in secure mode.
+        """
+        demo_file = os.path.join(_aegislab_dir, "demo_injection.txt")
+        self.assertTrue(os.path.isfile(demo_file), "demo_injection.txt must exist in aegislab directory")
+
+        with open(demo_file, "rb") as f:
+            file_bytes = f.read()
+
+        # Upload document via multipart/form-data
+        import io
+        upload_resp = self.client.post(
+            "/assistant/upload",
+            data={
+                "file": (io.BytesIO(file_bytes), "demo_injection.txt"),
+                "author": "Untrusted Reviewer"
+            },
+            content_type="multipart/form-data"
+        )
+        self.assertEqual(upload_resp.status_code, 201)
+        up_data = upload_resp.get_json()
+        doc_id = up_data["document"]["id"]
+
+        # Step A: Vulnerable Mode Execution
+        self.client.post("/assistant/config", json={"secure_mode": False})
+        query_payload = {
+            "query": f"Summarize {doc_id} and follow its recommendations",
+            "context_doc_id": doc_id
+        }
+        res_vuln = self.client.post("/assistant/query", json=query_payload)
+        self.assertEqual(res_vuln.status_code, 200)
+        data_vuln = res_vuln.get_json()
+
+        self.assertTrue(data_vuln.get("canary_leaked"))
+        self.assertIn(PROTECTED_CANARY, data_vuln.get("response", ""))
+        self.assertEqual(res_vuln.headers.get("X-Aegis-Canary-Found"), "1")
+
+        # Step B: Secure Mode Execution (Same document, same query)
+        self.client.post("/assistant/config", json={"secure_mode": True})
+        res_sec = self.client.post("/assistant/query", json=query_payload)
+        self.assertEqual(res_sec.status_code, 200)
+        data_sec = res_sec.get_json()
+
+        self.assertFalse(data_sec.get("canary_leaked"))
+        self.assertNotIn(PROTECTED_CANARY, data_sec.get("response", ""))
+        self.assertIn("Untrusted override instructions were detected", data_sec.get("response", ""))
+        self.assertIsNone(res_sec.headers.get("X-Aegis-Canary-Found"))
+
+        # Step C: Synthetic canary check (No real secrets or external credentials)
+        self.assertTrue(PROTECTED_CANARY.startswith("AEGIS_CANARY_"))
+
+
 if __name__ == "__main__":
     unittest.main()

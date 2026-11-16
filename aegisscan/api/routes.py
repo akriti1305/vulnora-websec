@@ -1244,10 +1244,10 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
     ai_new      = [f for f in newly_detected if f["vulnerability_type"] in ai_vuln_types]
 
     # Security controls verified in Scan B
-    controls_b = [f for f in scan_b.findings if f.vulnerability_type in ("Tool Integrity Verified", "AI Agent Approval Gate Verified")]
+    controls_b = [f for f in scan_b.findings if f.vulnerability_type in ("Tool Integrity Verified", "AI Agent Approval Gate Verified", "AI Canary Token Protection Verified")]
 
     # -------------------------------------------------------------------------
-    # Category-Level Differential Analysis (Web & Focused Demo)
+    # Category-Level Differential Analysis (Web & Focused Demo & AI Security)
     # -------------------------------------------------------------------------
     def get_cat_status(findings_list, cat_key, mode):
         if cat_key == "sqli":
@@ -1265,6 +1265,18 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
         elif cat_key == "cookies":
             flaws = [f for f in findings_list if "cookie" in f.vulnerability_type.lower() and is_vuln(f)]
             return ("Issue Found", len(flaws)) if flaws else ("No Longer Reproduced", 0)
+        elif cat_key == "ai_prompt_injection":
+            flaws = [f for f in findings_list if "prompt injection" in f.vulnerability_type.lower() and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "ai_info_leakage":
+            flaws = [f for f in findings_list if ("canary" in f.vulnerability_type.lower() or "sensitive information" in f.vulnerability_type.lower()) and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "ai_tool_integrity":
+            flaws = [f for f in findings_list if f.vulnerability_type in ("Tool Metadata Rug-Pull", "Poisoned Tool Description") and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
+        elif cat_key == "ai_unauthorized_actions":
+            flaws = [f for f in findings_list if ("excessive agency" in f.vulnerability_type.lower() or "context taint" in f.vulnerability_type.lower()) and is_vuln(f)]
+            return ("Issue Found", len(flaws)) if flaws else (("Not Tested", 0) if mode in ("basic", "external_basic") else ("No Longer Reproduced", 0))
         return ("Not Tested", 0)
 
     cat_keys = [
@@ -1297,6 +1309,46 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
             change_class = "not_tested"
 
         category_diffs.append({
+            "key": key,
+            "name": name,
+            "severity": default_sev,
+            "status_a": status_a,
+            "count_a": count_a,
+            "status_b": status_b,
+            "count_b": count_b,
+            "change_label": change_label,
+            "change_class": change_class,
+        })
+
+    ai_cat_keys = [
+        ("ai_prompt_injection", "Prompt Injection", "Critical"),
+        ("ai_info_leakage", "Sensitive Information Leakage", "Critical"),
+        ("ai_tool_integrity", "Tool Integrity", "High"),
+        ("ai_unauthorized_actions", "Unauthorized AI Actions", "Critical"),
+    ]
+
+    ai_category_diffs = []
+    for key, name, default_sev in ai_cat_keys:
+        status_a, count_a = get_cat_status(scan_a.findings, key, getattr(scan_a, "scan_mode", "deep"))
+        status_b, count_b = get_cat_status(scan_b.findings, key, scan_b_mode)
+        
+        if status_a == "Issue Found" and status_b == "No Longer Reproduced":
+            change_label = "RESOLVED AFTER RETEST"
+            change_class = "resolved"
+        elif status_a == "Issue Found" and status_b == "Issue Found":
+            change_label = "UNCHANGED (STILL CONFIRMED)"
+            change_class = "persists"
+        elif status_a != "Issue Found" and status_b == "Issue Found":
+            change_label = "NEWLY DETECTED"
+            change_class = "new"
+        elif status_a == "No Longer Reproduced" and status_b == "No Longer Reproduced":
+            change_label = "PASSING (NO REGRESSION)"
+            change_class = "passed"
+        else:
+            change_label = "NOT TESTED"
+            change_class = "not_tested"
+
+        ai_category_diffs.append({
             "key": key,
             "name": name,
             "severity": default_sev,
@@ -1361,6 +1413,7 @@ def compare_scans(a: int, b: int, db: Session = Depends(get_db)):
         },
         # Category-level & Focused Demo breakdowns
         "category_diffs"  : category_diffs,
+        "ai_category_diffs": ai_category_diffs,
         "focused_demo"    : focused_demo_info,
         "web_before_affected": web_before_affected,
         "web_after_affected": web_after_affected,
