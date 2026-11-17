@@ -54,3 +54,8 @@ logs/
 *~
 desktop.ini
 scratch/
+
+# Private Academic Project Report deliverables
+project_report/
+*.docx
+*.pdf
